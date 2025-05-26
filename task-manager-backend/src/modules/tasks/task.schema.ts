@@ -19,6 +19,9 @@ export class Task extends Document {
 
   @Prop()
   category!: string;
+
+  @Prop({ required: false })
+  deadline?: Date;
 }
 
 export const TaskSchema = SchemaFactory.createForClass(Task);

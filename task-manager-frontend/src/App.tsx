@@ -1,18 +1,33 @@
-import React, { useState } from "react";
-import Auth from "./Auth";
-import TaskList from "./TaskList";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import Dashboard from './pages/Dashboard';
+import PrivateRoute from './components/PrivateRoute';
+import './App.css';
 
 function App() {
-  const [token, setToken] = useState<string | null>(null);
-
-  const handleLogin = (token: string) => {
-    setToken(token);
-  };
-
   return (
-    <div className="min-h-screen bg-gray-100">
-      {token ? <TaskList token={token} /> : <Auth onLogin={handleLogin} />}
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
+              }
+            />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
     </div>
+      </Router>
+    </AuthProvider>
   );
 }
 

@@ -21,19 +21,12 @@ export class TasksService {
     return task;
   }
 
-  async createTask(
-    createTaskDto: CreateTaskDto,
-    userId: string
-  ): Promise<Task> {
+  async createTask(createTaskDto: CreateTaskDto, userId: string): Promise<Task> {
     const task = new this.taskModel({ ...createTaskDto, userId });
     return task.save();
   }
 
-  async updateTask(
-    id: string,
-    updateTaskDto: UpdateTaskDto,
-    userId: string
-  ): Promise<Task> {
+  async updateTask(id: string, updateTaskDto: UpdateTaskDto, userId: string): Promise<Task> {
     const task = await this.taskModel
       .findOneAndUpdate({ _id: id, userId }, updateTaskDto, { new: true })
       .exec();

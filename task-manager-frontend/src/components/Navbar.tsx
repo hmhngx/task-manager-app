@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
 
   return (
     <nav className="bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg">
@@ -17,9 +17,8 @@ export default function Navbar() {
             </Link>
           </div>
           <div className="flex items-center space-x-4">
-            {user ? (
+            {isAuthenticated ? (
               <>
-                <span className="text-white">Welcome, {user.username}</span>
                 <button
                   onClick={logout}
                   className="bg-white text-purple-600 px-4 py-2 rounded-md hover:bg-purple-100 transition-colors"

@@ -19,6 +19,8 @@ export default function TaskListPage() {
       category: newTask.category,
       completed: false,
       userId: "temp-user-id",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
     setTasks([...tasks, task]);
     setIsAddingTask(false);

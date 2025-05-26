@@ -30,18 +30,12 @@ export class TasksController {
   }
 
   @Get(':id')
-  getTaskById(
-    @Param('id') id: string,
-    @Request() req: RequestWithUser
-  ): Promise<Task> {
+  getTaskById(@Param('id') id: string, @Request() req: RequestWithUser): Promise<Task> {
     return this.tasksService.getTaskById(id, req.user.id);
   }
 
   @Post()
-  createTask(
-    @Body() createTaskDto: CreateTaskDto,
-    @Request() req: RequestWithUser
-  ): Promise<Task> {
+  createTask(@Body() createTaskDto: CreateTaskDto, @Request() req: RequestWithUser): Promise<Task> {
     return this.tasksService.createTask(createTaskDto, req.user.id);
   }
 
@@ -49,16 +43,13 @@ export class TasksController {
   updateTask(
     @Param('id') id: string,
     @Body() updateTaskDto: UpdateTaskDto,
-    @Request() req: RequestWithUser
+    @Request() req: RequestWithUser,
   ): Promise<Task> {
     return this.tasksService.updateTask(id, updateTaskDto, req.user.id);
   }
 
   @Delete(':id')
-  deleteTask(
-    @Param('id') id: string,
-    @Request() req: RequestWithUser
-  ): Promise<void> {
+  deleteTask(@Param('id') id: string, @Request() req: RequestWithUser): Promise<void> {
     return this.tasksService.deleteTask(id, req.user.id);
   }
 }

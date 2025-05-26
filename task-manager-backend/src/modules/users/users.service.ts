@@ -8,10 +8,7 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
-  async create(
-    username: string,
-    password: string
-  ): Promise<{ id: string; username: string }> {
+  async create(username: string, password: string): Promise<{ id: string; username: string }> {
     const existingUser = await this.userModel.findOne({ username }).exec();
     if (existingUser) {
       throw new ConflictException('Username already exists');

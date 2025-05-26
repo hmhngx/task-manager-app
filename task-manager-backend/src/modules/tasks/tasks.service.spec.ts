@@ -43,10 +43,7 @@ describe('TasksService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        TasksService,
-        { provide: getModelToken(Task.name), useValue: mockModel },
-      ],
+      providers: [TasksService, { provide: getModelToken(Task.name), useValue: mockModel }],
     }).compile();
 
     service = module.get<TasksService>(TasksService);
@@ -69,8 +66,6 @@ describe('TasksService', () => {
 
   it('should throw NotFoundException for invalid task ID', async () => {
     model.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
-    await expect(service.getTaskById('invalid', 'user1')).rejects.toThrow(
-      NotFoundException
-    );
+    await expect(service.getTaskById('invalid', 'user1')).rejects.toThrow(NotFoundException);
   });
 });
