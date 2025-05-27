@@ -1,20 +1,19 @@
-import { Module, DynamicModule, Type } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { getMongoConfig } from './config/database.config';
+import { MongooseModule } from '@nestjs/mongoose';
+import { AuthModule } from './modules/auth/auth.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { UsersModule } from './modules/users/users.module';
-import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
-    MongooseModule.forRootAsync({
-      useFactory: getMongoConfig,
+    ConfigModule.forRoot({
+      isGlobal: true,
     }),
+    MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/task-manager'),
+    AuthModule,
     TasksModule,
     UsersModule,
-    AuthModule,
-  ] as Array<DynamicModule | Type<any>>,
+  ],
 })
 export class AppModule {}
