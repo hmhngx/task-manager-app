@@ -3,26 +3,34 @@ export interface Task {
   title: string;
   description: string;
   category?: string;
-  completed: boolean;
+  deadline: Date;
+  status: 'todo' | 'done' | 'late';
   userId: string;
-  createdAt: string;
-  updatedAt: string;
-  deadline?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface TaskStats {
+  todo: number;
+  done: number;
+  late: number;
 }
 
 export interface CreateTaskDto {
   title: string;
   description: string;
   category?: string;
-  deadline?: string;
+  deadline: Date;
+  status: 'todo' | 'done' | 'late';
+  userId?: string;
 }
 
 export interface UpdateTaskDto {
   title?: string;
   description?: string;
   category?: string;
-  completed?: boolean;
-  deadline?: string;
+  deadline?: Date;
+  status?: 'todo' | 'done' | 'late';
 }
 
 export interface User {
