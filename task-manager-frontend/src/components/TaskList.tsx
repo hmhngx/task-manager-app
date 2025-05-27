@@ -186,11 +186,16 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate }) => {
           <div className="text-center text-gray-500">No tasks for this day.</div>
         )}
         {filteredTasks.map((task) => (
-          <div key={task._id} className={`border p-4 rounded ${
-            task.status === 'late' ? 'border-red-500' :
-            task.status === 'done' ? 'border-green-500' :
-            'border-gray-200'
-          }`}>
+          <div
+            key={task._id}
+            className={`border p-4 rounded-2xl shadow-lg transition hover:shadow-2xl hover:scale-[1.02] bg-white ${
+              task.status === 'late'
+                ? 'border-red-400'
+                : task.status === 'done'
+                ? 'border-green-400'
+                : 'border-gray-200'
+            }`}
+          >
             <div className="flex justify-between items-start">
               <div>
                 <h3 className={`font-semibold ${
@@ -218,15 +223,17 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate }) => {
               <div className="flex space-x-2">
                 <button
                   onClick={() => handleToggleTask(task._id)}
-                  className={`px-3 py-1 rounded ${
-                    task.status === 'done' ? 'bg-green-500' : 'bg-gray-500'
+                  className={`px-3 py-1 rounded-lg transition font-semibold shadow-sm hover:shadow-md active:scale-95 ${
+                    task.status === 'done'
+                      ? 'bg-green-500 hover:bg-green-600'
+                      : 'bg-gray-500 hover:bg-gray-600'
                   } text-white`}
                 >
                   {task.status === 'done' ? 'Completed' : 'Mark Complete'}
                 </button>
                 <button
                   onClick={() => handleDeleteTask(task._id)}
-                  className="px-3 py-1 bg-red-500 text-white rounded"
+                  className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg transition shadow-sm hover:shadow-md active:scale-95"
                 >
                   Delete
                 </button>
