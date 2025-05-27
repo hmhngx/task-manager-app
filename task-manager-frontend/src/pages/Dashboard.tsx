@@ -1,14 +1,35 @@
-import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import TaskList from '../components/TaskList';
 import Sidebar from '../components/Sidebar';
 import StatsPanel from '../components/StatsPanel';
+import { Task } from '../types';
+import { useEffect, useState } from 'react';
+import { getTasks } from '../services/taskService';
 
 const Dashboard: React.FC = () => {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    getTasks().then(setTasks);
+  }, []);
+
+  // Filter tasks for the selected day
+  const todayStr = selectedDate ? selectedDate.toDateString() : new Date().toDateString();
+  const tasksForToday = tasks.filter(
+    (task) => new Date(task.deadline).toDateString() === todayStr
+  );
+
+  const completedCount = tasksForToday.filter(
+    (task) => task.status === "done"
+  ).length;
+
+  const leftCount = tasksForToday.filter(
+    (task) => task.status !== "done"
+  ).length;
 
   const handleLogout = () => {
     logout();
@@ -16,7 +37,7 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f7fd] flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col">
       {/* Top Bar */}
       <nav className="bg-white shadow-sm rounded-b-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -29,12 +50,12 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-end">
-                <span className="font-semibold text-gray-700">Karen West</span>
+                <span className="font-semibold text-gray-700">{user?.username || "User"}</span>
                 <span className="text-xs text-gray-400">Last seen: Today</span>
               </div>
               <button
                 onClick={handleLogout}
-                className="ml-4 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="ml-4 px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition"
               >
                 Logout
               </button>
@@ -47,7 +68,9 @@ const Dashboard: React.FC = () => {
         <Sidebar
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
-          tasksLeft={0}
+          tasksLeft={leftCount}
+          completedCount={completedCount}
+          user={user}
         />
         <div className="flex-1 flex flex-col">
           <TaskList selectedDate={selectedDate} />
@@ -58,4 +81,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;
