@@ -10,13 +10,6 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
 
-  // Dummy stats for now
-  const weeklyStats = { todo: 4, late: 2, done: 12 };
-  const monthlyStats = { todo: 12, late: 5, done: 30 };
-
-  // Dummy tasks left for greeting
-  const tasksLeft = 2;
-
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -51,11 +44,15 @@ const Dashboard: React.FC = () => {
       </nav>
       {/* Main 3-column layout */}
       <main className="flex-1 flex flex-row gap-8 max-w-7xl mx-auto w-full py-8">
-        <Sidebar selectedDate={selectedDate} setSelectedDate={setSelectedDate} tasksLeft={tasksLeft} />
+        <Sidebar
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          tasksLeft={0}
+        />
         <div className="flex-1 flex flex-col">
           <TaskList selectedDate={selectedDate} />
         </div>
-        <StatsPanel weeklyStats={weeklyStats} monthlyStats={monthlyStats} />
+        <StatsPanel />
       </main>
     </div>
   );
