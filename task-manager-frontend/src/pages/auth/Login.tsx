@@ -12,11 +12,17 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     try {
-      const token = await loginUser(username, password);
-      login(token);
-      navigate('/dashboard');
+      const response = await loginUser(username, password);
+      if (response.access_token && response.user) {
+        login(response.access_token, response.user);
+        navigate('/dashboard', { replace: true });
+      } else {
+        setError('Invalid response from server');
+      }
     } catch (err) {
+      console.error('Login error:', err);
       setError('Invalid username or password');
     }
   };
@@ -54,6 +60,7 @@ const Login: React.FC = () => {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
               />
             </div>
           </div>
