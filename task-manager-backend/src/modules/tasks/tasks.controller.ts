@@ -2,54 +2,66 @@ import {
   Controller,
   Get,
   Post,
-  Patch,
-  Delete,
-  Param,
   Body,
+  Patch,
+  Param,
+  Delete,
   UseGuards,
   Request,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
-import { Task } from './task.schema';
-import { CreateTaskDto } from './create-task.dto';
-import { UpdateTaskDto } from './update-task.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Request as ExpressRequest } from 'express';
 
-interface RequestWithUser extends Request {
-  user: { id: string; username: string };
+interface RequestWithUser extends ExpressRequest {
+  user: {
+    userId: string;
+  };
 }
 
 @Controller('tasks')
 @UseGuards(JwtAuthGuard)
 export class TasksController {
-  constructor(private tasksService: TasksService) {}
+  constructor(private readonly tasksService: TasksService) {}
+
+  @Post()
+  create(@Body() createTaskDto: CreateTaskDto, @Request() req: RequestWithUser) {
+    return this.tasksService.create(createTaskDto, req.user.userId);
+  }
 
   @Get()
-  getAllTasks(@Request() req: RequestWithUser): Promise<Task[]> {
-    return this.tasksService.getAllTasks(req.user.id);
+  findAll(@Request() req: RequestWithUser) {
+    return this.tasksService.findAll(req.user.userId);
+  }
+
+  @Get('stats/weekly')
+  getWeeklyStats(@Request() req: RequestWithUser) {
+    return this.tasksService.getWeeklyStats(req.user.userId);
+  }
+
+  @Get('stats/monthly')
+  getMonthlyStats(@Request() req: RequestWithUser) {
+    return this.tasksService.getMonthlyStats(req.user.userId);
   }
 
   @Get(':id')
-  getTaskById(@Param('id') id: string, @Request() req: RequestWithUser): Promise<Task> {
-    return this.tasksService.getTaskById(id, req.user.id);
-  }
-
-  @Post()
-  createTask(@Body() createTaskDto: CreateTaskDto, @Request() req: RequestWithUser): Promise<Task> {
-    return this.tasksService.createTask(createTaskDto, req.user.id);
+  findOne(@Param('id') id: string, @Request() req: RequestWithUser) {
+    return this.tasksService.findOne(id, req.user.userId);
   }
 
   @Patch(':id')
-  updateTask(
+  update(
     @Param('id') id: string,
     @Body() updateTaskDto: UpdateTaskDto,
     @Request() req: RequestWithUser,
-  ): Promise<Task> {
-    return this.tasksService.updateTask(id, updateTaskDto, req.user.id);
+  ) {
+    return this.tasksService.update(id, updateTaskDto, req.user.userId);
   }
 
   @Delete(':id')
-  deleteTask(@Param('id') id: string, @Request() req: RequestWithUser): Promise<void> {
-    return this.tasksService.deleteTask(id, req.user.id);
+  remove(@Param('id') id: string, @Request() req: RequestWithUser) {
+    return this.tasksService.remove(id, req.user.userId);
   }
 }
