@@ -4,7 +4,9 @@ import { AuthProvider } from './contexts/AuthContext';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Dashboard from './pages/Dashboard';
+import AdminDashboard from './components/AdminDashboard';
 import PrivateRoute from './components/PrivateRoute';
+import AdminTasksDashboard from './components/AdminTasksDashboard';
 import './App.css';
 
 function App() {
@@ -23,9 +25,25 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/admin"
+              element={
+                <PrivateRoute>
+                  <AdminDashboard />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/tasks"
+              element={
+                <PrivateRoute>
+                  <AdminTasksDashboard />
+                </PrivateRoute>
+              }
+            />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
-    </div>
+        </div>
       </Router>
     </AuthProvider>
   );
