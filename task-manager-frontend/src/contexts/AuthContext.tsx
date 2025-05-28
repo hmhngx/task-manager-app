@@ -1,73 +1,62 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface User {
-  id: string;
-  username: string;
-}
+import { loginUser, registerUser } from '../services/authService';
+import { User } from '../types';
 
 interface AuthContextType {
-  isAuthenticated: boolean;
-  token: string | null;
   user: User | null;
-  login: (token: string, user: User) => void;
+  login: (username: string, password: string) => Promise<void>;
+  register: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
-    
-    if (storedToken && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setToken(storedToken);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Error parsing stored user:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      }
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+      setIsAuthenticated(true);
     }
   }, []);
 
-  const login = (newToken: string, newUser: User) => {
-    if (!newToken || !newUser) {
-      console.error('Invalid token or user data provided to login');
-      return;
-    }
+  const login = async (username: string, password: string) => {
     try {
-      localStorage.setItem('token', newToken);
-      localStorage.setItem('user', JSON.stringify(newUser));
-      setToken(newToken);
-      setUser(newUser);
+      const response = await loginUser(username, password);
+      setUser(response);
       setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(response));
     } catch (error) {
-      console.error('Error during login:', error);
+      throw error;
+    }
+  };
+
+  const register = async (username: string, password: string) => {
+    try {
+      const response = await registerUser(username, password);
+      setUser(response);
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(response));
+    } catch (error) {
+      throw error;
     }
   };
 
   const logout = () => {
-    try {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setToken(null);
-      setUser(null);
-      setIsAuthenticated(false);
-    } catch (error) {
-      console.error('Error during logout:', error);
-    }
+    setUser(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem('user');
   };
 
+  const isAdmin = user?.role === 'admin';
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, token, user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isAuthenticated, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
