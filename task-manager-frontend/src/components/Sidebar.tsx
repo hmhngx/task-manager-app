@@ -9,6 +9,7 @@ interface SidebarProps {
   tasksLeft: number;
   completedCount: number;
   user: User | null;
+  isAdmin: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -17,6 +18,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   tasksLeft,
   completedCount,
   user,
+  isAdmin,
 }) => {
   return (
     <aside className="bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-6 min-w-[320px] max-w-xs">
@@ -31,8 +33,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div>
           <div className="font-semibold text-gray-800">Hi, {user?.username || "User"}!</div>
           <div className="text-xs text-gray-500">
-            You have <span className="font-bold text-blue-600 underline hover:text-blue-800 transition cursor-pointer">{tasksLeft} tasks</span> left for today.<br />
-            Already completed {completedCount} Tasks today.
+            {isAdmin ? (
+              <span>You have admin access to all tasks.</span>
+            ) : (
+              <>
+                You have <span className="font-bold text-blue-600 underline hover:text-blue-800 transition cursor-pointer">{tasksLeft} tasks</span> left for today.<br />
+                Already completed {completedCount} Tasks today.
+              </>
+            )}
           </div>
         </div>
       </div>
