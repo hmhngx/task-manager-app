@@ -2,12 +2,14 @@ import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
-import { User } from '../users/schemas/user.schema';
+import { User } from '../users/user.schema';
 import { Types } from 'mongoose';
+import { UserRole } from '../users/user.schema';
 
 interface UserResponse {
   id: string;
   username: string;
+  role: UserRole;
 }
 
 @Injectable()
@@ -48,6 +50,7 @@ export class AuthService {
       return {
         id: this.getIdString(user._id),
         username: user.username,
+        role: user.role,
       };
     } catch (error) {
       this.logger.error(
@@ -63,6 +66,7 @@ export class AuthService {
       const payload = {
         username: user.username,
         sub: this.getIdString(user._id),
+        role: user.role,
       };
       const token = await this.jwtService.signAsync(payload);
       this.logger.log(`Token generated successfully for user: ${user.username}`);
@@ -71,6 +75,7 @@ export class AuthService {
         user: {
           id: this.getIdString(user._id),
           username: user.username,
+          role: user.role,
         },
       };
     } catch (error) {
