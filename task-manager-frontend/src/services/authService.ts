@@ -1,16 +1,14 @@
 import axios from 'axios';
+import { User } from '../types';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
-interface LoginResponse {
+export interface LoginResponse {
   access_token: string;
-  user: {
-    id: string;
-    username: string;
-  };
+  user: User;
 }
 
-export const loginUser = async (username: string, password: string): Promise<LoginResponse> => {
+export const loginUser = async (username: string, password: string): Promise<User> => {
   try {
     const response = await axios.post<LoginResponse>(`${API_URL}/auth/login`, {
       username,
@@ -19,18 +17,22 @@ export const loginUser = async (username: string, password: string): Promise<Log
     const { access_token, user } = response.data;
     localStorage.setItem('token', access_token);
     localStorage.setItem('user', JSON.stringify(user));
-    return response.data;
+    return user;
   } catch (error) {
     throw new Error('Login failed');
   }
 };
 
-export const registerUser = async (username: string, password: string): Promise<void> => {
+export const registerUser = async (username: string, password: string): Promise<User> => {
   try {
-    await axios.post(`${API_URL}/auth/register`, {
+    const response = await axios.post<LoginResponse>(`${API_URL}/auth/register`, {
       username,
       password,
     });
+    const { access_token, user } = response.data;
+    localStorage.setItem('token', access_token);
+    localStorage.setItem('user', JSON.stringify(user));
+    return user;
   } catch (error) {
     throw new Error('Registration failed');
   }
