@@ -2,7 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { TaskStats } from '../types';
 import { getWeeklyStats, getMonthlyStats } from '../services/taskService';
 
-const StatsPanel: React.FC = () => {
+interface StatsPanelProps {
+  isAdmin: boolean;
+}
+
+const StatsPanel: React.FC<StatsPanelProps> = ({ isAdmin }) => {
   const [weeklyStats, setWeeklyStats] = useState<TaskStats>({ todo: 0, done: 0, late: 0 });
   const [monthlyStats, setMonthlyStats] = useState<TaskStats>({ todo: 0, done: 0, late: 0 });
   const [error, setError] = useState('');
@@ -33,7 +37,9 @@ const StatsPanel: React.FC = () => {
       
       {/* Weekly Stats */}
       <div className="bg-white rounded-2xl shadow p-6 flex flex-col items-center transition-transform duration-200 hover:scale-105 hover:shadow-xl cursor-pointer">
-        <div className="font-semibold text-gray-700 mb-2">Weekly Stats</div>
+        <div className="font-semibold text-gray-700 mb-2">
+          {isAdmin ? 'All Users Weekly Stats' : 'Your Weekly Stats'}
+        </div>
         <div className="flex items-center gap-4">
           <div className="flex flex-col items-center">
             <div className="text-3xl font-bold text-blue-600">{weeklyStats.todo}</div>
@@ -52,7 +58,9 @@ const StatsPanel: React.FC = () => {
 
       {/* Monthly Stats */}
       <div className="bg-white rounded-2xl shadow p-6 flex flex-col items-center transition-transform duration-200 hover:scale-105 hover:shadow-xl cursor-pointer">
-        <div className="font-semibold text-gray-700 mb-2">Monthly Stats</div>
+        <div className="font-semibold text-gray-700 mb-2">
+          {isAdmin ? 'All Users Monthly Stats' : 'Your Monthly Stats'}
+        </div>
         <div className="flex items-center gap-4">
           <div className="flex flex-col items-center">
             <div className="text-3xl font-bold text-blue-600">{monthlyStats.todo}</div>
