@@ -3,10 +3,12 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UsersService } from '../users/users.service';
 import { Types } from 'mongoose';
+import { UserRole } from '../users/user.schema';
 
 interface JwtPayload {
   sub: string;
   username: string;
+  role: UserRole;
 }
 
 @Injectable()
@@ -33,7 +35,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return String(id);
   }
 
-  async validate(payload: JwtPayload): Promise<{ id: string; username: string }> {
+  async validate(payload: JwtPayload): Promise<{ id: string; username: string; role: UserRole }> {
     this.logger.log(`Validating JWT payload: ${JSON.stringify(payload)}`);
     try {
       if (!Types.ObjectId.isValid(payload.sub)) {
@@ -57,6 +59,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       return {
         id: this.getIdString(user._id),
         username: user.username,
+        role: payload.role,
       };
     } catch (error) {
       this.logger.error(
