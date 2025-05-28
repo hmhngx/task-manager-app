@@ -1,16 +1,12 @@
+import axios from 'axios';
 import { Task, TaskStats, CreateTaskDto, UpdateTaskDto } from '../types';
-import { API_URL } from '../config';
 import { getStoredToken, logoutUser } from './authService';
 
-const getAuthHeaders = () => {
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+
+const getAuthHeader = () => {
   const token = getStoredToken();
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-  return {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  };
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 const handleResponse = async (response: Response) => {
@@ -31,99 +27,105 @@ const handleResponse = async (response: Response) => {
 };
 
 export const getTasks = async (): Promise<Task[]> => {
-  const response = await fetch(`${API_URL}/tasks`, {
-    headers: getAuthHeaders()
-  });
-  if (!response.ok) {
-    throw new Error('Failed to fetch tasks');
-  }
-  return response.json();
-};
-
-export const createTask = async (task: CreateTaskDto): Promise<Task> => {
-  // Validate task data before sending
-  if (!task.title || !task.description || !task.deadline) {
-    throw new Error('Missing required fields');
-  }
-
-  // Ensure deadline is a valid Date object
-  if (!(task.deadline instanceof Date) || isNaN(task.deadline.getTime())) {
-    throw new Error('Invalid deadline date');
-  }
-
-  const taskData = {
-    ...task,
-    deadline: task.deadline.toISOString() // Convert Date to ISO string for API
-  };
-
-  console.log('Creating task with data:', JSON.stringify(taskData, null, 2));
-  console.log('Auth headers:', getAuthHeaders());
-  
   try {
-    const response = await fetch(`${API_URL}/tasks`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(taskData),
+    const response = await axios.get(`${API_URL}/tasks`, {
+      headers: getAuthHeader(),
     });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Failed to create task:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText,
-        requestData: taskData
-      });
-      throw new Error(`Failed to create task: ${errorText}`);
-    }
-
-    const createdTask = await response.json();
-    return {
-      ...createdTask,
-      deadline: new Date(createdTask.deadline),
-      createdAt: new Date(createdTask.createdAt),
-      updatedAt: new Date(createdTask.updatedAt)
-    };
+    return response.data;
   } catch (error) {
-    console.error('Error in createTask:', error);
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      logoutUser();
+      window.location.href = '/login';
+    }
     throw error;
   }
 };
 
-export const updateTask = async (id: string, task: Partial<Task>): Promise<Task> => {
-  const response = await fetch(`${API_URL}/tasks/${id}`, {
-    method: 'PATCH',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(task),
-  });
-  if (!response.ok) {
-    throw new Error('Failed to update task');
+export const createTask = async (task: CreateTaskDto): Promise<Task> => {
+  try {
+    const response = await axios.post(`${API_URL}/tasks`, task, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      logoutUser();
+      window.location.href = '/login';
+    }
+    throw error;
   }
-  return response.json();
+};
+
+export const updateTask = async (id: string, task: UpdateTaskDto): Promise<Task> => {
+  try {
+    const response = await axios.patch(`${API_URL}/tasks/${id}`, task, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      logoutUser();
+      window.location.href = '/login';
+    }
+    throw error;
+  }
 };
 
 export const deleteTask = async (id: string): Promise<void> => {
-  const response = await fetch(`${API_URL}/tasks/${id}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders()
-  });
-  if (!response.ok) {
-    throw new Error('Failed to delete task');
+  try {
+    await axios.delete(`${API_URL}/tasks/${id}`, {
+      headers: getAuthHeader(),
+    });
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      logoutUser();
+      window.location.href = '/login';
+    }
+    throw error;
   }
 };
 
 export const getWeeklyStats = async (): Promise<TaskStats> => {
-  console.log('Fetching weekly stats...');
-  const response = await fetch(`${API_URL}/tasks/stats/weekly`, {
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await axios.get(`${API_URL}/tasks/stats/weekly`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      logoutUser();
+      window.location.href = '/login';
+    }
+    throw error;
+  }
 };
 
 export const getMonthlyStats = async (): Promise<TaskStats> => {
-  console.log('Fetching monthly stats...');
-  const response = await fetch(`${API_URL}/tasks/stats/monthly`, {
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await axios.get(`${API_URL}/tasks/stats/monthly`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      logoutUser();
+      window.location.href = '/login';
+    }
+    throw error;
+  }
+};
+
+export const getAllTasks = async (): Promise<Task[]> => {
+  try {
+    const response = await axios.get(`${API_URL}/tasks/all`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      logoutUser();
+      window.location.href = '/login';
+    }
+    throw error;
+  }
 }; 
