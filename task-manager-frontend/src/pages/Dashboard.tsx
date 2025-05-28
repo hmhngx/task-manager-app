@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import TaskList from '../components/TaskList';
 import Sidebar from '../components/Sidebar';
@@ -8,19 +8,32 @@ import { useEffect, useState } from 'react';
 import { getTasks } from '../services/taskService';
 
 const Dashboard: React.FC = () => {
-  const { logout, user } = useAuth();
+  const { logout, user, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getTasks().then(setTasks);
+    const fetchTasks = async () => {
+      try {
+        const data = await getTasks();
+        setTasks(data);
+      } catch (err) {
+        setError('Failed to fetch tasks');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTasks();
   }, []);
 
   // Filter tasks for the selected day
   const todayStr = selectedDate ? selectedDate.toDateString() : new Date().toDateString();
   const tasksForToday = tasks.filter(
-    (task) => new Date(task.deadline).toDateString() === todayStr
+    (task) => task.deadline && new Date(task.deadline).toDateString() === todayStr
   );
 
   const completedCount = tasksForToday.filter(
@@ -51,8 +64,26 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-end">
                 <span className="font-semibold text-gray-700">{user?.username || "User"}</span>
-                <span className="text-xs text-gray-400">Last seen: Today</span>
+                <span className="text-xs text-gray-400">
+                  {isAdmin ? 'Administrator' : 'User'} • Last seen: Today
+                </span>
               </div>
+              {isAdmin && (
+                <>
+                  <Link
+                    to="/admin"
+                    className="px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 active:scale-95 transition"
+                  >
+                    Manage Users
+                  </Link>
+                  <Link
+                    to="/admin/tasks"
+                    className="px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-pink-600 hover:bg-pink-700 active:scale-95 transition"
+                  >
+                    Manage All Tasks
+                  </Link>
+                </>
+              )}
               <button
                 onClick={handleLogout}
                 className="ml-4 px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition"
@@ -71,11 +102,12 @@ const Dashboard: React.FC = () => {
           tasksLeft={leftCount}
           completedCount={completedCount}
           user={user}
+          isAdmin={isAdmin}
         />
         <div className="flex-1 flex flex-col">
-          <TaskList selectedDate={selectedDate} />
+          <TaskList selectedDate={selectedDate} isAdmin={isAdmin} />
         </div>
-        <StatsPanel />
+        <StatsPanel isAdmin={isAdmin} />
       </main>
     </div>
   );
