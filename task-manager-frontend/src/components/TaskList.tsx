@@ -5,13 +5,13 @@ import { getTasks, createTask, updateTask, deleteTask } from '../services/taskSe
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { TextField } from '@mui/material';
 
 interface TaskListProps {
   selectedDate: Date | null;
+  isAdmin: boolean;
 }
 
-const TaskList: React.FC<TaskListProps> = ({ selectedDate }) => {
+const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState({
     title: '',
@@ -19,14 +19,13 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate }) => {
     category: '',
     deadline: null as Date | null,
   });
-  const [error, setError] = useState('');
-  const { token, user } = useAuth();
+  const [error, setError] = useState<string>('');
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (token) {
-      fetchTasks();
-    }
-  }, [token]);
+    fetchTasks();
+  }, []);
 
   const fetchTasks = async () => {
     try {
@@ -36,8 +35,11 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate }) => {
         status: task.status || 'todo'
       }));
       setTasks(tasksWithStatus);
+      setError('');
     } catch (err) {
       setError('Failed to fetch tasks');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -85,12 +87,9 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate }) => {
       const task = tasks.find(t => t._id === taskId);
       if (!task) return;
 
-      const updatedTask = await updateTask(taskId, {
-        status: task.status === 'done' ? 'todo' : 'done'
-      });
-      setTasks(tasks.map(task => 
-        task._id === taskId ? updatedTask : task
-      ));
+      const newStatus = task.status === 'done' ? 'todo' : 'done';
+      const updatedTask = await updateTask(taskId, { status: newStatus });
+      setTasks(tasks.map(t => t._id === taskId ? updatedTask : t));
     } catch (err) {
       setError('Failed to update task');
     }
@@ -105,7 +104,14 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate }) => {
     }
   };
 
-  // Filter tasks for the selected day
+  if (loading) {
+    return <div className="text-center py-4">Loading tasks...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500 text-center py-4">{error}</div>;
+  }
+
   const filteredTasks = selectedDate
     ? tasks.filter(task =>
         task.deadline &&
@@ -130,7 +136,7 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate }) => {
           <textarea
             placeholder="Task description"
             value={newTask.description}
-            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+            onChange={(e) => setNewTask({ ...newTask    , description: e.target.value })}
             className="w-full p-2 border rounded"
             required
           />
@@ -182,6 +188,16 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate }) => {
       </form>
       
       <div className="space-y-4">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">
+            {isAdmin ? 'All Tasks' : 'Your Tasks'}
+          </h2>
+          {isAdmin && (
+            <div className="text-sm text-gray-500">
+              Admin View • {filteredTasks.length} tasks
+            </div>
+          )}
+        </div>
         {filteredTasks.length === 0 && (
           <div className="text-center text-gray-500">No tasks for this day.</div>
         )}
