@@ -8,7 +8,10 @@ export interface LoginResponse {
   user: User;
 }
 
-export const loginUser = async (username: string, password: string): Promise<User> => {
+export const loginUser = async (
+  username: string,
+  password: string
+): Promise<User> => {
   try {
     const response = await axios.post<LoginResponse>(`${API_URL}/auth/login`, {
       username,
@@ -23,12 +26,18 @@ export const loginUser = async (username: string, password: string): Promise<Use
   }
 };
 
-export const registerUser = async (username: string, password: string): Promise<User> => {
+export const registerUser = async (
+  username: string,
+  password: string
+): Promise<User> => {
   try {
-    const response = await axios.post<LoginResponse>(`${API_URL}/auth/register`, {
-      username,
-      password,
-    });
+    const response = await axios.post<LoginResponse>(
+      `${API_URL}/auth/register`,
+      {
+        username,
+        password,
+      }
+    );
     const { access_token, user } = response.data;
     localStorage.setItem('token', access_token);
     localStorage.setItem('user', JSON.stringify(user));
@@ -49,4 +58,4 @@ export const getStoredToken = (): string | null => {
 
 export const isAuthenticated = (): boolean => {
   return !!getStoredToken();
-}; 
+};

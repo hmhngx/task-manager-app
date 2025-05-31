@@ -13,7 +13,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -56,7 +58,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = user?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isAuthenticated, isAdmin }}>
+    <AuthContext.Provider
+      value={{ user, login, register, logout, isAuthenticated, isAdmin }}
+    >
       {children}
     </AuthContext.Provider>
   );
