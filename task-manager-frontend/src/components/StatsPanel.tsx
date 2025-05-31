@@ -7,8 +7,16 @@ interface StatsPanelProps {
 }
 
 const StatsPanel: React.FC<StatsPanelProps> = ({ isAdmin }) => {
-  const [weeklyStats, setWeeklyStats] = useState<TaskStats>({ todo: 0, done: 0, late: 0 });
-  const [monthlyStats, setMonthlyStats] = useState<TaskStats>({ todo: 0, done: 0, late: 0 });
+  const [weeklyStats, setWeeklyStats] = useState<TaskStats>({
+    todo: 0,
+    done: 0,
+    late: 0,
+  });
+  const [monthlyStats, setMonthlyStats] = useState<TaskStats>({
+    todo: 0,
+    done: 0,
+    late: 0,
+  });
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -16,7 +24,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isAdmin }) => {
       try {
         const [weekly, monthly] = await Promise.all([
           getWeeklyStats(),
-          getMonthlyStats()
+          getMonthlyStats(),
         ]);
         setWeeklyStats(weekly);
         setMonthlyStats(monthly);
@@ -34,7 +42,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isAdmin }) => {
   return (
     <aside className="flex flex-col gap-6 min-w-[260px] max-w-xs">
       {error && <div className="text-red-500 text-sm">{error}</div>}
-      
+
       {/* Weekly Stats */}
       <div className="bg-white rounded-2xl shadow p-6 flex flex-col items-center transition-transform duration-200 hover:scale-105 hover:shadow-xl cursor-pointer">
         <div className="font-semibold text-gray-700 mb-2">
@@ -42,15 +50,21 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isAdmin }) => {
         </div>
         <div className="flex items-center gap-4">
           <div className="flex flex-col items-center">
-            <div className="text-3xl font-bold text-blue-600">{weeklyStats.todo}</div>
+            <div className="text-3xl font-bold text-blue-600">
+              {weeklyStats.todo}
+            </div>
             <div className="text-xs text-gray-500">To Do</div>
           </div>
           <div className="flex flex-col items-center">
-            <div className="text-3xl font-bold text-red-500">{weeklyStats.late}</div>
+            <div className="text-3xl font-bold text-red-500">
+              {weeklyStats.late}
+            </div>
             <div className="text-xs text-gray-500">Late</div>
           </div>
           <div className="flex flex-col items-center">
-            <div className="text-3xl font-bold text-green-600">{weeklyStats.done}</div>
+            <div className="text-3xl font-bold text-green-600">
+              {weeklyStats.done}
+            </div>
             <div className="text-xs text-gray-500">Done</div>
           </div>
         </div>
@@ -63,15 +77,21 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isAdmin }) => {
         </div>
         <div className="flex items-center gap-4">
           <div className="flex flex-col items-center">
-            <div className="text-3xl font-bold text-blue-600">{monthlyStats.todo}</div>
+            <div className="text-3xl font-bold text-blue-600">
+              {monthlyStats.todo}
+            </div>
             <div className="text-xs text-gray-500">To Do</div>
           </div>
           <div className="flex flex-col items-center">
-            <div className="text-3xl font-bold text-red-500">{monthlyStats.late}</div>
+            <div className="text-3xl font-bold text-red-500">
+              {monthlyStats.late}
+            </div>
             <div className="text-xs text-gray-500">Late</div>
           </div>
           <div className="flex flex-col items-center">
-            <div className="text-3xl font-bold text-green-600">{monthlyStats.done}</div>
+            <div className="text-3xl font-bold text-green-600">
+              {monthlyStats.done}
+            </div>
             <div className="text-xs text-gray-500">Done</div>
           </div>
         </div>

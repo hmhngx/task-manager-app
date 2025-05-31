@@ -1,4 +1,4 @@
-import { Task } from "../types";
+import { Task } from '../types';
 
 interface TaskCardProps {
   task: Task;
@@ -16,7 +16,7 @@ export default function TaskCard({
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <h3
-            className={`text-lg font-semibold ${task.status === 'done' ? "line-through text-gray-500" : "text-gray-900"}`}
+            className={`text-lg font-semibold ${task.status === 'done' ? 'line-through text-gray-500' : 'text-gray-900'}`}
           >
             {task.title}
           </h3>
@@ -31,13 +31,15 @@ export default function TaskCard({
           <button
             type="button"
             title={
-              task.status === 'done' ? "Mark as not completed" : "Mark as completed"
+              task.status === 'done'
+                ? 'Mark as not completed'
+                : 'Mark as completed'
             }
             onClick={() => onComplete(task._id)}
             className={`p-2 rounded-full ${
               task.status === 'done'
-                ? "bg-green-100 text-green-600"
-                : "bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-600"
+                ? 'bg-green-100 text-green-600'
+                : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-600'
             } transition-colors`}
           >
             <svg

@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Task } from '../types';
-import { getTasks, createTask, updateTask, deleteTask } from '../services/taskService';
+import {
+  getTasks,
+  createTask,
+  updateTask,
+  deleteTask,
+} from '../services/taskService';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -30,9 +35,9 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
   const fetchTasks = async () => {
     try {
       const fetchedTasks = await getTasks();
-      const tasksWithStatus = fetchedTasks.map(task => ({
+      const tasksWithStatus = fetchedTasks.map((task) => ({
         ...task,
-        status: task.status || 'todo'
+        status: task.status || 'todo',
       }));
       setTasks(tasksWithStatus);
       setError('');
@@ -45,8 +50,15 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTask.title.trim() || !newTask.description.trim() || !newTask.deadline || !user) {
-      setError('Title, description, deadline, and user authentication are required');
+    if (
+      !newTask.title.trim() ||
+      !newTask.description.trim() ||
+      !newTask.deadline ||
+      !user
+    ) {
+      setError(
+        'Title, description, deadline, and user authentication are required'
+      );
       return;
     }
 
@@ -60,15 +72,15 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
     try {
       // Create a new Date object to ensure proper date handling
       const deadline = new Date(newTask.deadline);
-      
+
       const createdTask = await createTask({
         title: newTask.title.trim(),
         description: newTask.description.trim(),
         category: newTask.category?.trim() || undefined,
         deadline: deadline,
-        status: 'todo'
+        status: 'todo',
       });
-      
+
       setTasks([...tasks, createdTask]);
       setNewTask({ title: '', description: '', category: '', deadline: null });
       setError('');
@@ -84,12 +96,12 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
 
   const handleToggleTask = async (taskId: string) => {
     try {
-      const task = tasks.find(t => t._id === taskId);
+      const task = tasks.find((t) => t._id === taskId);
       if (!task) return;
 
       const newStatus = task.status === 'done' ? 'todo' : 'done';
       const updatedTask = await updateTask(taskId, { status: newStatus });
-      setTasks(tasks.map(t => t._id === taskId ? updatedTask : t));
+      setTasks(tasks.map((t) => (t._id === taskId ? updatedTask : t)));
     } catch (err) {
       setError('Failed to update task');
     }
@@ -98,7 +110,7 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
   const handleDeleteTask = async (taskId: string) => {
     try {
       await deleteTask(taskId);
-      setTasks(tasks.filter(task => task._id !== taskId));
+      setTasks(tasks.filter((task) => task._id !== taskId));
     } catch (err) {
       setError('Failed to delete task');
     }
@@ -113,9 +125,10 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
   }
 
   const filteredTasks = selectedDate
-    ? tasks.filter(task =>
-        task.deadline &&
-        new Date(task.deadline).toDateString() === selectedDate.toDateString()
+    ? tasks.filter(
+        (task) =>
+          task.deadline &&
+          new Date(task.deadline).toDateString() === selectedDate.toDateString()
       )
     : tasks;
 
@@ -136,7 +149,9 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
           <textarea
             placeholder="Task description"
             value={newTask.description}
-            onChange={(e) => setNewTask({ ...newTask    , description: e.target.value })}
+            onChange={(e) =>
+              setNewTask({ ...newTask, description: e.target.value })
+            }
             className="w-full p-2 border rounded"
             required
           />
@@ -144,36 +159,44 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
             type="text"
             placeholder="Category (optional)"
             value={newTask.category}
-            onChange={(e) => setNewTask({ ...newTask, category: e.target.value })}
+            onChange={(e) =>
+              setNewTask({ ...newTask, category: e.target.value })
+            }
             className="w-full p-2 border rounded"
           />
           <div>
-            <label className="block mb-1 font-medium">Deadline (required)</label>
+            <label className="block mb-1 font-medium">
+              Deadline (required)
+            </label>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DateTimePicker
                 value={newTask.deadline}
-                onChange={(date: Date | null) => setNewTask({ ...newTask, deadline: date })}
+                onChange={(date: Date | null) =>
+                  setNewTask({ ...newTask, deadline: date })
+                }
                 minDateTime={new Date()} // Set minimum date to now
                 slotProps={{
                   textField: {
                     fullWidth: true,
                     required: true,
-                    placeholder: "Select deadline",
-                    className: "w-full p-2 border rounded",
-                    sx: { 
+                    placeholder: 'Select deadline',
+                    className: 'w-full p-2 border rounded',
+                    sx: {
                       '& .MuiOutlinedInput-root': {
                         '& fieldset': { borderColor: 'transparent' },
                         '&:hover fieldset': { borderColor: 'transparent' },
-                        '&.Mui-focused fieldset': { borderColor: 'transparent' }
-                      }
-                    }
-                  }
+                        '&.Mui-focused fieldset': {
+                          borderColor: 'transparent',
+                        },
+                      },
+                    },
+                  },
                 }}
                 sx={{
                   width: '100%',
                   '& .MuiInputBase-root': {
-                    height: '42px'
-                  }
+                    height: '42px',
+                  },
                 }}
               />
             </LocalizationProvider>
@@ -186,7 +209,7 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
           </button>
         </div>
       </form>
-      
+
       <div className="space-y-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-800">
@@ -199,7 +222,9 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
           )}
         </div>
         {filteredTasks.length === 0 && (
-          <div className="text-center text-gray-500">No tasks for this day.</div>
+          <div className="text-center text-gray-500">
+            No tasks for this day.
+          </div>
         )}
         {filteredTasks.map((task) => (
           <div
@@ -208,31 +233,43 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
               task.status === 'late'
                 ? 'border-red-400'
                 : task.status === 'done'
-                ? 'border-green-400'
-                : 'border-gray-200'
+                  ? 'border-green-400'
+                  : 'border-gray-200'
             }`}
           >
             <div className="flex justify-between items-start">
               <div>
-                <h3 className={`font-semibold ${
-                  task.status === 'done' ? 'line-through text-gray-500' : 'text-gray-900'
-                }`}>{task.title}</h3>
+                <h3
+                  className={`font-semibold ${
+                    task.status === 'done'
+                      ? 'line-through text-gray-500'
+                      : 'text-gray-900'
+                  }`}
+                >
+                  {task.title}
+                </h3>
                 <p className="text-gray-600">{task.description}</p>
                 {task.category && (
                   <span className="text-sm text-gray-500">{task.category}</span>
                 )}
                 {task.deadline && (
-                  <div className={`text-xs mt-1 ${
-                    task.status === 'late' ? 'text-red-600' : 'text-blue-600'
-                  }`}>
+                  <div
+                    className={`text-xs mt-1 ${
+                      task.status === 'late' ? 'text-red-600' : 'text-blue-600'
+                    }`}
+                  >
                     Deadline: {new Date(task.deadline).toLocaleString()}
                   </div>
                 )}
-                <div className={`text-xs mt-1 ${
-                  task.status === 'late' ? 'text-red-600' :
-                  task.status === 'done' ? 'text-green-600' :
-                  'text-blue-600'
-                }`}>
+                <div
+                  className={`text-xs mt-1 ${
+                    task.status === 'late'
+                      ? 'text-red-600'
+                      : task.status === 'done'
+                        ? 'text-green-600'
+                        : 'text-blue-600'
+                  }`}
+                >
                   Status: {task?.status ? task.status.toUpperCase() : 'TODO'}
                 </div>
               </div>
@@ -262,4 +299,4 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
   );
 };
 
-export default TaskList; 
+export default TaskList;
