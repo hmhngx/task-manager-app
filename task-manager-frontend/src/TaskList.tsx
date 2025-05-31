@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 interface Task {
   id: string;
@@ -15,21 +15,21 @@ interface TaskListProps {
 
 const TaskList: React.FC<TaskListProps> = ({ token }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/tasks", {
+        const response = await axios.get('http://localhost:3000/tasks', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setTasks(response.data);
       } catch (err) {
-        setError("Failed to fetch tasks");
+        setError('Failed to fetch tasks');
       }
     };
     fetchTasks();
@@ -44,23 +44,23 @@ const TaskList: React.FC<TaskListProps> = ({ token }) => {
           data,
           {
             headers: { Authorization: `Bearer ${token}` },
-          },
+          }
         );
         setTasks(
-          tasks.map((task) => (task.id === editId ? response.data : task)),
+          tasks.map((task) => (task.id === editId ? response.data : task))
         );
         setEditId(null);
       } else {
-        const response = await axios.post("http://localhost:3000/tasks", data, {
+        const response = await axios.post('http://localhost:3000/tasks', data, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setTasks([...tasks, response.data]);
       }
-      setTitle("");
-      setDescription("");
-      setCategory("");
+      setTitle('');
+      setDescription('');
+      setCategory('');
     } catch (err) {
-      setError("Failed to save task");
+      setError('Failed to save task');
     }
   };
 
@@ -68,7 +68,7 @@ const TaskList: React.FC<TaskListProps> = ({ token }) => {
     setEditId(task.id);
     setTitle(task.title);
     setDescription(task.description);
-    setCategory(task.category || "");
+    setCategory(task.category || '');
   };
 
   const handleDeleteTask = async (id: string) => {
@@ -78,7 +78,7 @@ const TaskList: React.FC<TaskListProps> = ({ token }) => {
       });
       setTasks(tasks.filter((task) => task.id !== id));
     } catch (err) {
-      setError("Failed to delete task");
+      setError('Failed to delete task');
     }
   };
 
@@ -87,11 +87,11 @@ const TaskList: React.FC<TaskListProps> = ({ token }) => {
       const response = await axios.patch(
         `http://localhost:3000/tasks/${id}`,
         { completed: !completed },
-        { headers: { Authorization: `Bearer ${token}` } },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setTasks(tasks.map((task) => (task.id === id ? response.data : task)));
     } catch (err) {
-      setError("Failed to update task");
+      setError('Failed to update task');
     }
   };
 
@@ -126,7 +126,7 @@ const TaskList: React.FC<TaskListProps> = ({ token }) => {
           className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
           disabled={!title || !description}
         >
-          {editId ? "Update Task" : "Add Task"}
+          {editId ? 'Update Task' : 'Add Task'}
         </button>
       </div>
       <ul className="space-y-4">
@@ -137,7 +137,7 @@ const TaskList: React.FC<TaskListProps> = ({ token }) => {
           >
             <div>
               <h3
-                className={`text-lg font-semibold ${task.completed ? "line-through" : ""}`}
+                className={`text-lg font-semibold ${task.completed ? 'line-through' : ''}`}
               >
                 {task.title}
               </h3>
@@ -153,7 +153,7 @@ const TaskList: React.FC<TaskListProps> = ({ token }) => {
                 onClick={() => handleToggleComplete(task.id, task.completed)}
                 className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
               >
-                {task.completed ? "Unmark" : "Complete"}
+                {task.completed ? 'Unmark' : 'Complete'}
               </button>
               <button
                 onClick={() => handleEditTask(task)}
