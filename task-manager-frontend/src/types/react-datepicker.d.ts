@@ -13,4 +13,4 @@ declare module 'react-datepicker' {
 
   const DatePicker: React.FC<DatePickerProps>;
   export default DatePicker;
-} 
+}

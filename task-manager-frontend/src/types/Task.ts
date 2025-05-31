@@ -7,4 +7,4 @@ export interface Task {
   userId: string;
   createdAt: Date;
   updatedAt: Date;
-} 
+}

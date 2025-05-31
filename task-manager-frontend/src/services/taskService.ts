@@ -11,7 +11,10 @@ const getAuthHeader = () => {
 
 const handleResponse = async (response: Response) => {
   console.log('Response status:', response.status);
-  console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+  console.log(
+    'Response headers:',
+    Object.fromEntries(response.headers.entries())
+  );
   if (response.status === 401) {
     console.log('401 error - clearing token');
     logoutUser();
@@ -56,7 +59,10 @@ export const createTask = async (task: CreateTaskDto): Promise<Task> => {
   }
 };
 
-export const updateTask = async (id: string, task: UpdateTaskDto): Promise<Task> => {
+export const updateTask = async (
+  id: string,
+  task: UpdateTaskDto
+): Promise<Task> => {
   try {
     const response = await axios.patch(`${API_URL}/tasks/${id}`, task, {
       headers: getAuthHeader(),
@@ -128,4 +134,4 @@ export const getAllTasks = async (): Promise<Task[]> => {
     }
     throw error;
   }
-}; 
+};
