@@ -6,10 +6,15 @@ import { User } from '../users/user.schema';
 import { Types } from 'mongoose';
 import { UserRole } from '../users/user.schema';
 
-interface UserResponse {
+export interface UserResponse {
   id: string;
   username: string;
   role: UserRole;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  user: UserResponse;
 }
 
 @Injectable()
@@ -60,7 +65,7 @@ export class AuthService {
     }
   }
 
-  async login(user: User): Promise<{ access_token: string; user: UserResponse }> {
+  async login(user: User): Promise<LoginResponse> {
     this.logger.log(`Generating token for user: ${user.username}`);
     try {
       const payload = {

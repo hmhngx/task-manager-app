@@ -6,29 +6,15 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { AuthService, LoginResponse } from './auth.service';
 import { UsersService } from '../users/users.service';
-import { User } from '../users/user.schema';
 import { Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
 import { UserRole } from '../users/user.schema';
-
-interface LoginResponse {
-  access_token: string;
-  user: {
-    id: string;
-    username: string;
-    role: string;
-  };
-}
-
-interface RegisterResponse {
-  id: string;
-  username: string;
-}
+import { LoginDto, RegisterDto } from './dto/auth.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -48,33 +34,49 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(
-    @Body() registerDto: { username: string; password: string },
-  ): Promise<LoginResponse> {
-    const user = await this.usersService.create(registerDto.username, registerDto.password);
-    const fullUser = await this.usersService.findByUsername(user.username);
-    if (!fullUser) {
-      throw new UnauthorizedException('User not found');
+  async register(@Body() registerDto: RegisterDto): Promise<LoginResponse> {
+    // Check if user exists first
+    const existingUser = await this.usersService.findByUsername(registerDto.username);
+    if (existingUser) {
+      throw new BadRequestException('Username already exists');
     }
-    return this.authService.login(fullUser);
+
+    // Create new user
+    await this.usersService.create(registerDto.username, registerDto.password);
+    
+    // Fetch the full user object
+    const user = await this.usersService.findByUsername(registerDto.username);
+    if (!user) {
+      throw new BadRequestException('Failed to create user');
+    }
+
+    return this.authService.login(user);
   }
 
   @Post('register/admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
-  async registerAdmin(
-    @Body() registerDto: { username: string; password: string },
-  ): Promise<LoginResponse> {
-    const user = await this.usersService.createAdmin(registerDto.username, registerDto.password);
-    const fullUser = await this.usersService.findByUsername(user.username);
-    if (!fullUser) {
-      throw new UnauthorizedException('User not found');
+  async registerAdmin(@Body() registerDto: RegisterDto): Promise<LoginResponse> {
+    // Check if user exists first
+    const existingUser = await this.usersService.findByUsername(registerDto.username);
+    if (existingUser) {
+      throw new BadRequestException('Username already exists');
     }
-    return this.authService.login(fullUser);
+
+    // Create new admin user
+    await this.usersService.createAdmin(registerDto.username, registerDto.password);
+    
+    // Fetch the full user object
+    const user = await this.usersService.findByUsername(registerDto.username);
+    if (!user) {
+      throw new BadRequestException('Failed to create admin user');
+    }
+
+    return this.authService.login(user);
   }
 
   @Post('login')
-  async login(@Body() loginDto: { username: string; password: string }): Promise<LoginResponse> {
+  async login(@Body() loginDto: LoginDto): Promise<LoginResponse> {
     const user = await this.usersService.findByUsername(loginDto.username);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
