@@ -21,8 +21,8 @@ const TaskListPage: React.FC = () => {
             slotProps={{
               textField: {
                 fullWidth: true,
-                className: "bg-white"
-              }
+                className: 'bg-white',
+              },
             }}
           />
         </LocalizationProvider>

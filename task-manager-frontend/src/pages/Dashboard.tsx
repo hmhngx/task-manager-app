@@ -31,17 +31,20 @@ const Dashboard: React.FC = () => {
   }, []);
 
   // Filter tasks for the selected day
-  const todayStr = selectedDate ? selectedDate.toDateString() : new Date().toDateString();
+  const todayStr = selectedDate
+    ? selectedDate.toDateString()
+    : new Date().toDateString();
   const tasksForToday = tasks.filter(
-    (task) => task.deadline && new Date(task.deadline).toDateString() === todayStr
+    (task) =>
+      task.deadline && new Date(task.deadline).toDateString() === todayStr
   );
 
   const completedCount = tasksForToday.filter(
-    (task) => task.status === "done"
+    (task) => task.status === 'done'
   ).length;
 
   const leftCount = tasksForToday.filter(
-    (task) => task.status !== "done"
+    (task) => task.status !== 'done'
   ).length;
 
   const handleLogout = () => {
@@ -57,13 +60,27 @@ const Dashboard: React.FC = () => {
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
               <span className="text-blue-600 text-2xl font-bold flex items-center gap-2">
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                <svg
+                  className="w-7 h-7"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
                 TASK MANAGER
               </span>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-end">
-                <span className="font-semibold text-gray-700">{user?.username || "User"}</span>
+                <span className="font-semibold text-gray-700">
+                  {user?.username || 'User'}
+                </span>
                 <span className="text-xs text-gray-400">
                   {isAdmin ? 'Administrator' : 'User'} • Last seen: Today
                 </span>
