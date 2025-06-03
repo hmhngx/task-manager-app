@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { getAllTasks, deleteTask } from '../services/taskService';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Task } from '../types';
+import { Task } from '../types/Task';
 import { useNavigate, Link } from 'react-router-dom';
+import Button from './ui/Button';
 
 const AdminTasksDashboard: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -25,12 +26,13 @@ const AdminTasksDashboard: React.FC = () => {
 
   const fetchAllTasks = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await getAllTasks();
       setTasks(data);
-      setError(null);
     } catch (err) {
-      setError('Failed to fetch tasks');
+      console.error('Error fetching tasks:', err);
+      setError('Failed to fetch tasks. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -44,8 +46,9 @@ const AdminTasksDashboard: React.FC = () => {
     if (!taskToDelete) return;
     setIsDeleting(true);
     try {
-      await deleteTask(taskToDelete._id);
-      setTasks(tasks.filter((t) => t._id !== taskToDelete._id));
+      console.log('Deleting task with id:', taskToDelete._id || taskToDelete.id);
+      await deleteTask(taskToDelete._id || taskToDelete.id);
+      setTasks(tasks.filter((t) => (t._id || t.id) !== (taskToDelete._id || taskToDelete.id)));
       setTaskToDelete(null);
     } catch (err) {
       setError('Failed to delete task');
@@ -58,11 +61,14 @@ const AdminTasksDashboard: React.FC = () => {
     setTaskToDelete(null);
   };
 
-  const filteredTasks = tasks.filter(
-    (task) =>
-      task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTasks = tasks.filter((task) => {
+    const searchLower = searchTerm.toLowerCase();
+    const titleMatch = task.title.toLowerCase().includes(searchLower);
+    const descriptionMatch = task.description 
+      ? task.description.toLowerCase().includes(searchLower)
+      : false;
+    return titleMatch || descriptionMatch;
+  });
 
   if (!isAdmin) return null;
 
@@ -199,7 +205,7 @@ const AdminTasksDashboard: React.FC = () => {
                 )}
                 {filteredTasks.map((task) => (
                   <tr
-                    key={task._id}
+                    key={task._id || task.id}
                     className="hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -212,7 +218,7 @@ const AdminTasksDashboard: React.FC = () => {
                             {task.userId}
                           </div>
                           <div className="text-xs text-gray-500">
-                            Task ID: {task._id}
+                            Task ID: {task.id}
                           </div>
                         </div>
                       </div>
@@ -313,12 +319,11 @@ const AdminTasksDashboard: React.FC = () => {
                 >
                   Cancel
                 </button>
-                <button
+                <Button
                   onClick={handleDeleteConfirm}
                   disabled={isDeleting}
-                  className={`px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center ${
-                    isDeleting ? 'opacity-75 cursor-not-allowed' : ''
-                  }`}
+                  variant="danger"
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center shadow-neon-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                 >
                   {isDeleting ? (
                     <>
@@ -347,7 +352,7 @@ const AdminTasksDashboard: React.FC = () => {
                   ) : (
                     'Delete Task'
                   )}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

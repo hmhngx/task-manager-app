@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { useAuth } from './contexts/AuthContext';
+import Button from './components/ui/Button';
 
-interface AuthProps {
-  onLogin: (token: string) => void;
-}
-
-const Auth: React.FC<AuthProps> = ({ onLogin }) => {
+const Auth: React.FC = () => {
+  const { login, register } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
@@ -13,17 +11,10 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
   const handleSubmit = async () => {
     try {
-      const endpoint = isLogin ? 'login' : 'register';
-      const response = await axios.post(
-        `http://localhost:3000/auth/${endpoint}`,
-        {
-          username,
-          password,
-        }
-      );
       if (isLogin) {
-        onLogin(response.data.access_token);
+        await login(username, password);
       } else {
+        await register(username, password);
         setIsLogin(true);
         setError('Registration successful. Please log in.');
       }
@@ -52,21 +43,26 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         onChange={(e) => setPassword(e.target.value)}
         className="w-full p-2 mb-4 border rounded"
       />
-      <button
+      <Button
         onClick={handleSubmit}
-        className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+        variant="primary"
+        className="w-full shadow-neon-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+        aria-label={isLogin ? 'Login' : 'Register'}
         disabled={!username || !password}
+        loading={false}
       >
         {isLogin ? 'Login' : 'Register'}
-      </button>
-      <button
+      </Button>
+      <Button
         onClick={() => setIsLogin(!isLogin)}
-        className="mt-4 text-blue-500 hover:underline"
+        variant="ghost"
+        className="mt-4 text-blue-500 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+        aria-label={isLogin ? 'Switch to Register' : 'Switch to Login'}
       >
         {isLogin
           ? 'Need an account? Register'
           : 'Already have an account? Login'}
-      </button>
+      </Button>
     </div>
   );
 };

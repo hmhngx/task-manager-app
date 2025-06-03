@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getAllUsers, deleteUser } from '../services/userService';
 import { User } from '../types';
 import { useNavigate, Link } from 'react-router-dom';
+import Button from './ui/Button';
 
 const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -308,12 +309,11 @@ const AdminDashboard: React.FC = () => {
                 >
                   Cancel
                 </button>
-                <button
+                <Button
                   onClick={handleDeleteConfirm}
                   disabled={isDeleting}
-                  className={`px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center ${
-                    isDeleting ? 'opacity-75 cursor-not-allowed' : ''
-                  }`}
+                  variant="danger"
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center shadow-neon-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                 >
                   {isDeleting ? (
                     <>
@@ -342,7 +342,7 @@ const AdminDashboard: React.FC = () => {
                   ) : (
                     'Delete User'
                   )}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
