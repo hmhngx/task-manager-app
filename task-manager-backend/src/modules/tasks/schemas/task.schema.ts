@@ -1,33 +1,91 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export enum TaskStatus {
   TODO = 'todo',
+  PENDING_APPROVAL = 'pending_approval',
   DONE = 'done',
   LATE = 'late',
 }
 
-export type TaskDocument = HydratedDocument<Task>;
+export enum TaskPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  URGENT = 'urgent',
+}
+
+export enum TaskType {
+  TASK = 'task',
+  BUG = 'bug',
+  FEATURE = 'feature',
+  SUBTASK = 'subtask',
+}
+
+export type TaskDocument = Task & Document;
 
 @Schema({ timestamps: true })
-export class Task {
-  @Prop({ required: true, trim: true })
+export class Task extends Document {
+  @Prop({ required: true })
   title: string;
 
-  @Prop({ trim: true })
+  @Prop()
   description: string;
 
-  @Prop({ trim: true })
-  category: string;
+  @Prop({ type: String, enum: TaskType, default: TaskType.TASK })
+  type: TaskType;
 
-  @Prop({ required: true, type: Date })
+  @Prop({ type: String, enum: TaskPriority, default: TaskPriority.MEDIUM })
+  priority: TaskPriority;
+
+  @Prop({ type: [String], default: [] })
+  labels: string[];
+
+  @Prop({ type: Date })
   deadline: Date;
 
-  @Prop({ type: String, enum: TaskStatus, default: TaskStatus.TODO })
+  @Prop({ required: true, enum: TaskStatus, default: TaskStatus.TODO })
   status: TaskStatus;
 
-  @Prop({ required: true, type: String })
-  userId: string;
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  userId: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  assignee: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  creator: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Task' })
+  parentTask: Types.ObjectId;
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Task' }] })
+  subtasks: Types.ObjectId[];
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Comment' }], default: [] })
+  comments: string[];
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Attachment' }], default: [] })
+  attachments: string[];
+
+  @Prop({ type: Number, default: 0 })
+  progress: number;
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }] })
+  watchers: Types.ObjectId[];
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }] })
+  requesters: Types.ObjectId[];
+
+  @Prop({ type: Object })
+  workflow: {
+    status: string;
+    transitions: {
+      from: string;
+      to: string;
+      conditions: string[];
+    }[];
+  };
 }
 
 export const TaskSchema = SchemaFactory.createForClass(Task);

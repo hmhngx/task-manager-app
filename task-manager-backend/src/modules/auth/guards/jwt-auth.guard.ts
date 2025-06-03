@@ -1,10 +1,12 @@
 import { Injectable, ExecutionContext, Logger, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
+import { UserRole } from '../../users/user.schema';
 
 interface JwtUser {
   id: string;
   username: string;
+  role: UserRole;
 }
 
 interface RequestWithAuth extends Request {
@@ -36,10 +38,11 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       throw new UnauthorizedException('Invalid token or user not found');
     }
 
-    // Transform the user object to include userId
+    // Transform the user object to include userId and role
     const transformedUser = {
       ...user,
-      userId: (user as JwtUser).id,
+      id: (user as JwtUser).id,
+      role: (user as JwtUser).role,
     };
 
     this.logger.log(`JWT Auth Guard validated user: ${(user as JwtUser).username}`);

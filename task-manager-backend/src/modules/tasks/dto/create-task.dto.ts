@@ -1,22 +1,46 @@
-import { IsString, IsOptional, IsDate, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsDate, IsEnum, IsArray, IsMongoId } from 'class-validator';
 import { Type } from 'class-transformer';
-import { TaskStatus } from '../schemas/task.schema';
+import { TaskStatus, TaskType, TaskPriority } from '../schemas/task.schema';
 
 export class CreateTaskDto {
   @IsString()
   title: string;
 
   @IsString()
-  description: string;
-
-  @IsString()
   @IsOptional()
-  category?: string;
+  description?: string;
+
+  @IsEnum(TaskType)
+  @IsOptional()
+  type?: TaskType;
+
+  @IsEnum(TaskPriority)
+  @IsOptional()
+  priority?: TaskPriority;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  labels?: string[];
 
   @IsDate()
   @Type(() => Date)
-  deadline: Date;
+  @IsOptional()
+  deadline?: Date;
 
   @IsEnum(TaskStatus)
-  status: TaskStatus;
+  @IsOptional()
+  status?: TaskStatus;
+
+  @IsMongoId()
+  @IsOptional()
+  assignee?: string;
+
+  @IsMongoId()
+  @IsOptional()
+  parentTask?: string;
+
+  @IsMongoId()
+  @IsOptional()
+  workflow?: string;
 }

@@ -1,6 +1,6 @@
-import { IsString, IsOptional, IsDate, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsDate, IsEnum, IsArray, IsMongoId, IsNumber, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
-import { TaskStatus } from '../schemas/task.schema';
+import { TaskStatus, TaskType, TaskPriority } from '../schemas/task.schema';
 
 export class UpdateTaskDto {
   @IsString()
@@ -11,9 +11,18 @@ export class UpdateTaskDto {
   @IsOptional()
   description?: string;
 
-  @IsString()
+  @IsEnum(TaskType)
   @IsOptional()
-  category?: string;
+  type?: TaskType;
+
+  @IsEnum(TaskPriority)
+  @IsOptional()
+  priority?: TaskPriority;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  labels?: string[];
 
   @IsDate()
   @Type(() => Date)
@@ -23,4 +32,22 @@ export class UpdateTaskDto {
   @IsEnum(TaskStatus)
   @IsOptional()
   status?: TaskStatus;
+
+  @IsMongoId()
+  @IsOptional()
+  assignee?: string;
+
+  @IsMongoId()
+  @IsOptional()
+  parentTask?: string;
+
+  @IsMongoId()
+  @IsOptional()
+  workflow?: string;
+
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  @IsOptional()
+  progress?: number;
 }
