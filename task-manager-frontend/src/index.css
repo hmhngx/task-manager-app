@@ -1,3 +1,21 @@
 ﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  .shadow-neon-blue {
+    box-shadow: 0 0 8px 2px #3b82f6, 0 0 16px 4px #60a5fa;
+  }
+  .shadow-neon-purple {
+    box-shadow: 0 0 8px 2px #a78bfa, 0 0 16px 4px #c4b5fd;
+  }
+  .shadow-neon-green {
+    box-shadow: 0 0 8px 2px #22d3ee, 0 0 16px 4px #6ee7b7;
+  }
+  .shadow-neon-red {
+    box-shadow: 0 0 8px 2px #ef4444, 0 0 16px 4px #f87171;
+  }
+  .shadow-neon-gray {
+    box-shadow: 0 0 8px 2px #6b7280, 0 0 16px 4px #d1d5db;
+  }
+}
