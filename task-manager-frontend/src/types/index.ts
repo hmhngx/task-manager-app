@@ -4,6 +4,7 @@ export interface Task {
   description: string;
   category?: string;
   status: 'todo' | 'in-progress' | 'done' | 'late';
+  priority: 'low' | 'medium' | 'high';
   deadline?: Date;
   userId: string;
   createdAt: Date;
@@ -11,26 +12,19 @@ export interface Task {
 }
 
 export interface TaskStats {
-  todo: number;
-  done: number;
-  late: number;
-}
-
-export interface CreateTaskDto {
-  title: string;
-  description: string;
-  category?: string;
-  deadline?: Date;
-  status?: 'todo' | 'in-progress' | 'done' | 'late';
-  userId?: string;
-}
-
-export interface UpdateTaskDto {
-  title?: string;
-  description?: string;
-  category?: string;
-  status?: 'todo' | 'in-progress' | 'done' | 'late';
-  deadline?: Date;
+  totalTasks: number;
+  statusCounts: {
+    pending: number;
+    inProgress: number;
+    completed: number;
+    cancelled: number;
+  };
+  priorityCounts: {
+    low: number;
+    medium: number;
+    high: number;
+  };
+  overdueTasks: number;
 }
 
 export interface User {
