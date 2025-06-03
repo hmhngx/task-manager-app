@@ -66,14 +66,6 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col">
       {/* Main 3-column layout */}
       <main className="flex-1 flex flex-row gap-8 max-w-7xl mx-auto w-full py-8">
-        <Sidebar
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          tasksLeft={leftCount}
-          completedCount={completedCount}
-          user={user}
-          isAdmin={isAdmin}
-        />
         <div className="flex-1 flex flex-col">
           <TaskList selectedDate={selectedDate} isAdmin={isAdmin} />
         </div>
