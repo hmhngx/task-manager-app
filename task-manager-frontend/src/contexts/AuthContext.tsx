@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginUser, registerUser } from '../services/authService';
+import { loginUser, registerUser, logoutUser } from '../services/authService';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -50,9 +50,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logout = () => {
+    logoutUser();
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('user');
+    window.location.href = '/login';
   };
 
   const isAdmin = user?.role === 'admin';
