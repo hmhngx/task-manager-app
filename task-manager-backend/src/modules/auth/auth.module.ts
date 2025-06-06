@@ -7,6 +7,7 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './jwt.strategy';
 import { User, UserSchema } from '../users/user.schema';
+import { RefreshToken, RefreshTokenSchema } from './schemas/refresh-token.schema';
 
 @Module({
   imports: [
@@ -14,9 +15,12 @@ import { User, UserSchema } from '../users/user.schema';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'c82455ac-0068-4a90-9516-6bd234b556e2',
-      signOptions: { expiresIn: '24h' },
+      signOptions: { expiresIn: '1h' },
     }),
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: User.name, schema: UserSchema },
+      { name: RefreshToken.name, schema: RefreshTokenSchema },
+    ]),
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],

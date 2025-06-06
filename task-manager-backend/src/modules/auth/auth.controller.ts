@@ -5,6 +5,8 @@ import {
   BadRequestException,
   UnauthorizedException,
   UseGuards,
+  Logger,
+  ValidationPipe,
 } from '@nestjs/common';
 import { AuthService, LoginResponse } from './auth.service';
 import { UsersService } from '../users/users.service';
@@ -18,6 +20,8 @@ import { LoginDto, RegisterDto } from './dto/auth.dto';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
@@ -34,14 +38,17 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() registerDto: RegisterDto): Promise<LoginResponse> {
-    // Check if user exists first
+  async register(@Body(new ValidationPipe({ transform: true })) registerDto: RegisterDto) {
+    this.logger.log(`Registration attempt for username: ${registerDto.username}`);
+
+    // Check if username already exists
     const existingUser = await this.usersService.findByUsername(registerDto.username);
     if (existingUser) {
+      this.logger.warn(`Username already exists: ${registerDto.username}`);
       throw new BadRequestException('Username already exists');
     }
 
-    // Create new user
+    // Create new regular user (not admin)
     await this.usersService.create(registerDto.username, registerDto.password);
     
     // Fetch the full user object
@@ -76,7 +83,7 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() loginDto: LoginDto): Promise<LoginResponse> {
+  async login(@Body(new ValidationPipe({ transform: true })) loginDto: LoginDto): Promise<LoginResponse> {
     const user = await this.usersService.findByUsername(loginDto.username);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -88,5 +95,23 @@ export class AuthController {
     }
 
     return this.authService.login(user);
+  }
+
+  @Post('refresh')
+  async refreshTokens(@Body('refresh_token') refreshToken: string) {
+    if (!refreshToken) {
+      throw new BadRequestException('Refresh token is required');
+    }
+    return this.authService.refreshTokens(refreshToken);
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  async logout(@Body('refresh_token') refreshToken: string) {
+    if (!refreshToken) {
+      throw new BadRequestException('Refresh token is required');
+    }
+    await this.authService.logout(refreshToken);
+    return { message: 'Logged out successfully' };
   }
 }
