@@ -14,16 +14,24 @@ const Register: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
     setIsLoading(true);
     try {
       await register(username, password);
       navigate('/dashboard');
     } catch (err) {
-      setError('Registration failed. Username might be taken.');
+      setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
       setIsLoading(false);
     }
