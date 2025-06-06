@@ -30,8 +30,14 @@ async function bootstrap() {
       transform: true,
       forbidNonWhitelisted: true,
       exceptionFactory: (errors) => {
-        console.error('[ValidationPipe] Validation error:', JSON.stringify(errors, null, 2));
-        return new BadRequestException(errors);
+        const messages = errors.map(error => {
+          const constraints = error.constraints;
+          if (constraints) {
+            return Object.values(constraints)[0];
+          }
+          return 'Invalid input';
+        });
+        return new BadRequestException(messages.join(', '));
       },
     }),
   );
