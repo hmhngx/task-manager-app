@@ -4,9 +4,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import Button from '../../components/ui/Button';
 
 const Login: React.FC = () => {
-  const [username, setUsername] = useState('');
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -16,10 +16,10 @@ const Login: React.FC = () => {
     setError('');
     setIsLoading(true);
     try {
-      await login(username, password);
+      await login(name, password);
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError('Invalid username or password');
+      setError('Invalid name or password');
     } finally {
       setIsLoading(false);
     }
@@ -64,19 +64,19 @@ const Login: React.FC = () => {
           <div className="space-y-4">
             <div>
               <label
-                htmlFor="username"
+                htmlFor="name"
                 className="block text-sm font-medium text-gray-700"
               >
-                Username
+                Name
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <input
-                  id="username"
+                  id="name"
                   type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                  placeholder="Enter your username"
+                  placeholder="Enter your name"
                   required
                 />
               </div>

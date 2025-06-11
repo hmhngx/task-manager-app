@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import Button from '../../components/ui/Button';
 
 const Register: React.FC = () => {
-  const [username, setUsername] = useState('');
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -28,7 +28,7 @@ const Register: React.FC = () => {
 
     setIsLoading(true);
     try {
-      await register(username, password);
+      await register(name, password);
       navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
@@ -76,19 +76,19 @@ const Register: React.FC = () => {
           <div className="space-y-4">
             <div>
               <label
-                htmlFor="username"
+                htmlFor="name"
                 className="block text-sm font-medium text-gray-700"
               >
-                Username
+                Name
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <input
-                  id="username"
+                  id="name"
                   type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                  placeholder="Choose a username"
+                  placeholder="Choose a name"
                   required
                 />
               </div>
