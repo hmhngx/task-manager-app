@@ -28,9 +28,12 @@ export interface TaskStats {
 }
 
 export interface User {
-  id: string;
-  username: string;
+  _id: string;
+  name: string;
+  email: string;
   role: 'user' | 'admin';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuthContextType {
