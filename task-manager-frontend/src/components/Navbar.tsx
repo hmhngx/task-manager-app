@@ -1,4 +1,6 @@
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { User, getUserDisplayName } from '../types/user';
 import { useAuth } from '../contexts/AuthContext';
 import Button from './ui/Button';
 
@@ -71,7 +73,7 @@ export default function Navbar() {
           </div>
           <div className="flex items-center space-x-4">
             <div className="flex flex-col items-end">
-              <span className="text-gray-700 font-semibold">{user?.username}</span>
+              <span className="text-gray-700 font-semibold">{user ? getUserDisplayName(user) : ''}</span>
               {isAdmin && (
                 <span className="text-xs text-gray-400">Administrator • Last seen: Today</span>
               )}

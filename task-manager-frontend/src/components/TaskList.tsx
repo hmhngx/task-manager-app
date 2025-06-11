@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Task, TaskStatus, TaskPriority, TaskType, CreateTaskDto, UpdateTaskDto } from '../types/Task';
+import { User } from '../types/user';
 import { useAuth } from '../contexts/AuthContext';
 import taskService from '../services/taskService';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
