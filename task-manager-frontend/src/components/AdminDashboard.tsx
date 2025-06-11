@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllUsers, deleteUser } from '../services/userService';
-import { User } from '../types';
+import { User, getUserId, getUserDisplayName } from '../types/user';
 import { useNavigate, Link } from 'react-router-dom';
 import Button from './ui/Button';
 
@@ -39,13 +39,12 @@ const AdminDashboard: React.FC = () => {
     setUserToDelete(user);
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDelete = async () => {
     if (!userToDelete) return;
-
     setIsDeleting(true);
     try {
-      await deleteUser(userToDelete.id);
-      setUsers(users.filter((user) => user.id !== userToDelete.id));
+      await deleteUser(getUserId(userToDelete));
+      setUsers(users.filter((user) => getUserId(user) !== getUserId(userToDelete)));
       setUserToDelete(null);
     } catch (err) {
       setError('Failed to delete user');
@@ -59,7 +58,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   const filteredUsers = users.filter((user) =>
-    user.username.toLowerCase().includes(searchTerm.toLowerCase())
+    getUserDisplayName(user).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (!isAdmin) {
@@ -170,7 +169,7 @@ const AdminDashboard: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Username
+                    Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Role
@@ -182,20 +181,20 @@ const AdminDashboard: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredUsers.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={getUserId(u)} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           <div className="h-10 w-10 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center text-white font-semibold">
-                            {u.username.charAt(0).toUpperCase()}
+                            {getUserDisplayName(u).charAt(0).toUpperCase()}
                           </div>
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {u.username}
+                            {getUserDisplayName(u)}
                           </div>
                           <div className="text-sm text-gray-500">
-                            ID: {u.id}
+                            ID: {getUserId(u)}
                           </div>
                         </div>
                       </div>
@@ -212,25 +211,12 @@ const AdminDashboard: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      {u.id !== user?.id && (
+                      {user && (getUserId(u) !== getUserId(user)) && (
                         <button
                           onClick={() => handleDeleteClick(u)}
-                          className="text-red-600 hover:text-red-900 transition-colors duration-200 flex items-center space-x-1"
+                          className="text-red-600 hover:text-red-900"
                         >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                          <span>Delete</span>
+                          Delete
                         </button>
                       )}
                     </td>
@@ -297,7 +283,7 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-sm text-gray-500">
                   Are you sure you want to delete the user{' '}
                   <span className="font-medium text-gray-900">
-                    {userToDelete.username}
+                    {getUserDisplayName(userToDelete)}
                   </span>
                   ? This action cannot be undone.
                 </p>
@@ -310,7 +296,7 @@ const AdminDashboard: React.FC = () => {
                   Cancel
                 </button>
                 <Button
-                  onClick={handleDeleteConfirm}
+                  onClick={handleDelete}
                   disabled={isDeleting}
                   variant="danger"
                   className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center shadow-neon-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
