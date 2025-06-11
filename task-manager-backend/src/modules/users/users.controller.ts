@@ -38,6 +38,7 @@ export class UsersController {
       .map((user) => ({
         id: user._id,
         username: user.username,
+        name: user.username,
         role: user.role,
       }));
   }
