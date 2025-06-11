@@ -308,13 +308,14 @@ export class TasksService {
   async getTaskStats() {
     try {
       const tasks = await this.taskModel.find().lean().exec();
+      console.log('Fetched tasks for stats:', tasks);
       return {
-        todo: tasks.filter((task) => task.status === TaskStatus.TODO).length,
-        done: tasks.filter((task) => task.status === TaskStatus.DONE).length,
-        late: tasks.filter((task) => task.status === TaskStatus.LATE).length,
+        todo: tasks.filter((task) => task.status && task.status === TaskStatus.TODO).length,
+        done: tasks.filter((task) => task.status && task.status === TaskStatus.DONE).length,
+        late: tasks.filter((task) => task.status && task.status === TaskStatus.LATE).length,
       };
     } catch (error) {
-      console.error('Error in getTaskStats:', error);
+      console.error('[TasksService] Error in getTaskStats:', error);
       throw new BadRequestException('Failed to fetch task stats');
     }
   }

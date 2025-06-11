@@ -131,14 +131,19 @@ export class WorkflowsService {
       throw new NotFoundException('Task not found');
     }
 
-    if (task.requesters.some(requester => requester.toString() === userId)) {
+    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+      throw new BadRequestException('Invalid user ID format');
+    }
+
+    const userIdObj = new Types.ObjectId(userId);
+    if (task.requesters.some(requester => requester.toString() === userIdObj.toString())) {
       throw new BadRequestException('User has already requested this task');
     }
 
     return this.taskModel.findByIdAndUpdate(
       taskId,
       {
-        $push: { requesters: new Types.ObjectId(userId) },
+        $push: { requesters: userIdObj },
         status: 'pending_approval',
       },
       { new: true },
@@ -151,15 +156,20 @@ export class WorkflowsService {
       throw new NotFoundException('Task not found');
     }
 
-    if (!task.requesters.some(requester => requester.toString() === requesterId)) {
+    if (!requesterId.match(/^[0-9a-fA-F]{24}$/)) {
+      throw new BadRequestException('Invalid requester ID format');
+    }
+
+    const requesterIdObj = new Types.ObjectId(requesterId);
+    if (!task.requesters.some(requester => requester.toString() === requesterIdObj.toString())) {
       throw new BadRequestException('User has not requested this task');
     }
 
     return this.taskModel.findByIdAndUpdate(
       taskId,
       {
-        assignee: new Types.ObjectId(requesterId),
-        $pull: { requesters: new Types.ObjectId(requesterId) },
+        assignee: requesterIdObj,
+        $pull: { requesters: requesterIdObj },
         status: 'in_progress',
       },
       { new: true },
@@ -172,14 +182,19 @@ export class WorkflowsService {
       throw new NotFoundException('Task not found');
     }
 
-    if (!task.requesters.some(requester => requester.toString() === requesterId)) {
+    if (!requesterId.match(/^[0-9a-fA-F]{24}$/)) {
+      throw new BadRequestException('Invalid requester ID format');
+    }
+
+    const requesterIdObj = new Types.ObjectId(requesterId);
+    if (!task.requesters.some(requester => requester.toString() === requesterIdObj.toString())) {
       throw new BadRequestException('User has not requested this task');
     }
 
     return this.taskModel.findByIdAndUpdate(
       taskId,
       {
-        $pull: { requesters: new Types.ObjectId(requesterId) },
+        $pull: { requesters: requesterIdObj },
         status: 'todo',
       },
       { new: true },
