@@ -1,85 +1,104 @@
 # Task Manager Application
 
-A full-stack task management application built with React, NestJS, and MongoDB.
+A full-stack, modern task management application built with React, NestJS, and MongoDB.  
+Supports user/admin roles, task assignment, approval workflows, comments, attachments, and more.
+
+---
 
 ## Project Structure
 
-The project is organized as a monorepo with two main directories:
+├── task-manager-frontend/ # React frontend
+├── task-manager-backend/ # NestJS backend
+└── README.md # This file
 
-- `task-manager-frontend/`: React frontend application
-- `task-manager-backend/`: NestJS backend application
+
+---
 
 ## Features
 
-- User authentication and authorization
-- Create, read, update, and delete tasks
-- Task status management
-- Responsive design with Tailwind CSS
+- User authentication (JWT)
+- Admin and user roles
+- Create, read, update, delete (CRUD) tasks
+- Task assignment and approval workflow
+- Task request/approval/rejection by admin
+- Comments and file attachments on tasks
+- Task status management (todo, in progress, done, late, etc.)
+- Dashboard and reporting
+- Responsive UI with Tailwind CSS
+- API documentation with Swagger
+
+---
 
 ## Prerequisites
 
 - Node.js (v14 or higher)
-- MongoDB
+- MongoDB (local or Atlas)
 - npm or yarn
+
+---
 
 ## Getting Started
 
-### Backend Setup
+### 1. Backend Setup
 
-1. Navigate to the backend directory:
-   ```bash
-   cd task-manager-backend
-   ```
+```bash
+cd task-manager-backend
+npm install
+```
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+Create a `.env` file:
+```bash
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+```
 
-3. Create a `.env` file with the following variables:
-   ```
-   MONGODB_URI=your_mongodb_connection_string
-   JWT_SECRET=your_jwt_secret
-   ```
+Start the backend:
+```bash
+npm run start:dev
+```
+- API: http://localhost:3000
+- Swagger docs: http://localhost:3000/api
 
-4. Start the development server:
-   ```bash
-   npm run start:dev
-   ```
+---
 
-### Frontend Setup
+### 2. Frontend Setup
 
-1. Navigate to the frontend directory:
-   ```bash
-   cd task-manager-frontend
-   ```
+```bash
+cd task-manager-frontend
+npm install
+```
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+Create a `.env` file:
 
-3. Start the development server:
-   ```bash
-   npm start
-   ```
+```bash
+REACT_APP_API_URL=http://localhost:3000
+REACT_APP_ENV=development
+```
+
+
+Start the frontend:
+```bash
+npm start
+```
+- App: http://localhost:3001 (or as configured)
+
+---
 
 ## Technologies Used
 
-- Frontend:
-  - React
-  - TypeScript
-  - Tailwind CSS
-  - React Router
-  - Axios
+- **Frontend:** React, TypeScript, Tailwind CSS, React Router, Axios
+- **Backend:** NestJS, TypeScript, MongoDB, JWT, Passport.js, Swagger
 
-- Backend:
-  - NestJS
-  - TypeScript
-  - MongoDB
-  - JWT Authentication
-  - Passport.js
+---
+
+## Troubleshooting
+
+- **Blank screen after update:** Check browser console for errors, ensure backend is running.
+- **API 500 errors:** Check backend logs for stack traces.
+- **MongoDB connection issues:** Verify your `MONGODB_URI` and database status.
+
+---
 
 ## License
 
-MIT 
+MIT

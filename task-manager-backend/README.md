@@ -1,44 +1,104 @@
-Task Manager Backend
-A full-stack task management application backend built with NestJS, MongoDB, and TypeScript, featuring user authentication and task CRUD operations.
-Features
+# Task Manager Backend
 
-User registration and login with JWT authentication
-Create, read, update, and delete tasks with categories
-MongoDB for persistent storage
-Input validation with class-validator
-API documentation with Swagger
-Unit tests with Jest
+A robust backend for the Task Manager app, built with NestJS, MongoDB, and TypeScript.
 
-Tech Stack
+---
 
-NestJS: Backend framework
-MongoDB: Database
-TypeScript: Type-safe JavaScript
-JWT: Authentication
-Swagger: API documentation
+## Features
 
-Setup
+- User registration and login (JWT)
+- Admin and user roles
+- Task CRUD (create, read, update, delete)
+- Task assignment and approval workflow
+- Task request/approval/rejection endpoints
+- Comments and file attachments
+- Task watchers and requesters
+- Task statistics and reporting endpoints
+- Input validation with class-validator
+- API documentation with Swagger
+- Unit tests with Jest
 
-Clone the repository:git clone <repo-url>
-cd task-manager-backend
+---
 
+## Tech Stack
 
-Install dependencies:npm install
+- **NestJS**: Backend framework
+- **MongoDB**: Database
+- **TypeScript**: Type-safe JavaScript
+- **JWT**: Authentication
+- **Swagger**: API documentation
 
+---
 
-Set up MongoDB (e.g., MongoDB Atlas) and update the connection string in src/app.module.ts.
-Run the app:npm run start:dev
+## Setup
 
+1. Clone the repository:
+   ```bash
+   git clone <repo-url>
+   cd task-manager-backend
+   ```
 
-Access the API at http://localhost:3000 and Swagger docs at http://localhost:3000/api.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-API Endpoints
+3. Create a `.env` file:
+   ```
+   MONGODB_URI=your_mongodb_connection_string
+   JWT_SECRET=your_jwt_secret
+   ```
 
-POST /auth/register: Register a new user
-POST /auth/login: Login and receive a JWT
-GET /tasks: Get all tasks for the authenticated user
-GET /tasks/:id: Get a specific task
-POST /tasks: Create a new task
-PATCH /tasks/:id: Update a task
-DELETE /tasks/:id: Delete a task
+4. Start the app:
+   ```bash
+   npm run start:dev
+   ```
 
+5. Access the API at [http://localhost:3000](http://localhost:3000)  
+   Swagger docs: [http://localhost:3000/api](http://localhost:3000/api)
+
+---
+
+## Main API Endpoints
+
+- `POST /auth/register` — Register a new user
+- `POST /auth/login` — Login and receive a JWT
+- `GET /tasks` — Get all tasks for the authenticated user
+- `GET /tasks/:id` — Get a specific task
+- `POST /tasks` — Create a new task
+- `PATCH /tasks/:id` — Update a task
+- `DELETE /tasks/:id` — Delete a task
+- `POST /tasks/:id/request` — Request assignment to a task
+- `POST /tasks/:id/approve/:requesterId` — Admin approves a user's request
+- `POST /tasks/:id/reject/:requesterId` — Admin rejects a user's request
+- `GET /tasks/stats` — Get task statistics
+- `POST /tasks/:id/attachments` — Upload an attachment
+- `POST /tasks/:id/comments` — Add a comment
+
+---
+
+## Environment Variables
+
+- `MONGODB_URI` — MongoDB connection string
+- `JWT_SECRET` — Secret for JWT authentication
+
+---
+
+## Error Handling
+
+- All endpoints return appropriate HTTP status codes and error messages.
+- Check backend logs for stack traces on 500 errors.
+
+---
+
+## Testing
+
+```bash
+npm run test
+```
+
+---
+
+## License
+
+MIT
