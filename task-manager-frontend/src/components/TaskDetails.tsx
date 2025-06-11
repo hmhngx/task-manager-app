@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Task, Comment, Attachment, User as TaskUser } from '../types/Task';
+import { Task, Comment, Attachment } from '../types/Task';
+import { User, getUserId, getUserDisplayName } from '../types/user';
 import { useAuth } from '../contexts/AuthContext';
 import taskService from '../services/taskService';
 import TaskForm from './TaskForm';
@@ -17,7 +18,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   const [newComment, setNewComment] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [availableUsers, setAvailableUsers] = useState<TaskUser[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [selectedAssignee, setSelectedAssignee] = useState<string>('');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
@@ -33,9 +34,13 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   const fetchTaskDetails = async () => {
     try {
       const taskData = await taskService.getTaskById(taskId);
+      if (!taskData || !taskData.title) {
+        console.error('Fetched task is missing required fields:', taskData);
+      }
       setTask(taskData);
     } catch (error) {
       console.error('Error fetching task details:', error);
+      setTask(null);
     } finally {
       setIsLoading(false);
     }
@@ -165,8 +170,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
     return <div>Loading...</div>;
   }
 
-  if (!task) {
-    return <div>Task not found</div>;
+  if (!task || !task.title) {
+    return <div>Task not found or missing data</div>;
   }
 
   if (isEditing) {
@@ -248,9 +253,11 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
                 )}
               </dd>
             </div>
-            <div>
-              <dt className="text-sm text-gray-500">Assignee</dt>
-              <dd>{task.assignee?.username || 'Unassigned'}</dd>
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-600">Assigned to:</span>
+              <span className="font-medium">
+                {task.assignee ? getUserDisplayName(task.assignee) : 'Unassigned'}
+              </span>
             </div>
             <div>
               <dt className="text-sm text-gray-500">Deadline</dt>
@@ -284,8 +291,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
         <div>
           <h3 className="font-semibold">Subtasks</h3>
           <ul className="mt-2 space-y-2">
-            {task.subtasks.map((subtask) => (
-              <li key={subtask.id} className="p-2 bg-gray-50 rounded">
+            {task.subtasks.map((subtask, idx) => (
+              <li key={subtask.id || subtask._id || idx} className="p-2 bg-gray-50 rounded">
                 {subtask.title}
               </li>
             ))}
@@ -296,10 +303,11 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
       <div className="mt-6">
         <h3 className="font-semibold">Comments</h3>
         <div className="mt-2 space-y-4">
-          {task.comments.map((comment) => (
-            <div key={comment.id} className="bg-gray-50 p-3 rounded">
+          {task.comments.map((comment, idx) => (
+            <div key={comment.id ?? idx} className="bg-gray-50 p-3 rounded">
               <div className="flex justify-between items-start">
                 <div>
+                  <span className="font-medium">{getUserDisplayName(comment.author)}</span>
                   <span className="font-medium">{comment.author.username}</span>
                   <span className="text-sm text-gray-500 ml-2">
                     {new Date(comment.createdAt).toLocaleString()}
@@ -336,8 +344,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
       <div className="mt-6">
         <h3 className="font-semibold">Attachments</h3>
         <div className="mt-2 space-y-4">
-          {Array.isArray(task.attachments) && task.attachments.map((attachment) => {
-            const key = (attachment && typeof attachment === 'object' && ('id' in attachment ? attachment.id : (attachment as any)._id)) || attachment;
+          {Array.isArray(task.attachments) && task.attachments.map((attachment, idx) => {
+            const key = (attachment && typeof attachment === 'object' && ('id' in attachment ? attachment.id : (attachment as any)._id)) || attachment || idx;
             if (attachment && typeof attachment === 'object' && (attachment.originalName || attachment.url)) {
               return (
                 <div key={key} className="flex items-start justify-between bg-gray-50 p-4 rounded-lg">
@@ -373,7 +381,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
                         >
                           {downloadingId === (attachment.id || (attachment as any)._id) ? 'Downloading...' : 'Download'}
                         </button>
-                        {user?.id === (attachment.uploadedBy?.id || attachment.uploadedBy) && (
+                        {user && getUserId(user) === (attachment.uploadedBy?.id || attachment.uploadedBy) && (
                           <button
                             onClick={() => handleDeleteAttachment(attachment.id || (attachment as any)._id)}
                             className="text-red-500 hover:text-red-600 px-3 py-1 rounded-md hover:bg-red-50 transition-colors"
@@ -475,27 +483,37 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
         {task.requesters.length > 0 && (
           <div className="space-y-2">
             <h4 className="font-semibold">Pending Requests</h4>
-            {task.requesters.map((requester) => (
-              <div key={requester.id || (requester as any)._id} className="flex items-center space-x-2">
-                <span>{requester.username}</span>
-                {user?.role === 'admin' && (
-                  <>
-                    <button
-                      onClick={() => handleApproveRequest(requester.id || (requester as any)._id)}
-                      className="px-2 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => handleRejectRequest(requester.id || (requester as any)._id)}
-                      className="px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
-                    >
-                      Reject
-                    </button>
-                  </>
-                )}
-              </div>
-            ))}
+            {task.requesters.map((requester, idx) => {
+              const requesterId = typeof requester === 'string' ? requester : getUserId(requester as User);
+              const requesterName = typeof requester === 'string' ? 'User' : getUserDisplayName(requester as User);
+
+              if (!requesterId) {
+                console.error('Invalid requester ID:', requester);
+                return null;
+              }
+
+              return (
+                <div key={requesterId ?? idx} className="flex items-center space-x-2">
+                  <span>{requesterName}</span>
+                  {user?.role === 'admin' && typeof requesterId === 'string' && (
+                    <>
+                      <button
+                        onClick={() => handleApproveRequest(requesterId)}
+                        className="px-2 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleRejectRequest(requesterId)}
+                        className="px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                      >
+                        Reject
+                      </button>
+                    </>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

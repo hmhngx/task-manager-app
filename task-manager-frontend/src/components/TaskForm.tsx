@@ -1,66 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Task,
-  CreateTaskDto,
-  UpdateTaskDto,
-  TaskType,
-  TaskPriority,
-  TaskStatus,
-} from '../types/Task';
-import taskService from '../services/taskService';
+import { useNavigate } from 'react-router-dom';
+import { Task, TaskPriority, TaskType, CreateTaskDto, UpdateTaskDto } from '../types/Task';
+import { User, getUserDisplayName } from '../types/user';
 import { useAuth } from '../contexts/AuthContext';
+import { createTask, updateTask, getTaskById } from '../services/taskService';
+import { getAllUsers } from '../services/userService';
+import Button from './ui/Button';
 
 interface TaskFormProps {
   task?: Task;
-  onSubmit: (task: CreateTaskDto | UpdateTaskDto) => Promise<Task | undefined>;
+  onSubmit?: (task: CreateTaskDto | UpdateTaskDto) => Promise<Task | undefined>;
   onCancel: () => void;
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
   const { user } = useAuth();
-  const [formData, setFormData] = useState<{
-    title: string;
-    description?: string;
-    type: TaskType;
-    priority: TaskPriority;
-    labels?: string[];
-    deadline?: string;
-    status?: TaskStatus;
-    assignee?: string;
-    parentTask?: string;
-  }>(
-    {
-      title: task?.title || '',
-      description: task?.description || '',
-      type: task?.type || TaskType.TASK,
-      priority: task?.priority || TaskPriority.MEDIUM,
-      labels: task?.labels || [],
-      deadline: task?.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : '',
-      status: task?.status || TaskStatus.TODO,
-      assignee: task?.assignee?.id || '',
-      parentTask: task?.parentTask?.id || '',
-    }
-  );
+  const [formData, setFormData] = useState<CreateTaskDto>({
+    title: task?.title || '',
+    description: task?.description || '',
+    type: task?.type || TaskType.FEATURE,
+    priority: task?.priority || TaskPriority.MEDIUM,
+    labels: task?.labels || [],
+    deadline: task?.deadline ? new Date(task.deadline) : undefined,
+    assignee: task?.assignee?.id || '',
+    parentTask: task?.parentTask?.id || '',
+  });
 
-  const [availableUsers, setAvailableUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [parentTasks, setParentTasks] = useState<Task[]>([]);
   const [newLabel, setNewLabel] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        if (user?.role === 'admin') {
-          const users = await taskService.getAvailableUsers();
-          setAvailableUsers(users);
+        const [usersData, taskData] = await Promise.all([
+          getAllUsers(),
+          task?.id ? getTaskById(task.id) : null
+        ]);
+        setUsers(usersData);
+        if (taskData) {
+          setFormData({
+            title: taskData.title,
+            description: taskData.description,
+            type: taskData.type,
+            priority: taskData.priority,
+            labels: taskData.labels,
+            deadline: taskData.deadline ? new Date(taskData.deadline) : undefined,
+            assignee: taskData.assignee?.id || '',
+            parentTask: taskData.parentTask?.id || '',
+          });
         }
-        const tasks = await taskService.getAllTasks();
-        setParentTasks(tasks);
       } catch (error) {
-        console.error('Error fetching form data:', error);
+        console.error('Error fetching data:', error);
       }
     };
     fetchData();
-  }, [user]);
+  }, [task?.id]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -71,7 +67,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value ? new Date(value) : undefined }));
   };
 
   const handleAddLabel = () => {
@@ -93,13 +89,30 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const submitData = {
-      ...formData,
-      assignee: formData.assignee === '' ? null : formData.assignee,
-      deadline: formData.deadline ? new Date(formData.deadline) : undefined,
-      parentTask: formData.parentTask || undefined,
-    };
-    const createdOrUpdatedTask = await onSubmit(submitData);
+    try {
+      const submitData = {
+        ...formData,
+        deadline: formData.deadline,
+        assignee: formData.assignee || undefined,
+        parentTask: formData.parentTask || undefined,
+      };
+
+      if (onSubmit) {
+        await onSubmit(submitData);
+      } else if (task?.id) {
+        await updateTask(task.id, submitData);
+      } else {
+        await createTask(submitData);
+      }
+      navigate('/tasks');
+    } catch (error) {
+      console.error('Error saving task:', error);
+    }
+  };
+
+  const formatDateForInput = (date: Date | undefined): string => {
+    if (!date) return '';
+    return date.toISOString().split('T')[0];
   };
 
   return (
@@ -178,10 +191,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
           Deadline
         </label>
         <input
-          type="datetime-local"
+          type="date"
           id="deadline"
           name="deadline"
-          value={formData.deadline || ''}
+          value={formatDateForInput(formData.deadline)}
           onChange={handleDateChange}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
         />
@@ -194,15 +207,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
           </label>
           <select
             id="assignee"
-            name="assignee"
-            value={formData.assignee}
-            onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            value={formData.assignee || ''}
+            onChange={(e) => setFormData({ ...formData, assignee: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
-            <option key="unassigned" value="">Unassigned</option>
-            {availableUsers.map((user) => (
+            <option value="">Unassigned</option>
+            {users.map((user) => (
               <option key={user.id} value={user.id}>
-                {user.username}
+                {getUserDisplayName(user)}
               </option>
             ))}
           </select>
@@ -257,11 +269,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
               <button
                 type="button"
                 onClick={() => handleRemoveLabel(label)}
-                className="ml-1 inline-flex items-center p-0.5 rounded-full text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 focus:outline-none focus:bg-indigo-500 focus:text-white"
+                className="ml-1 inline-flex items-center p-0.5 rounded-full text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 <span className="sr-only">Remove label</span>
                 <svg className="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8">
-                  <path strokeLinecap="round" strokeWidth="1.5" d="M1 1l6 6m0-6L1 7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M1 1l6 6m0-6L1 7" />
                 </svg>
               </button>
             </span>
@@ -270,19 +282,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
       </div>
 
       <div className="flex justify-end space-x-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
+        <Button type="button" onClick={onCancel} variant="secondary">
           Cancel
-        </button>
-        <button
-          type="submit"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
+        </Button>
+        <Button type="submit" variant="primary">
           {task ? 'Update Task' : 'Create Task'}
-        </button>
+        </Button>
       </div>
     </form>
   );
