@@ -124,7 +124,7 @@ const ReportScreen: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>ID</TableCell>
+                  <TableCell>No.</TableCell>
                   <TableCell>Title</TableCell>
                   <TableCell>Description</TableCell>
                   <TableCell>Status</TableCell>
@@ -135,9 +135,9 @@ const ReportScreen: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {tasks.map((task) => (
+                {tasks.map((task, idx) => (
                   <TableRow key={task._id}>
-                    <TableCell>{task._id}</TableCell>
+                    <TableCell>{idx + 1}</TableCell>
                     <TableCell>{task.title}</TableCell>
                     <TableCell>{task.description}</TableCell>
                     <TableCell>{task.status}</TableCell>
