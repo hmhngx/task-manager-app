@@ -1,93 +1,226 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { User, getUserDisplayName } from '../types/user';
 import { useAuth } from '../contexts/AuthContext';
 import Button from './ui/Button';
+import UserAvatar from './UserAvatar';
+
+const NavLink = ({ to, label, isActive, onClick }: { to: string; label: string; isActive: boolean; onClick: () => void }) => (
+  <Link
+    to={to}
+    onClick={onClick}
+    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+      isActive
+        ? 'bg-indigo-50 text-indigo-700 font-semibold'
+        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+    }`}
+  >
+    {label}
+  </Link>
+);
 
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const isAdmin = user?.role === 'admin';
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 10;
+      if (isScrolled !== scrolled) {
+        setScrolled(isScrolled);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [scrolled]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Failed to log out', error);
+    }
+  };
+
+  const navLinks = [
+    ...(isAdmin
+      ? [
+          { to: '/admin', label: 'Manage Users' },
+          { to: '/admin/tasks', label: 'All Tasks' },
+          { to: '/dashboard', label: 'Dashboard' },
+          { to: '/', label: 'My Tasks' },
+        ]
+      : [
+          { to: '/', label: 'My Tasks' },
+          { to: '/dashboard', label: 'Dashboard' },
+        ]),
+  ];
 
   if (!isAuthenticated) return null;
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-lg border-b border-blue-100" role="navigation" aria-label="Main Navigation">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-8">
-            <Link
-              to="/"
-              className="text-indigo-700 text-2xl font-extrabold tracking-tight flex items-center gap-2 hover:text-indigo-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded"
-              tabIndex={0}
-            >
-              <svg className="w-7 h-7 text-indigo-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-              Task Manager
-            </Link>
-            {/* Admin Navbar */}
-            {isAdmin && (
-              <>
-                <Link
-                  to="/admin"
-                  className={`text-base font-medium px-3 py-2 rounded transition-colors ${location.pathname === '/admin' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-800'}`}
+    <>
+      <nav
+        className={`fixed w-full z-50 transition-all duration-300 ${
+          scrolled
+            ? 'bg-white/95 backdrop-blur-md shadow-sm py-2'
+            : 'bg-white/90 backdrop-blur-sm py-3'
+        } border-b border-gray-100`}
+        role="navigation"
+        aria-label="Main navigation"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <div className="flex items-center justify-between w-full md:w-auto">
+              <Link
+                to="/"
+                className="flex-shrink-0 text-2xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <div className="p-1.5 bg-indigo-100 rounded-lg">
+                  <svg
+                    className="w-6 h-6 text-indigo-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                </div>
+                <span>TaskManager</span>
+              </Link>
+
+              {/* Mobile menu button */}
+              <div className="md:hidden flex items-center">
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                  aria-expanded="false"
                 >
-                  Manage Users
-                </Link>
-                <Link
-                  to="/admin/tasks"
-                  className={`text-base font-medium px-3 py-2 rounded transition-colors ${location.pathname === '/admin/tasks' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-800'}`}
-                >
-                  Manage All Tasks
-                </Link>
-                <Link
-                  to="/dashboard"
-                  className={`text-base font-medium px-3 py-2 rounded transition-colors ${location.pathname === '/dashboard' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-800'}`}
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  to="/"
-                  className={`text-base font-medium px-3 py-2 rounded transition-colors ${location.pathname === '/' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-800'}`}
-                >
-                  Tasks
-                </Link>
-              </>
-            )}
-            {/* User Navbar */}
-            {!isAdmin && (
-              <>
-                <Link
-                  to="/"
-                  className={`text-base font-medium px-3 py-2 rounded transition-colors ${location.pathname === '/' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-800'}`}
-                >
-                  Tasks
-                </Link>
-                <Link
-                  to="/dashboard"
-                  className={`text-base font-medium px-3 py-2 rounded transition-colors ${location.pathname === '/dashboard' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-800'}`}
-                >
-                  Dashboard
-                </Link>
-              </>
-            )}
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex flex-col items-end">
-              <span className="text-gray-700 font-semibold">{user ? getUserDisplayName(user) : ''}</span>
-              {isAdmin && (
-                <span className="text-xs text-gray-400">Administrator • Last seen: Today</span>
-              )}
+                  <span className="sr-only">Open main menu</span>
+                  {!isMenuOpen ? (
+                    <svg
+                      className="block h-6 w-6"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 6h16M4 12h16M4 18h16"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="block h-6 w-6"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
-            <Button
-              onClick={logout}
-              variant="danger"
-              className="focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-            >
-              Logout
-            </Button>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-1">
+              {navLinks.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  label={link.label}
+                  isActive={location.pathname === link.to}
+                  onClick={() => {}}
+                />
+              ))}
+            </div>
+
+            {/* User Profile and Logout */}
+            <div className="hidden md:flex items-center space-x-4">
+              <div className="flex items-center">
+                <UserAvatar user={user as User} className="h-9 w-9" />
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-700">
+                    {getUserDisplayName(user as User)}
+                  </p>
+                  {isAdmin && (
+                    <span className="text-xs text-gray-500">Administrator</span>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="ml-4 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+              >
+                Sign out
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
+
+        {/* Mobile menu */}
+        {isMenuOpen && (
+          <div className="md:hidden bg-white border-t border-gray-200">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              {navLinks.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  label={link.label}
+                  isActive={location.pathname === link.to}
+                  onClick={() => setIsMenuOpen(false)}
+                />
+              ))}
+            </div>
+            <div className="pt-4 pb-3 border-t border-gray-200">
+              <div className="flex items-center px-4">
+                <UserAvatar user={user as User} />
+                <div className="ml-3">
+                  <p className="text-base font-medium text-gray-700">
+                    {getUserDisplayName(user as User)}
+                  </p>
+                  {isAdmin && (
+                    <p className="text-sm font-medium text-gray-500">Administrator</p>
+                  )}
+                </div>
+              </div>
+              <div className="mt-3 px-2 space-y-1">
+                <button
+                  onClick={handleLogout}
+                  className="w-full block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </nav>
+      {/* Add padding to account for fixed navbar */}
+      <div className="h-20"></div>
+    </>
   );
 }
