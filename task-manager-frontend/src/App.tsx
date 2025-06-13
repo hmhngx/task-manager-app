@@ -23,6 +23,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
   const [tasksLeft, setTasksLeft] = React.useState(0);
   const [completedCount, setCompletedCount] = React.useState(0);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
 
   React.useEffect(() => {
     if (!user) return;
@@ -49,7 +50,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex flex-col">
       <Navbar />
-      <div className="flex flex-1 w-full max-w-7xl mx-auto gap-8 py-8 px-4">
+      <div className="flex flex-1 w-full max-w-7xl mx-auto py-8 px-4">
         <Sidebar 
           selectedDate={selectedDate} 
           setSelectedDate={setSelectedDate} 
@@ -57,8 +58,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           completedCount={completedCount} 
           user={user || null} 
           isAdmin={user?.role === 'admin' || false} 
+          isCollapsed={isSidebarCollapsed}
+          toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
-        <main className="flex-1 flex flex-col">{children}</main>
+        <main className="flex-1 flex flex-col transition-all duration-300">
+          {children}
+        </main>
       </div>
     </div>
   );
