@@ -175,8 +175,8 @@ const AdminTasksDashboard: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    No.
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Title
@@ -203,26 +203,12 @@ const AdminTasksDashboard: React.FC = () => {
                     </td>
                   </tr>
                 )}
-                {filteredTasks.map((task) => (
+                {filteredTasks.map((task, idx) => (
                   <tr
                     key={task._id || task.id}
                     className="hover:bg-gray-50 transition-colors"
                   >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center text-white font-semibold">
-                          {task.userId?.charAt(0).toUpperCase() || '?'}
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {task.userId}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            Task ID: {task.id}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center font-bold">{idx + 1}</td>
                     <td className="px-6 py-4 whitespace-nowrap font-semibold text-gray-900">
                       {task.title}
                     </td>
