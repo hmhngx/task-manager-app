@@ -9,6 +9,9 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import TaskForm from './TaskForm';
 import TaskDetails from './TaskDetails';
 import Button from './ui/Button';
+import TablePagination from '@mui/material/TablePagination';
+import { format } from 'date-fns';
+import dayjs from 'dayjs';
 
 interface TaskListProps {
   selectedDate: Date | null;
@@ -32,6 +35,8 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
     key: keyof Task;
     direction: 'asc' | 'desc';
   } | null>(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
     fetchTasks();
@@ -97,6 +102,17 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
       const comparison = aValue < bValue ? -1 : 1;
       return sortConfig.direction === 'asc' ? comparison : -comparison;
     });
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const paginatedTasks = filteredAndSortedTasks.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   if (isLoading) {
     return <div className="flex-1 flex items-center justify-center text-lg text-gray-500">Loading tasks...</div>;
@@ -185,7 +201,7 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
             </tr>
           </thead>
           <tbody>
-            {filteredAndSortedTasks.map((task, idx) => (
+            {paginatedTasks.map((task, idx) => (
               <tr
                 key={task._id ? task._id : task.id}
                 className={`transition-all duration-200 ${idx % 2 === 0 ? 'bg-white/70' : 'bg-blue-50/60'} border-b hover:bg-indigo-50 hover:shadow-lg cursor-pointer`}
@@ -227,7 +243,7 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
                 </td>
                 <td className="px-6 py-4">
                   {task.deadline
-                    ? new Date(task.deadline).toLocaleDateString()
+                    ? dayjs(task.deadline).format('MMM DD, YYYY HH:mm')
                     : 'No deadline'}
                 </td>
                 <td className="px-6 py-4">
@@ -249,7 +265,16 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
             ))}
           </tbody>
         </table>
-                </div>
+        <TablePagination
+          component="div"
+          count={filteredAndSortedTasks.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+        />
+      </div>
 
       {showCreateForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

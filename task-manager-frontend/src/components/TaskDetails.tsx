@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import taskService from '../services/taskService';
 import TaskForm from './TaskForm';
 import Button from './ui/Button';
+import dayjs from 'dayjs';
 
 interface TaskDetailsProps {
   taskId: string;
@@ -261,7 +262,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
             </div>
             <div>
               <dt className="text-sm text-gray-500">Deadline</dt>
-              <dd>{task.deadline ? new Date(task.deadline).toLocaleString() : 'No deadline'}</dd>
+              <dd>{task.deadline ? dayjs(task.deadline).format('MMM DD, YYYY HH:mm') : 'No deadline'}</dd>
             </div>
           </dl>
         </div>

@@ -6,6 +6,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { createTask, updateTask, getTaskById } from '../services/taskService';
 import { getAllUsers } from '../services/userService';
 import Button from './ui/Button';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 
 interface TaskFormProps {
   task?: Task;
@@ -65,9 +69,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value ? new Date(value) : undefined }));
+  const handleDateChange = (newValue: dayjs.Dayjs | null) => {
+    setFormData((prev) => ({ ...prev, deadline: newValue?.toDate() || undefined }));
   };
 
   const handleAddLabel = () => {
@@ -190,14 +193,18 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
         <label htmlFor="deadline" className="block text-sm font-medium text-gray-700">
           Deadline
         </label>
-        <input
-          type="date"
-          id="deadline"
-          name="deadline"
-          value={formatDateForInput(formData.deadline)}
-          onChange={handleDateChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        />
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DateTimePicker
+            value={formData.deadline ? dayjs(formData.deadline) : null}
+            onChange={handleDateChange}
+            slotProps={{
+              textField: {
+                fullWidth: true,
+                className: 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
+              }
+            }}
+          />
+        </LocalizationProvider>
       </div>
 
       {user?.role === 'admin' && (
