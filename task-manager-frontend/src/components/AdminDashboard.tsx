@@ -6,6 +6,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import Button from './ui/Button';
 import UserAvatar from './UserAvatar';
 import { FiTrash2 } from 'react-icons/fi';
+import TablePagination from '@mui/material/TablePagination';
 
 const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -16,6 +17,8 @@ const AdminDashboard: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const { isAdmin, user } = useAuth();
   const navigate = useNavigate();
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -62,6 +65,17 @@ const AdminDashboard: React.FC = () => {
   const filteredUsers = users.filter((user) =>
     getUserDisplayName(user).toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const paginatedUsers = filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   if (!isAdmin) {
     return null;
@@ -182,7 +196,7 @@ const AdminDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredUsers.map((u) => (
+                {paginatedUsers.map((u) => (
                   <tr key={getUserId(u)} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -237,6 +251,15 @@ const AdminDashboard: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            <TablePagination
+              component="div"
+              count={filteredUsers.length}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+            />
           </div>
         </div>
 
