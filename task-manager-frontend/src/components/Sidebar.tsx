@@ -97,7 +97,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-4 border-b border-gray-100`}>
           {!isCollapsed && (
             <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              TaskFlow
+              TaskManager
             </h1>
           )}
         </div>
@@ -178,7 +178,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <div className={`${isCollapsed ? 'px-1' : 'px-3'} pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider`}>
                 {!isCollapsed && 'Admin'}
               </div>
-              <NavItem to="/admin" icon={FiSettings as React.ComponentType<{ className?: string }>} label="Admin Dashboard" adminOnly />
+              <NavItem to="/admin" icon={FiSettings as React.ComponentType<{ className?: string }>} label="Manage Users" adminOnly />
               <NavItem to="/admin/tasks" icon={FiUsers as React.ComponentType<{ className?: string }>} label="Manage Tasks" adminOnly />
             </>
           )}
