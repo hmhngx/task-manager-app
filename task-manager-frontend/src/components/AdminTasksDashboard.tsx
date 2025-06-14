@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Task } from '../types/Task';
 import { useNavigate, Link } from 'react-router-dom';
 import Button from './ui/Button';
+import TablePagination from '@mui/material/TablePagination';
 
 const AdminTasksDashboard: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -14,6 +15,8 @@ const AdminTasksDashboard: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -69,6 +72,17 @@ const AdminTasksDashboard: React.FC = () => {
       : false;
     return titleMatch || descriptionMatch;
   });
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const paginatedTasks = filteredTasks.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   if (!isAdmin) return null;
 
@@ -196,19 +210,19 @@ const AdminTasksDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredTasks.length === 0 && (
+                {paginatedTasks.length === 0 && (
                   <tr>
                     <td colSpan={6} className="text-center py-8 text-gray-500">
                       No tasks found.
                     </td>
                   </tr>
                 )}
-                {filteredTasks.map((task, idx) => (
+                {paginatedTasks.map((task, idx) => (
                   <tr
                     key={task._id || task.id}
                     className="hover:bg-gray-50 transition-colors"
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-center font-bold">{idx + 1}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center font-bold">{page * rowsPerPage + idx + 1}</td>
                     <td className="px-6 py-4 whitespace-nowrap font-semibold text-gray-900">
                       {task.title}
                     </td>
@@ -258,6 +272,15 @@ const AdminTasksDashboard: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            <TablePagination
+              component="div"
+              count={filteredTasks.length}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+            />
           </div>
         </div>
 
