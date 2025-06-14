@@ -52,9 +52,9 @@ export default function Navbar() {
     ...(isAdmin
       ? [
           { to: '/admin', label: 'Manage Users' },
-          { to: '/admin/tasks', label: 'All Tasks' },
+          { to: '/admin/tasks', label: 'Manage Tasks' },
           { to: '/dashboard', label: 'Dashboard' },
-          { to: '/', label: 'My Tasks' },
+          { to: '/', label: 'All Tasks' },
         ]
       : [
           { to: '/', label: 'My Tasks' },
