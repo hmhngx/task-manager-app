@@ -313,6 +313,7 @@ export class TasksService {
         todo: tasks.filter((task) => task.status && task.status === TaskStatus.TODO).length,
         done: tasks.filter((task) => task.status && task.status === TaskStatus.DONE).length,
         late: tasks.filter((task) => task.status && task.status === TaskStatus.LATE).length,
+        in_progress: tasks.filter((task) => task.status && task.status === TaskStatus.IN_PROGRESS).length,
       };
     } catch (error) {
       console.error('[TasksService] Error in getTaskStats:', error);
@@ -320,7 +321,7 @@ export class TasksService {
     }
   }
 
-  async getWeeklyStats(): Promise<{ todo: number; done: number; late: number }> {
+  async getWeeklyStats(): Promise<{ todo: number; done: number; late: number; in_progress: number }> {
     try {
     const startOfWeekFn = startOfWeek as DateFn;
     const startOfWeekDate = startOfWeekFn(new Date());
@@ -335,6 +336,7 @@ export class TasksService {
       todo: tasks.filter((t) => t.status === TaskStatus.TODO).length,
       done: tasks.filter((t) => t.status === TaskStatus.DONE).length,
       late: tasks.filter((t) => t.status === TaskStatus.LATE).length,
+      in_progress: tasks.filter((t) => t.status === TaskStatus.IN_PROGRESS).length,
     };
     } catch (error) {
       console.error('Error in getWeeklyStats:', error);
@@ -342,25 +344,26 @@ export class TasksService {
     }
   }
 
-  async getMonthlyStats(): Promise<{ todo: number; done: number; late: number }> {
+  async getMonthlyStats(): Promise<{ todo: number; done: number; late: number; in_progress: number }> {
     try {
-    const startOfMonthFn = startOfMonth as DateFn;
-    const startOfMonthDate = startOfMonthFn(new Date());
-    const tasks = await this.taskModel
-      .find({
-        createdAt: { $gte: startOfMonthDate },
-      })
+      const startOfMonthFn = startOfMonth as DateFn;
+      const startOfMonthDate = startOfMonthFn(new Date());
+      const tasks = await this.taskModel
+        .find({
+          createdAt: { $gte: startOfMonthDate },
+        })
         .lean()
-      .exec();
+        .exec();
 
-    return {
-      todo: tasks.filter((t) => t.status === TaskStatus.TODO).length,
-      done: tasks.filter((t) => t.status === TaskStatus.DONE).length,
-      late: tasks.filter((t) => t.status === TaskStatus.LATE).length,
-    };
+      return {
+        todo: tasks.filter((t) => t.status === TaskStatus.TODO).length,
+        done: tasks.filter((t) => t.status === TaskStatus.DONE).length,
+        late: tasks.filter((t) => t.status === TaskStatus.LATE).length,
+        in_progress: tasks.filter((t) => t.status === TaskStatus.IN_PROGRESS).length,
+      };
     } catch (error) {
       console.error('Error in getMonthlyStats:', error);
       throw new BadRequestException('Failed to fetch monthly stats');
-  }
+    }
   }
 }
