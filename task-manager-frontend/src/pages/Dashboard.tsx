@@ -18,7 +18,8 @@ const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<TaskStats>({
     todo: 0,
     done: 0,
-    late: 0
+    late: 0,
+    in_progress: 0,
   });
 
   useEffect(() => {
