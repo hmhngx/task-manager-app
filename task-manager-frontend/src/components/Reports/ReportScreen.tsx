@@ -105,11 +105,12 @@ const ReportScreen: React.FC = () => {
               value={taskType}
               label="Task Type"
               onChange={(e) => setTaskType(e.target.value)}
+              displayEmpty
             >
-              <MenuItem value="All">All</MenuItem>
-              <MenuItem value="Bug">Bug</MenuItem>
-              <MenuItem value="Feature">Feature</MenuItem>
-              <MenuItem value="Task">Task</MenuItem>
+              <MenuItem value="">All Types</MenuItem>
+              <MenuItem value="bug">Bug</MenuItem>
+              <MenuItem value="feature">Feature</MenuItem>
+              <MenuItem value="task">Task</MenuItem>
             </Select>
           </FormControl>
 
