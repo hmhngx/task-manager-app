@@ -1,6 +1,7 @@
 export enum TaskStatus {
   TODO = 'todo',
   PENDING_APPROVAL = 'pending_approval',
+  IN_PROGRESS = 'in_progress',
   DONE = 'done',
   LATE = 'late',
 }
@@ -88,6 +89,7 @@ export interface TaskStats {
   todo: number;
   done: number;
   late: number;
+  in_progress: number;
 }
 
 export interface CreateTaskDto {

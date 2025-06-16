@@ -4,7 +4,7 @@ export interface Task {
   description: string;
   category?: string;
   status: 'todo' | 'in-progress' | 'done' | 'late';
-  priority: 'low' | 'medium' | 'high';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
   deadline?: Date;
   userId: string;
   createdAt: Date;
@@ -23,6 +23,7 @@ export interface TaskStats {
     low: number;
     medium: number;
     high: number;
+    urgent: number;
   };
   overdueTasks: number;
 }
