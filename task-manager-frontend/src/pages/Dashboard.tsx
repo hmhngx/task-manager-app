@@ -70,7 +70,7 @@ const Dashboard: React.FC = () => {
         <div className="flex-1 flex flex-col">
           <TaskList selectedDate={selectedDate} isAdmin={isAdmin} />
         </div>
-        <StatsPanel isAdmin={isAdmin} stats={stats} />
+        <StatsPanel isAdmin={isAdmin} />
       </main>
     </div>
   );
