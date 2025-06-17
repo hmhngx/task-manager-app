@@ -85,6 +85,48 @@ export class TasksController {
     return this.tasksService.getTasksByType(type);
   }
 
+  @Get('stats')
+  async getTaskStats() {
+    try {
+      return await this.tasksService.getTaskStats();
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('[TasksController] Error in /tasks/stats:', error.message, error.stack);
+      } else {
+        console.error('[TasksController] Unknown error in /tasks/stats:', error);
+      }
+      throw new BadRequestException('Failed to fetch task stats');
+    }
+  }
+
+  @Get('stats/weekly')
+  async getWeeklyStats() {
+    try {
+      return await this.tasksService.getWeeklyStats();
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('[TasksController] Error in /tasks/stats/weekly:', error.message, error.stack);
+      } else {
+        console.error('[TasksController] Unknown error in /tasks/stats/weekly:', error);
+      }
+      throw new BadRequestException('Failed to fetch weekly stats');
+    }
+  }
+
+  @Get('stats/monthly')
+  async getMonthlyStats() {
+    try {
+      return await this.tasksService.getMonthlyStats();
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('[TasksController] Error in /tasks/stats/monthly:', error.message, error.stack);
+      } else {
+        console.error('[TasksController] Unknown error in /tasks/stats/monthly:', error);
+      }
+      throw new BadRequestException('Failed to fetch monthly stats');
+    }
+  }
+
   @Get(':id')
   getOne(@Param('id') id: string) {
     return this.tasksService.getTaskById(id);
@@ -304,48 +346,5 @@ export class TasksController {
   @Delete(':id/watchers')
   removeWatcher(@Param('id') taskId: string, @Req() req: RequestWithUser) {
     return this.tasksService.removeWatcher(taskId, req.user.id);
-  }
-
-  // Stats endpoints
-  @Get('stats')
-  async getTaskStats() {
-    try {
-      return await this.tasksService.getTaskStats();
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error('[TasksController] Error in /tasks/stats:', error.message, error.stack);
-      } else {
-        console.error('[TasksController] Unknown error in /tasks/stats:', error);
-      }
-      throw new BadRequestException('Failed to fetch task stats');
-    }
-  }
-
-  @Get('stats/weekly')
-  async getWeeklyStats() {
-    try {
-      return await this.tasksService.getWeeklyStats();
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error('[TasksController] Error in /tasks/stats/weekly:', error.message, error.stack);
-      } else {
-        console.error('[TasksController] Unknown error in /tasks/stats/weekly:', error);
-      }
-      throw new BadRequestException('Failed to fetch weekly stats');
-    }
-  }
-
-  @Get('stats/monthly')
-  async getMonthlyStats() {
-    try {
-      return await this.tasksService.getMonthlyStats();
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error('[TasksController] Error in /tasks/stats/monthly:', error.message, error.stack);
-      } else {
-        console.error('[TasksController] Unknown error in /tasks/stats/monthly:', error);
-      }
-      throw new BadRequestException('Failed to fetch monthly stats');
-    }
   }
 }
