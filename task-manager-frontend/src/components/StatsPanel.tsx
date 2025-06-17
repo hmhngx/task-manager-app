@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { TaskStats } from '../types/Task';
-import { getWeeklyStats, getMonthlyStats } from '../services/taskService';
+import React, { useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
+import { fetchStats } from '../store/statsSlice';
+import { useAppDispatch } from '../store';
 
 interface StatsPanelProps {
   isAdmin: boolean;
-  stats: TaskStats;
 }
 
 const statIcons = {
@@ -22,40 +23,15 @@ const statIcons = {
   ),
 };
 
-const StatsPanel: React.FC<StatsPanelProps> = ({ isAdmin, stats }) => {
-  const [weeklyStats, setWeeklyStats] = useState<TaskStats>({
-    todo: 0,
-    done: 0,
-    late: 0,
-    in_progress: 0,
-  });
-  const [monthlyStats, setMonthlyStats] = useState<TaskStats>({
-    todo: 0,
-    done: 0,
-    late: 0,
-    in_progress: 0,
-  });
-  const [error, setError] = useState('');
+const StatsPanel: React.FC<StatsPanelProps> = ({ isAdmin }) => {
+  const dispatch = useAppDispatch();
+  const { weekly, monthly, loading, error } = useSelector((state: RootState) => state.stats);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const [weekly, monthly] = await Promise.all([
-          getWeeklyStats(),
-          getMonthlyStats(),
-        ]);
-        setWeeklyStats(weekly);
-        setMonthlyStats(monthly);
-      } catch (err) {
-        setError('Failed to fetch stats');
-      }
-    };
-
-    fetchStats();
-    // Refresh stats every minute
-    const interval = setInterval(fetchStats, 60000);
+    dispatch(fetchStats());
+    const interval = setInterval(() => dispatch(fetchStats()), 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [dispatch]);
 
   if (error) {
     return <div className="text-red-500 text-sm">{error}</div>;
@@ -71,22 +47,22 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isAdmin, stats }) => {
         <div className="flex items-center justify-evenly w-full gap-4">
           <div className="flex flex-col items-center flex-1">
             {statIcons.todo}
-            <div className="text-4xl font-extrabold text-blue-600 mt-1">{weeklyStats.todo}</div>
+            <div className="text-4xl font-extrabold text-blue-600 mt-1">{weekly?.todo ?? 0}</div>
             <div className="text-xs text-gray-500 mt-1">To Do</div>
           </div>
           <div className="flex flex-col items-center flex-1">
             {statIcons.in_progress}
-            <div className="text-4xl font-extrabold text-yellow-500 mt-1">{weeklyStats.in_progress}</div>
+            <div className="text-4xl font-extrabold text-yellow-500 mt-1">{weekly?.in_progress ?? 0}</div>
             <div className="text-xs text-gray-500 mt-1">In_Progress</div>
           </div>
           <div className="flex flex-col items-center flex-1">
             {statIcons.late}
-            <div className="text-4xl font-extrabold text-red-500 mt-1">{weeklyStats.late}</div>
+            <div className="text-4xl font-extrabold text-red-500 mt-1">{weekly?.late ?? 0}</div>
             <div className="text-xs text-gray-500 mt-1">Late</div>
           </div>
           <div className="flex flex-col items-center flex-1">
             {statIcons.done}
-            <div className="text-4xl font-extrabold text-green-600 mt-1">{weeklyStats.done}</div>
+            <div className="text-4xl font-extrabold text-green-600 mt-1">{weekly?.done ?? 0}</div>
             <div className="text-xs text-gray-500 mt-1">Done</div>
           </div>
         </div>
@@ -100,22 +76,22 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isAdmin, stats }) => {
         <div className="flex items-center justify-evenly w-full gap-4">
           <div className="flex flex-col items-center flex-1">
             {statIcons.todo}
-            <div className="text-4xl font-extrabold text-blue-600 mt-1">{monthlyStats.todo}</div>
+            <div className="text-4xl font-extrabold text-blue-600 mt-1">{monthly?.todo ?? 0}</div>
             <div className="text-xs text-gray-500 mt-1">To Do</div>
           </div>
           <div className="flex flex-col items-center flex-1">
             {statIcons.in_progress}
-            <div className="text-4xl font-extrabold text-yellow-500 mt-1">{monthlyStats.in_progress}</div>
+            <div className="text-4xl font-extrabold text-yellow-500 mt-1">{monthly?.in_progress ?? 0}</div>
             <div className="text-xs text-gray-500 mt-1">In_Progress</div>
           </div>
           <div className="flex flex-col items-center flex-1">
             {statIcons.late}
-            <div className="text-4xl font-extrabold text-red-500 mt-1">{monthlyStats.late}</div>
+            <div className="text-4xl font-extrabold text-red-500 mt-1">{monthly?.late ?? 0}</div>
             <div className="text-xs text-gray-500 mt-1">Late</div>
           </div>
           <div className="flex flex-col items-center flex-1">
             {statIcons.done}
-            <div className="text-4xl font-extrabold text-green-600 mt-1">{monthlyStats.done}</div>
+            <div className="text-4xl font-extrabold text-green-600 mt-1">{monthly?.done ?? 0}</div>
             <div className="text-xs text-gray-500 mt-1">Done</div>
           </div>
         </div>

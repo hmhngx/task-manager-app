@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Task, TaskStatus, TaskPriority, TaskType, CreateTaskDto, UpdateTaskDto } from '../types/Task';
 import { User } from '../types/user';
 import { useAuth } from '../contexts/AuthContext';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
+import { useAppDispatch } from '../store';
+import { fetchTasks, setFilters, setSortConfig, setPage, setRowsPerPage } from '../store/tasksSlice';
 import taskService from '../services/taskService';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -20,48 +24,24 @@ interface TaskListProps {
 
 const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useAppDispatch();
+  const { tasks, loading, filters, sortConfig, page, rowsPerPage } = useSelector((state: RootState) => state.tasks);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [filters, setFilters] = useState({
-    status: '',
-    priority: '',
-    type: '',
-    assignee: '',
-    search: '',
-  });
-  const [sortConfig, setSortConfig] = useState<{
-    key: keyof Task;
-    direction: 'asc' | 'desc';
-  } | null>(null);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
-    fetchTasks();
-  }, [selectedDate]);
-
-  const fetchTasks = async () => {
-    try {
-      const data = await taskService.getAllTasks();
-      setTasks(data);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    dispatch(fetchTasks());
+  }, [dispatch, selectedDate]);
 
   const handleCreateTask = async (taskData: CreateTaskDto | UpdateTaskDto) => {
     try {
-      const newTask = await taskService.createTask(taskData as CreateTaskDto);
-      setTasks((prevTasks) => [...prevTasks, newTask]);
+      const createdTask = await taskService.createTask(taskData as CreateTaskDto);
       setShowCreateForm(false);
-      return newTask;
+      dispatch(fetchTasks());
+      return createdTask;
     } catch (error) {
       console.error('Error creating task:', error);
-      return undefined;
+      return undefined
     }
   };
 
@@ -69,12 +49,21 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
-      }
-    setSortConfig({ key, direction });
+    }
+    dispatch(setSortConfig({ key, direction }));
   };
 
   const handleFilterChange = (key: string, value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
+    dispatch(setFilters({ ...filters, [key]: value }));
+  };
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    dispatch(setPage(newPage));
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    dispatch(setRowsPerPage(parseInt(event.target.value, 10)));
+    dispatch(setPage(0));
   };
 
   const filteredAndSortedTasks = tasks
@@ -91,30 +80,18 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
     })
     .sort((a, b) => {
       if (!sortConfig) return 0;
-
       const aValue = a[sortConfig.key];
       const bValue = b[sortConfig.key];
-
       if (aValue === undefined && bValue === undefined) return 0;
       if (aValue === undefined) return 1;
       if (bValue === undefined) return -1;
-
       const comparison = aValue < bValue ? -1 : 1;
       return sortConfig.direction === 'asc' ? comparison : -comparison;
     });
 
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
   const paginatedTasks = filteredAndSortedTasks.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
-  if (isLoading) {
+  if (loading) {
     return <div className="flex-1 flex items-center justify-center text-lg text-gray-500">Loading tasks...</div>;
   }
 
