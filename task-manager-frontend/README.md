@@ -1,6 +1,6 @@
 # Task Manager Frontend
 
-A modern, feature-rich task management frontend built with React, TypeScript, and Tailwind CSS.
+A modern, feature-rich task management frontend built with React, TypeScript, Redux Toolkit, and Material-UI.
 
 ---
 
@@ -14,13 +14,16 @@ A modern, feature-rich task management frontend built with React, TypeScript, an
 - Task status management (todo, in progress, done, late, etc.)
 - Sidebar navigation (customizable)
 - Responsive design
-- Modern UI with Tailwind CSS
+- Modern UI with Material-UI and Tailwind CSS
+- State management with Redux Toolkit
+- Excel export functionality
+- Advanced reporting and data visualization
 
 ---
 
 ## Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js (v16 or higher)
 - npm or yarn
 - Backend API running (see backend README)
 
@@ -60,9 +63,9 @@ src/
 ├── contexts/ # React contexts (auth, etc.)
 ├── pages/ # Page components
 ├── services/ # API services
+├── store/ # Redux store configuration and slices
 ├── types/ # TypeScript type definitions
 └── utils/ # Utility functions
-
 
 ---
 
@@ -75,10 +78,24 @@ src/
 
 ---
 
+## Key Technologies
+
+- **React** with TypeScript for type safety
+- **Redux Toolkit** for state management
+- **Material-UI** for UI components
+- **Tailwind CSS** for custom styling
+- **React Router** for navigation
+- **Axios** for API calls
+- **XLSX** for Excel export functionality
+- **Day.js** for date handling
+
+---
+
 ## Customization
 
 - **Sidebar:** You can easily add or remove navigation elements in `src/components/Sidebar.tsx`.
-- **UI:** All styling is done with Tailwind CSS for easy customization.
+- **UI:** Styling is done with a combination of Material-UI and Tailwind CSS.
+- **State Management:** Redux store configuration can be modified in `src/store/`.
 
 ---
 
@@ -87,6 +104,7 @@ src/
 - **Blank screen after update:** Check browser console for errors, ensure backend is running.
 - **API 500 errors:** Check backend logs for stack traces.
 - **React key warnings:** Ensure all `.map()` calls use unique keys.
+- **Redux state issues:** Use Redux DevTools to debug state updates and actions.
 
 ---
 
