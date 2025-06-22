@@ -76,7 +76,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
       auth: {
         token: token,
       },
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'],
     });
 
     // Initialize notification socket
@@ -84,7 +84,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
       auth: {
         token: token,
       },
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'],
     });
 
     // Initialize admin socket (only for admin users)
@@ -94,7 +94,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
         auth: {
           token: token,
         },
-        transports: ['websocket', 'polling'],
+        transports: ['websocket'],
       });
     }
 

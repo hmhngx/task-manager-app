@@ -77,29 +77,29 @@ function App() {
   return (
     <AuthProvider>
       <WebSocketProvider>
-        <Router>
-          <Routes>
-            {/* Auth pages: no layout, just the box */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+      <Router>
+        <Routes>
+          {/* Auth pages: no layout, just the box */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-            {/* Main app pages: wrapped in Layout */}
-            <Route
-              path="/*"
-              element={
-                <Layout>
-                  <Routes>
-                    <Route path="dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-                    <Route path="admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
-                    <Route path="admin/tasks" element={<PrivateRoute><AdminTasksDashboard /></PrivateRoute>} />
-                    <Route path="reports" element={<PrivateRoute><ReportScreen /></PrivateRoute>} />
-                    <Route path="" element={<TaskList selectedDate={null} isAdmin={false} />} />
-                  </Routes>
-                </Layout>
-              }
-            />
-          </Routes>
-        </Router>
+          {/* Main app pages: wrapped in Layout */}
+          <Route
+            path="/*"
+            element={
+              <Layout>
+                <Routes>
+                  <Route path="dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+                  <Route path="admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
+                  <Route path="admin/tasks" element={<PrivateRoute><AdminTasksDashboard /></PrivateRoute>} />
+                  <Route path="reports" element={<PrivateRoute><ReportScreen /></PrivateRoute>} />
+                  <Route path="" element={<TaskList selectedDate={null} isAdmin={false} />} />
+                </Routes>
+              </Layout>
+            }
+          />
+        </Routes>
+      </Router>
       </WebSocketProvider>
     </AuthProvider>
   );
