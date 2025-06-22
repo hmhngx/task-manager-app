@@ -39,54 +39,38 @@ A robust backend for the Task Manager app, built with NestJS, MongoDB, and TypeS
 - **Class-validator**: Input validation
 - **Passport.js**: Authentication strategies
 - **Winston**: Logging
+- **@nestjs/schedule**: For cron jobs
 
 ---
 
-## WebSocket Integration
+## Notification System
 
-### Architecture
-```
-src/modules/websocket/
-├── websocket.module.ts          # Main WebSocket module
-├── services/
-│   └── websocket.service.ts     # Centralized WebSocket service
-├── gateways/
-│   ├── task.gateway.ts          # Task-related events
-│   ├── notification.gateway.ts  # Notification events
-│   └── admin.gateway.ts         # Admin monitoring events
-└── guards/
-    └── websocket-auth.guard.ts  # JWT authentication for WebSocket
-```
+The application includes a comprehensive real-time notification system built with WebSockets.
+
+### Implemented Features
+
+-   **Task Broadcasts**: Notifies all connected clients on task creation, updates, and deletion.
+-   **Assignment Alerts**: Sends a direct notification to a user when they are assigned a new task.
+-   **Task Requests**: Admins receive notifications for new task requests, and users are notified when their requests are approved or rejected.
+-   **Comment & Mention Alerts**: Notifies all task participants when a new comment is added. Users receive a special notification when mentioned in a comment.
+-   **Status Updates**: All participants are notified when a task's status changes.
+-   **Deadline Reminders**: Automatically sends reminders for tasks with approaching deadlines.
+-   **Overdue Task Alerts**: Notifies relevant users when a task becomes overdue.
+-   **Participant Changes**: Notifies users when they are added to or removed from a task.
 
 ### WebSocket Events
 
-#### Task Events
-- `task:created` - New task created
-- `task:updated` - Task modified
-- `task:deleted` - Task removed
-- `task:assigned` - Task assigned to user
-- `task:status_changed` - Status transition
+-   `notification:new`: A general-purpose event for delivering all notifications to the client.
+-   `task:created`, `task:updated`, `task:deleted`: Broadcasted for task lifecycle events.
+-   `admin:task_activity`: A dedicated event for sending real-time updates to the admin dashboard.
 
-#### Comment Events
-- `comment:added` - New comment on task
-- `comment:edited` - Comment modified
-- `comment:deleted` - Comment removed
+### API Endpoints for Notifications
 
-#### Notification Events
-- `notification:task_assigned` - Task assignment
-- `notification:status_change` - Status updates
-- `notification:mention` - Comment mentions
-- `notification:deadline_approaching` - Deadline reminders
-
-#### Admin Events
-- `admin:user_activity` - User login/logout
-- `admin:task_activity` - Task creation/completion
-- `admin:system_stats` - Updated statistics
-
-### Security
-- JWT authentication for WebSocket connections
-- Room-based subscriptions with proper authorization
-- User information attached to socket for authorization
+-   `POST /tasks/request`: A user can request a task.
+-   `POST /tasks/:id/approve`: An admin can approve a task request.
+-   `POST /tasks/:id/reject`: An admin can reject a task request.
+-   `POST /tasks/:id/participants`: An admin can add a user to a task.
+-   `DELETE /tasks/:id/participants/:participantId`: An admin can remove a user from a task.
 
 ---
 
@@ -109,7 +93,7 @@ src/modules/websocket/
    JWT_SECRET=your_jwt_secret
    PORT=3000
    NODE_ENV=development
-   FRONTEND_URL=http://localhost:3001
+   FRONTEND_URL=http://localhost:3000
    ```
 
 4. Start the app:
@@ -133,8 +117,8 @@ src/modules/websocket/
 - `PATCH /tasks/:id` — Update a task
 - `DELETE /tasks/:id` — Delete a task
 - `POST /tasks/:id/request` — Request assignment to a task
-- `POST /tasks/:id/approve/:requesterId` — Admin approves a user's request
-- `POST /tasks/:id/reject/:requesterId` — Admin rejects a user's request
+- `POST /tasks/:id/approve` — Admin approves a user's request
+- `POST /tasks/:id/reject` — Admin rejects a user's request
 - `GET /tasks/stats` — Get task statistics
 - `GET /tasks/stats/weekly` — Get weekly task statistics
 - `GET /tasks/stats/weekly/detailed` — Get detailed weekly statistics
@@ -206,7 +190,7 @@ WebSocket connections require valid JWT tokens passed in the auth object:
 ```typescript
 const socket = io(`${backendUrl}/tasks`, {
   auth: { token: jwtToken },
-  transports: ['websocket', 'polling'],
+  transports: ['websocket'],
 });
 ```
 

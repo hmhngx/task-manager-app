@@ -1,6 +1,6 @@
 # Task Manager Application
 
-A full-stack, modern task management application built with React, NestJS, MongoDB, and Redux.  
+A full-stack, modern task management application built with React, NestJS, and MongoDB.  
 Supports user/admin roles, task assignment, approval workflows, comments, attachments, and **real-time collaboration** via WebSocket integration.
 
 ---
@@ -29,28 +29,21 @@ Supports user/admin roles, task assignment, approval workflows, comments, attach
 - **Real-time comments and mentions**
 - **Admin dashboard with live monitoring**
 - **Live activity feed**
-- Responsive UI with Tailwind CSS and Material-UI
+- Responsive UI with Tailwind CSS
 - State management with Redux Toolkit
 - API documentation with Swagger
 
 ---
 
-## Real-Time Features
+## Real-Time Notification System
 
-### 🚀 WebSocket Integration
-The application includes comprehensive real-time functionality:
+The application includes a comprehensive real-time notification system with the following features:
 
-- **Live Task Updates**: Status changes, assignments, and modifications broadcast instantly
-- **Real-Time Comments**: New comments appear instantly with mention notifications
-- **Live Notifications**: Task assignments, status changes, and deadline reminders
-- **Admin Dashboard Monitoring**: Real-time user activity and system statistics
-- **Live Activity Feed**: System-wide events and collaboration awareness
-
-### 📡 WebSocket Architecture
-- **Backend**: NestJS WebSocket gateways with JWT authentication
-- **Frontend**: React WebSocket context with custom hooks
-- **Events**: Task updates, comments, notifications, and admin monitoring
-- **Security**: Room-based subscriptions with proper authorization
+-   **Live Task Updates**: All task changes are broadcast instantly to relevant users.
+-   **Assignment & Mention Notifications**: Users receive immediate alerts for task assignments and when they are mentioned in comments.
+-   **Task Request Alerts**: Admins are notified of new task requests, and users receive real-time updates on the status of their requests.
+-   **Deadline & Overdue Reminders**: The system automatically sends notifications for upcoming deadlines and overdue tasks.
+-   **Push Notifications**: A pop-up notification system ensures that users never miss important updates.
 
 ---
 
@@ -75,7 +68,7 @@ Create a `.env` file:
 ```bash
 MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
-FRONTEND_URL=http://localhost:3001
+FRONTEND_URL=http://localhost:3000
 ```
 
 Start the backend:
@@ -83,7 +76,7 @@ Start the backend:
 npm run start:dev
 ```
 - API: http://localhost:3000
-- WebSocket: ws://localhost:3000/tasks
+- WebSocket: ws://localhost:3000
 - Swagger docs: http://localhost:3000/api
 
 ---
@@ -107,7 +100,7 @@ Start the frontend:
 ```bash
 npm start
 ```
-- App: http://localhost:3001 (or as configured)
+- App: http://localhost:3000 (or as configured)
 
 ---
 
@@ -116,7 +109,6 @@ npm start
 - **Frontend:** 
   - React with TypeScript
   - Redux Toolkit for state management
-  - Material-UI for UI components
   - Tailwind CSS for styling
   - React Router for navigation
   - Axios for API calls
@@ -132,33 +124,7 @@ npm start
   - **Socket.IO for WebSocket functionality**
   - Swagger for API documentation
   - Class-validator for input validation
-
----
-
-## WebSocket Events
-
-### Task Events
-- `task:created` - New task created
-- `task:updated` - Task modified
-- `task:deleted` - Task removed
-- `task:assigned` - Task assigned to user
-- `task:status_changed` - Status transition
-
-### Comment Events
-- `comment:added` - New comment on task
-- `comment:edited` - Comment modified
-- `comment:deleted` - Comment removed
-
-### Notification Events
-- `notification:task_assigned` - Task assignment
-- `notification:status_change` - Status updates
-- `notification:mention` - Comment mentions
-- `notification:deadline_approaching` - Deadline reminders
-
-### Admin Events
-- `admin:user_activity` - User login/logout
-- `admin:task_activity` - Task creation/completion
-- `admin:system_stats` - Updated statistics
+  - **@nestjs/schedule** for cron jobs
 
 ---
 
