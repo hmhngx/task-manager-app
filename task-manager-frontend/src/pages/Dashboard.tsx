@@ -1,17 +1,15 @@
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import TaskList from '../components/TaskList';
-import Sidebar from '../components/Sidebar';
 import StatsPanel from '../components/StatsPanel';
 import { Task, TaskStats } from '../types/Task';
 import { useEffect, useState } from 'react';
 import { getTasks, getTaskStats } from '../services/taskService';
-import Button from '../components/ui/Button';
 
 const Dashboard: React.FC = () => {
-  const { logout, user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate] = useState<Date | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,19 +47,6 @@ const Dashboard: React.FC = () => {
     (task) =>
       task.deadline && new Date(task.deadline).toDateString() === todayStr
   );
-
-  const completedCount = tasksForToday.filter(
-    (task) => task.status === 'done'
-  ).length;
-
-  const leftCount = tasksForToday.filter(
-    (task) => task.status !== 'done'
-  ).length;
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col">

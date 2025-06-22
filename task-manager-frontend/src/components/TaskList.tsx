@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { useAppDispatch } from '../store';
 import { fetchTasks, setFilters, setSortConfig, setPage, setRowsPerPage } from '../store/tasksSlice';
+import { useTaskSocket } from '../hooks/useTaskSocket';
 import taskService from '../services/taskService';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -29,6 +30,25 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
+  // WebSocket integration for real-time updates
+  const { isConnected } = useTaskSocket({
+    onTaskUpdate: (task) => {
+      console.log('Task updated in real-time:', task);
+    },
+    onTaskCreated: (task) => {
+      console.log('Task created in real-time:', task);
+    },
+    onTaskDeleted: (taskId) => {
+      console.log('Task deleted in real-time:', taskId);
+    },
+    onStatusChange: (taskId, oldStatus, newStatus) => {
+      console.log(`Task ${taskId} status changed from ${oldStatus} to ${newStatus}`);
+    },
+    onAssignment: (taskId, assigneeId, assignerId) => {
+      console.log(`Task ${taskId} assigned to ${assigneeId} by ${assignerId}`);
+    },
+  });
+
   useEffect(() => {
     dispatch(fetchTasks());
   }, [dispatch, selectedDate]);
@@ -37,7 +57,7 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
     try {
       const createdTask = await taskService.createTask(taskData as CreateTaskDto);
       setShowCreateForm(false);
-      dispatch(fetchTasks());
+      // No need to manually refresh - WebSocket will handle the update
       return createdTask;
     } catch (error) {
       console.error('Error creating task:', error);
@@ -98,7 +118,16 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
   return (
     <div className="p-0 md:p-4">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-indigo-700">Tasks</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-extrabold tracking-tight text-indigo-700">Tasks</h1>
+          {/* WebSocket connection status indicator */}
+          <div className="flex items-center gap-2">
+            <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <span className="text-sm text-gray-600">
+              {isConnected ? 'Live updates enabled' : 'Connecting...'}
+            </span>
+          </div>
+        </div>
         {isAdmin && (
           <Button
             onClick={() => setShowCreateForm(true)}

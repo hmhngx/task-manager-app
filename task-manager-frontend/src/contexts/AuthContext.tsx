@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginUser, registerUser, logoutUser } from '../services/authService';
+import { loginUser, registerUser, logoutUser, getStoredToken } from '../services/authService';
 import { User } from '../types';
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   login: (name: string, password: string) => Promise<void>;
   register: (name: string, password: string) => Promise<void>;
   logout: () => void;
@@ -17,12 +18,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    const storedToken = getStoredToken();
+    if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
+      setToken(storedToken);
       setIsAuthenticated(true);
     }
   }, []);
@@ -30,7 +34,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = async (name: string, password: string) => {
     try {
       const response = await loginUser(name, password);
+      const storedToken = getStoredToken();
       setUser(response);
+      setToken(storedToken);
       setIsAuthenticated(true);
       localStorage.setItem('user', JSON.stringify(response));
     } catch (error) {
@@ -41,7 +47,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const register = async (name: string, password: string) => {
     try {
       const response = await registerUser(name, password);
+      const storedToken = getStoredToken();
       setUser(response);
+      setToken(storedToken);
       setIsAuthenticated(true);
       localStorage.setItem('user', JSON.stringify(response));
     } catch (error) {
@@ -52,6 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const logout = () => {
     logoutUser();
     setUser(null);
+    setToken(null);
     setIsAuthenticated(false);
     window.location.href = '/login';
   };
@@ -60,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <AuthContext.Provider
-      value={{ user, login, register, logout, isAuthenticated, isAdmin }}
+      value={{ user, token, login, register, logout, isAuthenticated, isAdmin }}
     >
       {children}
     </AuthContext.Provider>
