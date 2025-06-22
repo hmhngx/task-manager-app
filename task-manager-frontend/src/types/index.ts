@@ -11,6 +11,20 @@ export interface Task {
   updatedAt: Date;
 }
 
+export interface Comment {
+  _id: string;
+  content: string;
+  taskId: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  user?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+}
+
 export interface TaskStats {
   totalTasks: number;
   statusCounts: {
@@ -39,6 +53,7 @@ export interface User {
 
 export interface AuthContextType {
   user: User | null;
+  token: string | null;
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, password: string) => Promise<void>;
   logout: () => void;

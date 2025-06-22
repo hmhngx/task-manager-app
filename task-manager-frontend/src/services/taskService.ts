@@ -8,26 +8,6 @@ const getAuthHeader = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-const handleResponse = async (response: Response) => {
-  console.log('Response status:', response.status);
-  console.log(
-    'Response headers:',
-    Object.fromEntries(response.headers.entries())
-  );
-  if (response.status === 401) {
-    console.log('401 error - clearing token');
-    logoutUser();
-    window.location.href = '/login';
-    throw new Error('Session expired. Please log in again.');
-  }
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Error response:', errorText);
-    throw new Error('Request failed');
-  }
-  return response.json();
-};
-
 export const getTasks = async (): Promise<Task[]> => {
   try {
     const response = await axios.get(`${API_URL}/tasks`, {
@@ -93,6 +73,28 @@ export const deleteTask = async (id: string): Promise<void> => {
 export const getWeeklyStats = async (): Promise<TaskStats> => {
   try {
     const response = await axios.get(`${API_URL}/tasks/stats/weekly`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      logoutUser();
+      window.location.href = '/login';
+    }
+    throw error;
+  }
+};
+
+export const getWeeklyStatsDetailed = async (): Promise<{
+  currentStatus: TaskStats;
+  weeklyActivity: {
+    created: number;
+    completed: number;
+    updated: number;
+  };
+}> => {
+  try {
+    const response = await axios.get(`${API_URL}/tasks/stats/weekly/detailed`, {
       headers: getAuthHeader(),
     });
     return response.data;
@@ -459,6 +461,7 @@ const taskService = {
   updateTask,
   deleteTask,
   getWeeklyStats,
+  getWeeklyStatsDetailed,
   getMonthlyStats,
   getAllTasks,
   getAllTasksWithFilters,

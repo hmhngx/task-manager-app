@@ -46,6 +46,29 @@ const tasksSlice = createSlice({
     setRowsPerPage(state, action: PayloadAction<number>) {
       state.rowsPerPage = action.payload;
     },
+    // WebSocket real-time update actions
+    updateTask(state, action: PayloadAction<Task>) {
+      const index = state.tasks.findIndex(task => 
+        task._id === action.payload._id || task.id === action.payload.id
+      );
+      if (index !== -1) {
+        state.tasks[index] = action.payload;
+      }
+    },
+    addTask(state, action: PayloadAction<Task>) {
+      // Check if task already exists to avoid duplicates
+      const exists = state.tasks.some(task => 
+        task._id === action.payload._id || task.id === action.payload.id
+      );
+      if (!exists) {
+        state.tasks.unshift(action.payload);
+      }
+    },
+    removeTask(state, action: PayloadAction<string>) {
+      state.tasks = state.tasks.filter(task => 
+        task._id !== action.payload && task.id !== action.payload
+      );
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -64,5 +87,13 @@ const tasksSlice = createSlice({
   },
 });
 
-export const { setFilters, setSortConfig, setPage, setRowsPerPage } = tasksSlice.actions;
+export const { 
+  setFilters, 
+  setSortConfig, 
+  setPage, 
+  setRowsPerPage, 
+  updateTask, 
+  addTask, 
+  removeTask 
+} = tasksSlice.actions;
 export default tasksSlice.reducer; 
