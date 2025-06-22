@@ -1,14 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Comment, CommentDocument } from '../schemas/comment.schema';
 import { Task, TaskDocument } from '../schemas/task.schema';
+import { TaskGateway } from '../../websocket/gateways/task.gateway';
 
 @Injectable()
 export class CommentsService {
   constructor(
     @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
     @InjectModel(Task.name) private taskModel: Model<TaskDocument>,
+    @Inject(forwardRef(() => TaskGateway))
+    private taskGateway: TaskGateway,
   ) {}
 
   async createComment(taskId: string, content: string, authorId: string, mentions: string[] = []) {
@@ -28,7 +31,16 @@ export class CommentsService {
       $push: { comments: comment._id },
     });
 
-    return comment;
+    // Populate comment with author info for WebSocket event
+    const populatedComment = await this.commentModel
+      .findById(comment._id)
+      .populate('author', 'username')
+      .populate('mentions', 'username');
+
+    // Emit WebSocket event for comment creation
+    await this.taskGateway.handleCommentAdded(populatedComment, taskId, authorId);
+
+    return populatedComment;
   }
 
   async getTaskComments(taskId: string) {
@@ -55,15 +67,23 @@ export class CommentsService {
       throw new Error('Not authorized to edit this comment');
     }
 
-    return this.commentModel.findByIdAndUpdate(
-      commentId,
-      {
-        content,
-        isEdited: true,
-        editedAt: new Date(),
-      },
-      { new: true },
-    );
+    const updatedComment = await this.commentModel
+      .findByIdAndUpdate(
+        commentId,
+        {
+          content,
+          isEdited: true,
+          editedAt: new Date(),
+        },
+        { new: true },
+      )
+      .populate('author', 'username')
+      .populate('mentions', 'username');
+
+    // Emit WebSocket event for comment edit
+    await this.taskGateway.handleCommentEdited(updatedComment, comment.task.toString(), userId);
+
+    return updatedComment;
   }
 
   async deleteComment(commentId: string, userId: string) {
@@ -80,6 +100,11 @@ export class CommentsService {
       $pull: { comments: commentId },
     });
 
-    return this.commentModel.findByIdAndDelete(commentId);
+    await this.commentModel.findByIdAndDelete(commentId);
+
+    // Emit WebSocket event for comment deletion
+    await this.taskGateway.handleCommentDeleted(commentId, comment.task.toString(), userId);
+
+    return { message: 'Comment deleted successfully' };
   }
 } 

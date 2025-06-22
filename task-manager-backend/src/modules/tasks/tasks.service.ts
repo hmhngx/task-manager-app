@@ -1,10 +1,17 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Task, TaskDocument, TaskStatus, TaskType, TaskPriority } from './schemas/task.schema';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { WorkflowsService } from './services/workflows.service';
+import { TaskGateway } from '../websocket/gateways/task.gateway';
 import { startOfWeek, startOfMonth } from 'date-fns';
 
 type DateFn = {
@@ -17,6 +24,8 @@ export class TasksService {
   constructor(
     @InjectModel(Task.name) private readonly taskModel: Model<TaskDocument>,
     private readonly workflowsService: WorkflowsService,
+    @Inject(forwardRef(() => TaskGateway))
+    private readonly taskGateway: TaskGateway,
   ) {}
 
   async createTask(createTaskDto: CreateTaskDto, creatorId: string) {
@@ -33,6 +42,9 @@ export class TasksService {
         $push: { subtasks: task._id },
       });
     }
+
+    // Emit WebSocket event for task creation
+    await this.taskGateway.handleTaskCreated(task, creatorId);
 
     return task;
   }
@@ -114,6 +126,10 @@ export class TasksService {
         throw new NotFoundException('Task not found');
       }
 
+      // Store old values for comparison
+      const oldStatus = task.status;
+      const oldAssignee = task.assignee?.toString();
+
       // Allow admins to update any task
       const isAdmin = userRole === 'admin';
       const isCreator = task.creator.toString() === userId;
@@ -176,6 +192,29 @@ export class TasksService {
         await this.updateParentTaskProgress(task.parentTask.toString());
       }
 
+      // Emit WebSocket events based on what changed
+      const changes = { ...updateTaskDto };
+      
+      // Handle status change
+      if (updateTaskDto.status && updateTaskDto.status !== oldStatus) {
+        await this.taskGateway.handleTaskStatusChanged(
+          updatedTask,
+          oldStatus,
+          updateTaskDto.status,
+          userId,
+        );
+      }
+
+      // Handle assignment change
+      if (updateTaskDto.assignee !== undefined && updateTaskDto.assignee !== oldAssignee) {
+        if (updateTaskDto.assignee) {
+          await this.taskGateway.handleTaskAssigned(updatedTask, updateTaskDto.assignee, userId);
+        }
+      }
+
+      // Emit general task update event
+      await this.taskGateway.handleTaskUpdated(updatedTask, userId, changes);
+
       return updatedTask;
     } catch (error: any) {
       if (error instanceof Error) {
@@ -200,16 +239,16 @@ export class TasksService {
     // Remove task from parent's subtasks if it's a subtask
     if (task.parentTask) {
       await this.taskModel.findByIdAndUpdate(task.parentTask, {
-        $pull: { subtasks: id },
+        $pull: { subtasks: task._id },
       });
     }
 
-    // Delete all subtasks
-    if (task.subtasks.length > 0) {
-      await this.taskModel.deleteMany({ _id: { $in: task.subtasks } });
-    }
+    await this.taskModel.findByIdAndDelete(id);
 
-    return this.taskModel.findByIdAndDelete(id);
+    // Emit WebSocket event for task deletion
+    await this.taskGateway.handleTaskDeleted(id, userId);
+
+    return { message: 'Task deleted successfully' };
   }
 
   async addWatcher(taskId: string, userId: string) {
@@ -220,7 +259,7 @@ export class TasksService {
 
     if (task.watchers.some((watcher) => watcher.toString() === userId)) {
       throw new BadRequestException('User is already watching this task');
-  }
+    }
 
     return this.taskModel.findByIdAndUpdate(
       taskId,
@@ -238,7 +277,7 @@ export class TasksService {
     return this.taskModel.findByIdAndUpdate(
       taskId,
       { $pull: { watchers: new Types.ObjectId(userId) } },
-        { new: true },
+      { new: true },
     );
   }
 
@@ -321,26 +360,114 @@ export class TasksService {
     }
   }
 
-  async getWeeklyStats(): Promise<{ todo: number; done: number; late: number; in_progress: number }> {
+  async getWeeklyStats(): Promise<{
+    todo: number;
+    done: number;
+    late: number;
+    in_progress: number;
+  }> {
     try {
-    const startOfWeekFn = startOfWeek as DateFn;
-    const startOfWeekDate = startOfWeekFn(new Date());
-    const tasks = await this.taskModel
-      .find({
-        createdAt: { $gte: startOfWeekDate },
-      })
+      const startOfWeekFn = startOfWeek as DateFn;
+      const startOfWeekDate = startOfWeekFn(new Date());
+      const currentDate = new Date();
+      console.log('[TasksService] getWeeklyStats - currentDate:', currentDate);
+      console.log('[TasksService] getWeeklyStats - startOfWeekDate:', startOfWeekDate);
+      
+      // Get all tasks for comparison
+      const allTasks = await this.taskModel.find().lean().exec();
+      console.log('[TasksService] getWeeklyStats - all tasks count:', allTasks.length);
+      
+      // Get tasks that were either created this week OR updated this week
+      const weeklyTasks = await this.taskModel
+        .find({
+          $or: [
+            { createdAt: { $gte: startOfWeekDate } },
+            { updatedAt: { $gte: startOfWeekDate } },
+          ],
+        })
         .lean()
-      .exec();
+        .exec();
 
-    return {
-      todo: tasks.filter((t) => t.status === TaskStatus.TODO).length,
-      done: tasks.filter((t) => t.status === TaskStatus.DONE).length,
-      late: tasks.filter((t) => t.status === TaskStatus.LATE).length,
-      in_progress: tasks.filter((t) => t.status === TaskStatus.IN_PROGRESS).length,
-    };
+      console.log('[TasksService] getWeeklyStats - weekly tasks found:', weeklyTasks.length);
+      console.log(
+        '[TasksService] getWeeklyStats - weekly tasks:',
+        weeklyTasks.map((t) => ({
+          id: t._id,
+          status: t.status,
+          createdAt: (t as any).createdAt,
+          updatedAt: (t as any).updatedAt,
+          title: t.title,
+        })),
+      );
+
+      // Check status distribution
+      const statusCounts = weeklyTasks.reduce((acc, task) => {
+        acc[task.status] = (acc[task.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      console.log('[TasksService] getWeeklyStats - status counts:', statusCounts);
+
+      const result = {
+        todo: weeklyTasks.filter((t) => t.status === TaskStatus.TODO).length,
+        done: weeklyTasks.filter((t) => t.status === TaskStatus.DONE).length,
+        late: weeklyTasks.filter((t) => t.status === TaskStatus.LATE).length,
+        in_progress: weeklyTasks.filter((t) => t.status === TaskStatus.IN_PROGRESS).length,
+      };
+
+      console.log('[TasksService] getWeeklyStats - result:', result);
+      return result;
     } catch (error) {
       console.error('Error in getWeeklyStats:', error);
       throw new BadRequestException('Failed to fetch weekly stats');
+    }
+  }
+
+  // Alternative method for more accurate weekly stats
+  async getWeeklyStatsDetailed(): Promise<{
+    currentStatus: { todo: number; done: number; late: number; in_progress: number };
+    weeklyActivity: { created: number; completed: number; updated: number };
+  }> {
+    try {
+      const startOfWeekFn = startOfWeek as DateFn;
+      const startOfWeekDate = startOfWeekFn(new Date());
+      
+      // Get all current tasks (regardless of when they were created)
+      const allTasks = await this.taskModel.find().lean().exec();
+      
+      // Get tasks created this week
+      const createdThisWeek = await this.taskModel
+        .find({ createdAt: { $gte: startOfWeekDate } })
+        .lean()
+        .exec();
+      
+      // Get tasks updated this week
+      const updatedThisWeek = await this.taskModel
+        .find({ updatedAt: { $gte: startOfWeekDate } })
+        .lean()
+        .exec();
+      
+      // Get tasks completed this week (status changed to DONE)
+      const completedThisWeek = updatedThisWeek.filter(task => 
+        task.status === TaskStatus.DONE && 
+        (task as any).updatedAt >= startOfWeekDate
+      );
+
+      return {
+        currentStatus: {
+          todo: allTasks.filter((t) => t.status === TaskStatus.TODO).length,
+          done: allTasks.filter((t) => t.status === TaskStatus.DONE).length,
+          late: allTasks.filter((t) => t.status === TaskStatus.LATE).length,
+          in_progress: allTasks.filter((t) => t.status === TaskStatus.IN_PROGRESS).length,
+        },
+        weeklyActivity: {
+          created: createdThisWeek.length,
+          completed: completedThisWeek.length,
+          updated: updatedThisWeek.length,
+        }
+      };
+    } catch (error) {
+      console.error('Error in getWeeklyStatsDetailed:', error);
+      throw new BadRequestException('Failed to fetch detailed weekly stats');
     }
   }
 

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TasksController } from './tasks.controller';
 import { TasksService } from './tasks.service';
@@ -9,6 +9,9 @@ import { Workflow, WorkflowSchema } from './schemas/workflow.schema';
 import { CommentsService } from './services/comments.service';
 import { AttachmentsService } from './services/attachments.service';
 import { WorkflowsService } from './services/workflows.service';
+import { NotificationsService } from './services/notifications.service';
+import { WebSocketModule } from '../websocket/websocket.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
@@ -18,9 +21,23 @@ import { WorkflowsService } from './services/workflows.service';
       { name: Attachment.name, schema: AttachmentSchema },
       { name: Workflow.name, schema: WorkflowSchema },
     ]),
+    forwardRef(() => WebSocketModule),
+    forwardRef(() => UsersModule),
   ],
   controllers: [TasksController],
-  providers: [TasksService, CommentsService, AttachmentsService, WorkflowsService],
-  exports: [TasksService, CommentsService, AttachmentsService, WorkflowsService],
+  providers: [
+    TasksService,
+    CommentsService,
+    AttachmentsService,
+    WorkflowsService,
+    NotificationsService,
+  ],
+  exports: [
+    TasksService,
+    CommentsService,
+    AttachmentsService,
+    WorkflowsService,
+    NotificationsService,
+  ],
 })
 export class TasksModule {}

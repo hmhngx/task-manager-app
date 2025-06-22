@@ -24,7 +24,7 @@ import { RefreshToken, RefreshTokenSchema } from './schemas/refresh-token.schema
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
-  exports: [AuthService],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {
   private readonly logger = new Logger(AuthModule.name);

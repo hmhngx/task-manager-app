@@ -5,6 +5,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { UsersModule } from './modules/users/users.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { WebSocketModule } from './modules/websocket/websocket.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     TasksModule,
     UsersModule,
     ReportsModule,
+    WebSocketModule,
   ],
 })
 export class AppModule {}
