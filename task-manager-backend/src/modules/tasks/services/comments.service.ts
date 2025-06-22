@@ -69,13 +69,13 @@ export class CommentsService {
 
     const updatedComment = await this.commentModel
       .findByIdAndUpdate(
-        commentId,
-        {
-          content,
-          isEdited: true,
-          editedAt: new Date(),
-        },
-        { new: true },
+      commentId,
+      {
+        content,
+        isEdited: true,
+        editedAt: new Date(),
+      },
+      { new: true },
       )
       .populate('author', 'username')
       .populate('mentions', 'username');

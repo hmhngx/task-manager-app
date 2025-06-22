@@ -8,7 +8,7 @@ import {
 import { UseGuards, Inject, forwardRef } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { WebSocketAuthGuard } from '../guards/websocket-auth.guard';
-import { WebSocketService } from '../services/websocket.service';
+import { WebSocketService, NotificationData } from '../services/websocket.service';
 import { TasksService } from '../../tasks/tasks.service';
 import { CommentsService } from '../../tasks/services/comments.service';
 import { NotificationsService } from '../../tasks/services/notifications.service';
@@ -115,6 +115,11 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
       creator: creatorId,
       timestamp: new Date(),
     });
+
+    // If task requires approval, notify admins
+    if (task.status === 'pending_approval') {
+      this.webSocketService.sendTaskRequestNotification(task, creatorId);
+    }
   }
 
   /**
@@ -137,6 +142,11 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
       changes,
       timestamp: new Date(),
     });
+
+    // Check for deadline changes and send reminders
+    if (changes.deadline) {
+      await this.handleDeadlineChange(task, updaterId);
+    }
   }
 
   /**
@@ -152,11 +162,18 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     // Send notification to assignee
-    this.webSocketService.broadcastToUser(assigneeId, 'notification:task_assigned', {
-      task,
-      assigner: assignerId,
+    const notification: NotificationData = {
+      id: `assignment-${task._id}-${Date.now()}`,
+      type: 'task_assigned',
+      title: 'Task Assigned',
+      message: `You have been assigned to task: "${task.title}"`,
+      data: { task, assigner: assignerId },
       timestamp: new Date(),
-    });
+      read: false,
+      priority: 'medium'
+    };
+    
+    this.webSocketService.sendNotification(assigneeId, notification);
 
     // Broadcast to admin room
     this.webSocketService.broadcastToAdmins('admin:task_activity', {
@@ -182,24 +199,39 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }, updaterId);
 
     // Send notifications to relevant users
+    const notifyUsers: string[] = [];
+    
     if (task.assignee && task.assignee.toString() !== updaterId) {
-      this.webSocketService.broadcastToUser(task.assignee.toString(), 'notification:status_change', {
-        task,
-        oldStatus,
-        newStatus,
-        updater: updaterId,
-        timestamp: new Date(),
+      notifyUsers.push(task.assignee.toString());
+    }
+    
+    if (task.creator.toString() !== updaterId) {
+      notifyUsers.push(task.creator.toString());
+    }
+
+    // Add watchers to notification list
+    if (task.watchers && task.watchers.length > 0) {
+      task.watchers.forEach((watcher: any) => {
+        const watcherId = watcher._id ? watcher._id.toString() : watcher.toString();
+        if (watcherId !== updaterId && !notifyUsers.includes(watcherId)) {
+          notifyUsers.push(watcherId);
+        }
       });
     }
 
-    if (task.creator.toString() !== updaterId) {
-      this.webSocketService.broadcastToUser(task.creator.toString(), 'notification:status_change', {
-        task,
-        oldStatus,
-        newStatus,
-        updater: updaterId,
+    if (notifyUsers.length > 0) {
+      const notification: NotificationData = {
+        id: `status-${task._id}-${Date.now()}`,
+        type: 'status_change',
+        title: 'Task Status Changed',
+        message: `Task "${task.title}" status changed from ${oldStatus} to ${newStatus}`,
+        data: { task, oldStatus, newStatus, updater: updaterId },
         timestamp: new Date(),
-      });
+        read: false,
+        priority: 'medium'
+      };
+      
+      this.webSocketService.sendNotificationToUsers(notifyUsers, notification);
     }
 
     // Broadcast to admin room
@@ -214,7 +246,7 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
-   * Handle comment added event
+   * Handle comment added event with enhanced notifications
    */
   async handleCommentAdded(comment: any, taskId: string, authorId: string) {
     // Broadcast to task room
@@ -225,18 +257,53 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
       timestamp: new Date(),
     }, authorId);
 
-    // Handle mentions
-    if (comment.mentions && comment.mentions.length > 0) {
-      comment.mentions.forEach((mentionId: string) => {
-        if (mentionId !== authorId) {
-          this.webSocketService.broadcastToUser(mentionId, 'notification:mention', {
-            comment,
-            taskId,
-            author: authorId,
-            timestamp: new Date(),
-          });
+    // Get task details for notifications
+    const task = await this.tasksService.getTaskById(taskId);
+    const notifyUsers: string[] = [];
+
+    // Add task participants to notification list
+    if (task.assignee && task.assignee.toString() !== authorId) {
+      notifyUsers.push(task.assignee.toString());
+    }
+    
+    if (task.creator.toString() !== authorId) {
+      notifyUsers.push(task.creator.toString());
+    }
+
+    // Add watchers to notification list
+    if (task.watchers && task.watchers.length > 0) {
+      task.watchers.forEach((watcher: any) => {
+        const watcherId = watcher._id ? watcher._id.toString() : watcher.toString();
+        if (watcherId !== authorId && !notifyUsers.includes(watcherId)) {
+          notifyUsers.push(watcherId);
         }
       });
+    }
+
+    // Handle mentions
+    if (comment.mentions && comment.mentions.length > 0) {
+      comment.mentions.forEach((mention: any) => {
+        const mentionId = mention._id ? mention._id.toString() : mention.toString();
+        if (mentionId !== authorId && !notifyUsers.includes(mentionId)) {
+          notifyUsers.push(mentionId);
+        }
+      });
+    }
+
+    // Send notifications to relevant users
+    if (notifyUsers.length > 0) {
+      const notification: NotificationData = {
+        id: `comment-${comment._id}-${Date.now()}`,
+        type: 'new_comment',
+        title: 'New Comment',
+        message: `New comment on task "${task.title}": ${comment.content.substring(0, 100)}${comment.content.length > 100 ? '...' : ''}`,
+        data: { comment, task, author: authorId },
+        timestamp: new Date(),
+        read: false,
+        priority: 'low'
+      };
+      
+      this.webSocketService.sendNotificationToUsers(notifyUsers, notification);
     }
 
     // Broadcast to admin room
@@ -289,5 +356,87 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
       deleter: deleterId,
       timestamp: new Date(),
     });
+  }
+
+  /**
+   * Handle task request approval/rejection
+   */
+  async handleTaskRequestResponse(task: any, requesterId: string, approved: boolean, adminId: string) {
+    this.webSocketService.sendTaskRequestResponseNotification(requesterId, task, approved, adminId);
+  }
+
+  /**
+   * Handle participant changes (add/remove users from task)
+   */
+  async handleParticipantChange(task: any, action: 'added' | 'removed', participantId: string, adminId: string) {
+    this.webSocketService.sendParticipantChangeNotification(task, action, participantId, adminId);
+  }
+
+  /**
+   * Handle deadline changes and send reminders
+   */
+  async handleDeadlineChange(task: any, updaterId: string) {
+    const notifyUsers: string[] = [];
+    
+    if (task.assignee && task.assignee.toString() !== updaterId) {
+      notifyUsers.push(task.assignee.toString());
+    }
+    
+    if (task.creator.toString() !== updaterId) {
+      notifyUsers.push(task.creator.toString());
+    }
+
+    if (notifyUsers.length > 0) {
+      const notification: NotificationData = {
+        id: `deadline-change-${task._id}-${Date.now()}`,
+        type: 'deadline_changed',
+        title: 'Task Deadline Changed',
+        message: `Deadline for task "${task.title}" has been updated`,
+        data: { task, updater: updaterId },
+        timestamp: new Date(),
+        read: false,
+        priority: 'medium'
+      };
+      
+      this.webSocketService.sendNotificationToUsers(notifyUsers, notification);
+    }
+  }
+
+  /**
+   * Handle overdue task notifications
+   */
+  async handleOverdueTask(task: any) {
+    const notifyUsers: string[] = [];
+    
+    if (task.assignee) {
+      notifyUsers.push(task.assignee.toString());
+    }
+    
+    if (task.creator) {
+      notifyUsers.push(task.creator.toString());
+    }
+
+    if (notifyUsers.length > 0) {
+      this.webSocketService.sendOverdueNotification(notifyUsers, task);
+    }
+  }
+
+  /**
+   * Handle deadline reminder notifications
+   */
+  async handleDeadlineReminder(task: any) {
+    const notifyUsers: string[] = [];
+    
+    if (task.assignee) {
+      notifyUsers.push(task.assignee.toString());
+    }
+    
+    if (task.creator) {
+      notifyUsers.push(task.creator.toString());
+    }
+
+    if (notifyUsers.length > 0) {
+      this.webSocketService.sendDeadlineReminder(notifyUsers, task);
+    }
   }
 } 

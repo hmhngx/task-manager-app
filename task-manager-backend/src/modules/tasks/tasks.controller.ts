@@ -55,6 +55,23 @@ export class TasksController {
     return this.tasksService.createTask(createTaskDto, req.user.id);
   }
 
+  @Post('request')
+  createTaskRequest(@Body() createTaskDto: CreateTaskDto, @Req() req: RequestWithUser) {
+    return this.tasksService.createTaskRequest(createTaskDto, req.user.id);
+  }
+
+  @Post(':id/approve')
+  @Roles(UserRole.ADMIN)
+  approveTaskRequest(@Param('id') taskId: string, @Req() req: RequestWithUser) {
+    return this.tasksService.handleTaskRequest(taskId, true, req.user.id);
+  }
+
+  @Post(':id/reject')
+  @Roles(UserRole.ADMIN)
+  rejectTaskRequest(@Param('id') taskId: string, @Req() req: RequestWithUser) {
+    return this.tasksService.handleTaskRequest(taskId, false, req.user.id);
+  }
+
   @Get()
   getAll(@Query() query: any) {
     return this.tasksService.getAllTasks(query);
@@ -360,5 +377,47 @@ export class TasksController {
   @Delete(':id/watchers')
   removeWatcher(@Param('id') taskId: string, @Req() req: RequestWithUser) {
     return this.tasksService.removeWatcher(taskId, req.user.id);
+  }
+
+  @Post(':id/participants')
+  @Roles(UserRole.ADMIN)
+  addParticipant(
+    @Param('id') taskId: string,
+    @Body('participantId') participantId: string,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.tasksService.addParticipant(taskId, participantId, req.user.id);
+  }
+
+  @Delete(':id/participants/:participantId')
+  @Roles(UserRole.ADMIN)
+  removeParticipant(
+    @Param('id') taskId: string,
+    @Param('participantId') participantId: string,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.tasksService.removeParticipant(taskId, participantId, req.user.id);
+  }
+
+  @Get('overdue')
+  getOverdueTasks() {
+    return this.tasksService.getOverdueTasks();
+  }
+
+  @Get('upcoming-deadlines')
+  getUpcomingDeadlineTasks() {
+    return this.tasksService.getUpcomingDeadlineTasks();
+  }
+
+  @Post('check-overdue')
+  @Roles(UserRole.ADMIN)
+  checkOverdueTasks() {
+    return this.tasksService.checkOverdueTasks();
+  }
+
+  @Post('check-deadlines')
+  @Roles(UserRole.ADMIN)
+  checkUpcomingDeadlines() {
+    return this.tasksService.checkUpcomingDeadlines();
   }
 }

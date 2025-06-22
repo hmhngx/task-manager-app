@@ -49,6 +49,56 @@ export class TasksService {
     return task;
   }
 
+  /**
+   * Create a task request that requires admin approval
+   */
+  async createTaskRequest(createTaskDto: CreateTaskDto, requesterId: string) {
+    const task = await this.taskModel.create({
+      ...createTaskDto,
+      creator: requesterId,
+      userId: requesterId,
+      status: TaskStatus.PENDING_APPROVAL,
+      priority: createTaskDto.priority || TaskPriority.MEDIUM,
+      requesters: [requesterId],
+    });
+
+    // Emit WebSocket event for task request
+    await this.taskGateway.handleTaskCreated(task, requesterId);
+
+    return task;
+  }
+
+  /**
+   * Approve or reject a task request
+   */
+  async handleTaskRequest(taskId: string, approved: boolean, adminId: string) {
+    const task = await this.taskModel.findById(taskId);
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    if (task.status !== TaskStatus.PENDING_APPROVAL) {
+      throw new BadRequestException('Task is not pending approval');
+    }
+
+    const newStatus = approved ? TaskStatus.TODO : TaskStatus.LATE; // Use LATE as rejected status
+    const updatedTask = await this.taskModel.findByIdAndUpdate(
+      taskId,
+      { status: newStatus },
+      { new: true }
+    ).populate('creator', 'username');
+
+    // Notify the requester about the decision
+    await this.taskGateway.handleTaskRequestResponse(
+      updatedTask,
+      task.creator.toString(),
+      approved,
+      adminId
+    );
+
+    return updatedTask;
+  }
+
   async getAllTasks(filters: any = {}): Promise<TaskDocument[]> {
     try {
       const query = this.taskModel.find(filters);
@@ -491,6 +541,104 @@ export class TasksService {
     } catch (error) {
       console.error('Error in getMonthlyStats:', error);
       throw new BadRequestException('Failed to fetch monthly stats');
+    }
+  }
+
+  /**
+   * Add a participant to a task
+   */
+  async addParticipant(taskId: string, participantId: string, adminId: string) {
+    const task = await this.taskModel.findById(taskId);
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    // Add to watchers if not already present
+    if (!task.watchers.some((watcher) => watcher.toString() === participantId)) {
+      await this.taskModel.findByIdAndUpdate(taskId, {
+        $push: { watchers: new Types.ObjectId(participantId) },
+      });
+    }
+
+    // Notify the participant
+    await this.taskGateway.handleParticipantChange(task, 'added', participantId, adminId);
+
+    return this.taskModel.findById(taskId).populate('watchers', 'username');
+  }
+
+  /**
+   * Remove a participant from a task
+   */
+  async removeParticipant(taskId: string, participantId: string, adminId: string) {
+    const task = await this.taskModel.findById(taskId);
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    // Remove from watchers
+    await this.taskModel.findByIdAndUpdate(taskId, {
+      $pull: { watchers: new Types.ObjectId(participantId) },
+    });
+
+    // Notify the participant
+    await this.taskGateway.handleParticipantChange(task, 'removed', participantId, adminId);
+
+    return this.taskModel.findById(taskId).populate('watchers', 'username');
+  }
+
+  /**
+   * Get tasks that are overdue
+   */
+  async getOverdueTasks() {
+    const now = new Date();
+    return this.taskModel
+      .find({
+        deadline: { $lt: now },
+        status: { $nin: [TaskStatus.DONE, TaskStatus.LATE] },
+      })
+      .populate('assignee', 'username')
+      .populate('creator', 'username')
+      .sort({ deadline: 1 })
+      .exec();
+  }
+
+  /**
+   * Get tasks with upcoming deadlines (within 24 hours)
+   */
+  async getUpcomingDeadlineTasks() {
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    
+    return this.taskModel
+      .find({
+        deadline: { $gte: now, $lte: tomorrow },
+        status: { $nin: [TaskStatus.DONE, TaskStatus.LATE] },
+      })
+      .populate('assignee', 'username')
+      .populate('creator', 'username')
+      .sort({ deadline: 1 })
+      .exec();
+  }
+
+  /**
+   * Check for overdue tasks and send notifications
+   */
+  async checkOverdueTasks() {
+    const overdueTasks = await this.getOverdueTasks();
+    
+    for (const task of overdueTasks) {
+      await this.taskGateway.handleOverdueTask(task);
+    }
+  }
+
+  /**
+   * Check for upcoming deadlines and send reminders
+   */
+  async checkUpcomingDeadlines() {
+    const upcomingTasks = await this.getUpcomingDeadlineTasks();
+    
+    for (const task of upcomingTasks) {
+      await this.taskGateway.handleDeadlineReminder(task);
     }
   }
 }
