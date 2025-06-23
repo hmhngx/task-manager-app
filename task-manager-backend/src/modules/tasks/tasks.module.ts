@@ -12,6 +12,7 @@ import { WorkflowsService } from './services/workflows.service';
 import { NotificationsService } from './services/notifications.service';
 import { WebSocketModule } from '../websocket/websocket.module';
 import { UsersModule } from '../users/users.module';
+import { NotificationModule } from '../notifications/notification.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { UsersModule } from '../users/users.module';
     ]),
     forwardRef(() => WebSocketModule),
     forwardRef(() => UsersModule),
+    forwardRef(() => NotificationModule),
   ],
   controllers: [TasksController],
   providers: [

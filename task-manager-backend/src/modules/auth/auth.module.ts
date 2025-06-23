@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
+import { NotificationModule } from '../notifications/notification.module';
 import { JwtStrategy } from './jwt.strategy';
 import { User, UserSchema } from '../users/user.schema';
 import { RefreshToken, RefreshTokenSchema } from './schemas/refresh-token.schema';
@@ -12,6 +13,7 @@ import { RefreshToken, RefreshTokenSchema } from './schemas/refresh-token.schema
 @Module({
   imports: [
     UsersModule,
+    NotificationModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'c82455ac-0068-4a90-9516-6bd234b556e2',

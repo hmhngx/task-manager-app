@@ -7,6 +7,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
 import { UsersModule } from './modules/users/users.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { WebSocketModule } from './modules/websocket/websocket.module';
+import { NotificationModule } from './modules/notifications/notification.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { WebSocketModule } from './modules/websocket/websocket.module';
     UsersModule,
     ReportsModule,
     WebSocketModule,
+    NotificationModule,
   ],
 })
 export class AppModule {}
