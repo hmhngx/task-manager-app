@@ -4,6 +4,7 @@ import {
   BadRequestException,
   Inject,
   forwardRef,
+  Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -12,7 +13,11 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { WorkflowsService } from './services/workflows.service';
 import { TaskGateway } from '../websocket/gateways/task.gateway';
+import { NotificationService } from '../notifications/services/notification.service';
+import { NotificationGateway } from '../websocket/gateways/notification.gateway';
+import { UsersService } from '../users/users.service';
 import { startOfWeek, startOfMonth } from 'date-fns';
+import { NotificationType, NotificationPriority } from '../../shared/interfaces/notification.interface';
 
 type DateFn = {
   (date: Date | number): Date;
@@ -21,11 +26,17 @@ type DateFn = {
 
 @Injectable()
 export class TasksService {
+  private readonly logger = new Logger(TasksService.name);
+
   constructor(
     @InjectModel(Task.name) private readonly taskModel: Model<TaskDocument>,
     private readonly workflowsService: WorkflowsService,
     @Inject(forwardRef(() => TaskGateway))
     private readonly taskGateway: TaskGateway,
+    private readonly notificationService: NotificationService,
+    @Inject(forwardRef(() => NotificationGateway))
+    private readonly notificationGateway: NotificationGateway,
+    private readonly usersService: UsersService,
   ) {}
 
   async createTask(createTaskDto: CreateTaskDto, creatorId: string) {
@@ -46,6 +57,33 @@ export class TasksService {
     // Emit WebSocket event for task creation
     await this.taskGateway.handleTaskCreated(task, creatorId);
 
+    // Notify all users (broadcast)
+    const allUsers = await this.usersService.findAll();
+    for (const user of allUsers) {
+      if (user._id.toString() !== creatorId) {
+        await this.notificationService.createAndSendNotification(user._id.toString(), {
+          title: 'New Task Created',
+          message: `Task "${task.title}" was created`,
+          type: NotificationType.TASK_CREATED,
+          priority: NotificationPriority.MEDIUM,
+          data: { taskId: task._id.toString() },
+          timestamp: new Date(),
+        });
+        
+        // Send WebSocket notification
+        this.notificationGateway.sendNotificationToUser(user._id.toString(), {
+          id: task._id.toString(),
+          title: 'New Task Created',
+          message: `Task "${task.title}" was created`,
+          type: NotificationType.TASK_CREATED,
+          priority: NotificationPriority.MEDIUM,
+          data: { taskId: task._id.toString() },
+          read: false,
+          timestamp: new Date(),
+        });
+      }
+    }
+
     return task;
   }
 
@@ -64,6 +102,31 @@ export class TasksService {
 
     // Emit WebSocket event for task request
     await this.taskGateway.handleTaskCreated(task, requesterId);
+
+    // Notify all admins about the request
+    const adminUsers = await this.usersService.findAdmins();
+    for (const admin of adminUsers) {
+      await this.notificationService.createAndSendNotification(admin._id.toString(), {
+        title: 'Task Request',
+        message: `A new task request "${task.title}" was submitted`,
+        type: NotificationType.TASK_REQUEST,
+        priority: NotificationPriority.MEDIUM,
+        data: { taskId: task._id.toString() },
+        timestamp: new Date(),
+      });
+      
+      // Send WebSocket notification
+      this.notificationGateway.sendNotificationToUser(admin._id.toString(), {
+        id: task._id.toString(),
+        title: 'Task Request',
+        message: `A new task request "${task.title}" was submitted`,
+        type: NotificationType.TASK_REQUEST,
+        priority: NotificationPriority.MEDIUM,
+        data: { taskId: task._id.toString() },
+        read: false,
+        timestamp: new Date(),
+      });
+    }
 
     return task;
   }
@@ -96,13 +159,34 @@ export class TasksService {
       adminId
     );
 
+    // Notify requester
+    await this.notificationService.createAndSendNotification(task.creator.toString(), {
+      title: `Task Request ${approved ? 'Approved' : 'Rejected'}`,
+      message: `Your task request "${task.title}" was ${approved ? 'approved' : 'rejected'}`,
+      type: NotificationType.TASK_REQUEST_RESPONSE,
+      priority: NotificationPriority.MEDIUM,
+      data: { taskId: task._id.toString() },
+      timestamp: new Date(),
+    });
+
+    // Send WebSocket notification
+    this.notificationGateway.sendNotificationToUser(task.creator.toString(), {
+      id: task._id.toString(),
+      title: `Task Request ${approved ? 'Approved' : 'Rejected'}`,
+      message: `Your task request "${task.title}" was ${approved ? 'approved' : 'rejected'}`,
+      type: NotificationType.TASK_REQUEST_RESPONSE,
+      priority: NotificationPriority.MEDIUM,
+      data: { taskId: task._id.toString() },
+      read: false,
+      timestamp: new Date(),
+    });
+
     return updatedTask;
   }
 
   async getAllTasks(filters: any = {}): Promise<TaskDocument[]> {
     try {
       const query = this.taskModel.find(filters);
-      
       const populatedQuery = query
         .populate({
           path: 'assignee',
@@ -265,6 +349,19 @@ export class TasksService {
       // Emit general task update event
       await this.taskGateway.handleTaskUpdated(updatedTask, userId, changes);
 
+      // Notify all participants (assignee, creator, watchers)
+      const participantIds = [task.assignee?.toString(), task.creator?.toString(), ...(task.watchers || []).map((w) => w.toString())].filter(Boolean);
+      for (const userId of participantIds) {
+        await this.notificationService.createAndSendNotification(userId, {
+          type: NotificationType.TASK_STATUS_CHANGED,
+          title: 'Task Status Changed',
+          message: `Task "${task.title}" status changed to ${updateTaskDto.status}`,
+          taskId: task._id.toString(),
+          priority: NotificationPriority.MEDIUM,
+          timestamp: new Date(),
+        });
+      }
+
       return updatedTask;
     } catch (error: any) {
       if (error instanceof Error) {
@@ -297,6 +394,19 @@ export class TasksService {
 
     // Emit WebSocket event for task deletion
     await this.taskGateway.handleTaskDeleted(id, userId);
+
+    // Notify all participants (assignee, creator, watchers)
+    const participantIds = [task.assignee?.toString(), task.creator?.toString(), ...(task.watchers || []).map((w) => w.toString())].filter(Boolean);
+    for (const userId of participantIds) {
+      await this.notificationService.createAndSendNotification(userId, {
+        type: NotificationType.TASK_DELETED,
+        title: 'Task Deleted',
+        message: `Task "${task.title}" was deleted`,
+        taskId: task._id.toString(),
+        priority: NotificationPriority.MEDIUM,
+        timestamp: new Date(),
+      });
+    }
 
     return { message: 'Task deleted successfully' };
   }
@@ -561,7 +671,26 @@ export class TasksService {
     }
 
     // Notify the participant
-    await this.taskGateway.handleParticipantChange(task, 'added', participantId, adminId);
+    await this.notificationService.createAndSendNotification(participantId, {
+      title: 'Participant Added',
+      message: `You have been added to task "${task.title}"`,
+      type: NotificationType.PARTICIPANT_ADDED,
+      priority: NotificationPriority.MEDIUM,
+      data: { taskId: task._id.toString() },
+      timestamp: new Date(),
+    });
+
+    // Send WebSocket notification
+    this.notificationGateway.sendNotificationToUser(participantId, {
+      id: task._id.toString(),
+      title: 'Participant Added',
+      message: `You have been added to task "${task.title}"`,
+      type: NotificationType.PARTICIPANT_ADDED,
+      priority: NotificationPriority.MEDIUM,
+      data: { taskId: task._id.toString() },
+      read: false,
+      timestamp: new Date(),
+    });
 
     return this.taskModel.findById(taskId).populate('watchers', 'username');
   }
@@ -582,6 +711,28 @@ export class TasksService {
 
     // Notify the participant
     await this.taskGateway.handleParticipantChange(task, 'removed', participantId, adminId);
+
+    // Notify the participant
+    await this.notificationService.createAndSendNotification(participantId, {
+      title: 'Participant Removed',
+      message: `You have been removed from task "${task.title}"`,
+      type: NotificationType.PARTICIPANT_REMOVED,
+      priority: NotificationPriority.MEDIUM,
+      data: { taskId: task._id.toString() },
+      timestamp: new Date(),
+    });
+
+    // Send WebSocket notification
+    this.notificationGateway.sendNotificationToUser(participantId, {
+      id: task._id.toString(),
+      title: 'Participant Removed',
+      message: `You have been removed from task "${task.title}"`,
+      type: NotificationType.PARTICIPANT_REMOVED,
+      priority: NotificationPriority.MEDIUM,
+      data: { taskId: task._id.toString() },
+      read: false,
+      timestamp: new Date(),
+    });
 
     return this.taskModel.findById(taskId).populate('watchers', 'username');
   }
@@ -640,5 +791,83 @@ export class TasksService {
     for (const task of upcomingTasks) {
       await this.taskGateway.handleDeadlineReminder(task);
     }
+  }
+
+  // Example for task assignment:
+  async assignTask(taskId: string, assigneeId: string, assignerId: string) {
+    const task = await this.taskModel.findByIdAndUpdate(
+      taskId,
+      { assignee: assigneeId },
+      { new: true },
+    );
+    if (!task) throw new NotFoundException('Task not found');
+    
+    // Notify assignee
+    await this.notificationService.createAndSendNotification(assigneeId, {
+      title: 'Task Assigned',
+      message: `You have been assigned to task "${task.title}"`,
+      type: NotificationType.TASK_ASSIGNED,
+      priority: NotificationPriority.MEDIUM,
+      data: { taskId: task._id.toString() },
+      timestamp: new Date(),
+    });
+
+    // Send WebSocket notification
+    this.notificationGateway.sendNotificationToUser(assigneeId, {
+      id: task._id.toString(),
+      title: 'Task Assigned',
+      message: `You have been assigned to task "${task.title}"`,
+      type: NotificationType.TASK_ASSIGNED,
+      priority: NotificationPriority.MEDIUM,
+      data: { taskId: task._id.toString() },
+      read: false,
+      timestamp: new Date(),
+    });
+    
+    return task;
+  }
+
+  // Example for status change:
+  async updateTaskStatus(taskId: string, newStatus: TaskStatus, updaterId: string) {
+    const task = await this.taskModel.findByIdAndUpdate(
+      taskId,
+      { status: newStatus },
+      { new: true },
+    );
+    if (!task) throw new NotFoundException('Task not found');
+    
+    // Notify all participants (assignee, creator, watchers)
+    const participantIds = [
+      task.assignee?.toString(),
+      task.creator?.toString(),
+      ...(task.watchers || []).map((w) => w.toString()),
+    ].filter(Boolean);
+    
+    for (const userId of participantIds) {
+      if (userId !== updaterId) {
+        await this.notificationService.createAndSendNotification(userId, {
+          title: 'Task Status Changed',
+          message: `Task "${task.title}" status changed to ${newStatus}`,
+          type: NotificationType.TASK_STATUS_CHANGED,
+          priority: NotificationPriority.MEDIUM,
+          data: { taskId: task._id.toString(), status: newStatus },
+          timestamp: new Date(),
+        });
+
+        // Send WebSocket notification
+        this.notificationGateway.sendNotificationToUser(userId, {
+          id: task._id.toString(),
+          title: 'Task Status Changed',
+          message: `Task "${task.title}" status changed to ${newStatus}`,
+          type: NotificationType.TASK_STATUS_CHANGED,
+          priority: NotificationPriority.MEDIUM,
+          data: { taskId: task._id.toString(), status: newStatus },
+          read: false,
+          timestamp: new Date(),
+        });
+      }
+    }
+    
+    return task;
   }
 }

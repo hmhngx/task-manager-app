@@ -61,6 +61,10 @@ export class UsersService {
     return this.userModel.find().exec();
   }
 
+  async findAdmins(): Promise<User[]> {
+    return this.userModel.find({ role: UserRole.ADMIN }).exec();
+  }
+
   async delete(id: string): Promise<void> {
     await this.userModel.findByIdAndDelete(id).exec();
   }

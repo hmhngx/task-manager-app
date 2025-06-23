@@ -4,6 +4,12 @@ import { Model } from 'mongoose';
 import { Comment, CommentDocument } from '../schemas/comment.schema';
 import { Task, TaskDocument } from '../schemas/task.schema';
 import { TaskGateway } from '../../websocket/gateways/task.gateway';
+import { NotificationService } from '../../notifications/services/notification.service';
+import { NotificationGateway } from '../../websocket/gateways/notification.gateway';
+import {
+  NotificationType,
+  NotificationPriority,
+} from '../../../shared/interfaces/notification.interface';
 
 @Injectable()
 export class CommentsService {
@@ -12,6 +18,9 @@ export class CommentsService {
     @InjectModel(Task.name) private taskModel: Model<TaskDocument>,
     @Inject(forwardRef(() => TaskGateway))
     private taskGateway: TaskGateway,
+    private notificationService: NotificationService,
+    @Inject(forwardRef(() => NotificationGateway))
+    private notificationGateway: NotificationGateway,
   ) {}
 
   async createComment(taskId: string, content: string, authorId: string, mentions: string[] = []) {
@@ -39,6 +48,38 @@ export class CommentsService {
 
     // Emit WebSocket event for comment creation
     await this.taskGateway.handleCommentAdded(populatedComment, taskId, authorId);
+
+    // Notify task participants about the comment
+    const participantIds = [
+      task.assignee?.toString(),
+      task.creator?.toString(),
+      ...(task.watchers || []).map((w) => w.toString()),
+    ].filter(Boolean);
+
+    for (const participantId of participantIds) {
+      if (participantId !== authorId) {
+        await this.notificationService.createAndSendNotification(participantId, {
+          title: 'New Comment Added',
+          message: `A new comment was added to task "${task.title}"`,
+          type: NotificationType.COMMENT_ADDED,
+          priority: NotificationPriority.LOW,
+          data: { taskId: task._id.toString(), commentId: comment._id.toString() },
+          timestamp: new Date(),
+        });
+
+        // Send WebSocket notification
+        this.notificationGateway.sendNotificationToUser(participantId, {
+          id: comment._id.toString(),
+          title: 'New Comment Added',
+          message: `A new comment was added to task "${task.title}"`,
+          type: NotificationType.COMMENT_ADDED,
+          priority: NotificationPriority.LOW,
+          data: { taskId: task._id.toString(), commentId: comment._id.toString() },
+          read: false,
+          timestamp: new Date(),
+        });
+      }
+    }
 
     return populatedComment;
   }
