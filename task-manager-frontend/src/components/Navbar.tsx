@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { User, getUserDisplayName } from '../types/user';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
 import { useAuth } from '../contexts/AuthContext';
-import Button from './ui/Button';
 import UserAvatar from './UserAvatar';
+import { User } from '../types/user';
+import NotificationBox from './NotificationBox';
+import Button from './ui/Button';
 
 const NavLink = ({ to, label, isActive, onClick }: { to: string; label: string; isActive: boolean; onClick: () => void }) => (
   <Link
@@ -25,7 +28,13 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const { unreadCount } = useSelector((state: RootState) => state.notifications);
   const isAdmin = user?.role === 'admin';
+
+  const getUserDisplayName = (user: User) => {
+    return user?.username || user?.email || 'User';
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -158,8 +167,36 @@ export default function Navbar() {
               ))}
             </div>
 
-            {/* User Profile and Logout */}
+            {/* User Profile, Notifications, and Logout */}
             <div className="hidden md:flex items-center space-x-4">
+              {/* Notification Bell */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                  className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-md transition-colors duration-200"
+                  title="Notifications"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 17h5l-5 5v-5zM10.5 3.75a6 6 0 0 1 6 6v4.5l2.25 2.25a.75.75 0 0 1-.75 1.25H3a.75.75 0 0 1-.75-.75L4.5 14.25V9.75a6 6 0 0 1 6-6z"
+                    />
+                  </svg>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+              
               <div className="flex items-center">
                 <UserAvatar user={user as User} className="h-9 w-9" />
                 <div className="ml-3">
@@ -199,18 +236,18 @@ export default function Navbar() {
               <div className="flex items-center px-4">
                 <UserAvatar user={user as User} />
                 <div className="ml-3">
-                  <p className="text-base font-medium text-gray-700">
+                  <p className="text-base font-medium text-gray-800">
                     {getUserDisplayName(user as User)}
                   </p>
                   {isAdmin && (
-                    <p className="text-sm font-medium text-gray-500">Administrator</p>
+                    <p className="text-sm text-gray-500">Administrator</p>
                   )}
                 </div>
               </div>
-              <div className="mt-3 px-2 space-y-1">
+              <div className="mt-3 px-4">
                 <button
                   onClick={handleLogout}
-                  className="w-full block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  className="w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
                 >
                   Sign out
                 </button>
@@ -219,6 +256,13 @@ export default function Navbar() {
           </div>
         )}
       </nav>
+      
+      {/* Notification Box */}
+      <NotificationBox 
+        isOpen={isNotificationOpen} 
+        onClose={() => setIsNotificationOpen(false)} 
+      />
+      
       {/* Add padding to account for fixed navbar */}
       <div className="h-20"></div>
     </>
