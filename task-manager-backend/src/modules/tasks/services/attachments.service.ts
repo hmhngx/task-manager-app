@@ -48,9 +48,7 @@ export class AttachmentsService {
         thumbnail = `data:image/jpeg;base64,${thumbnailBuffer.toString('base64')}`;
 
         // Optimize main image
-        processedData = await image
-          .jpeg({ quality: 85 })
-          .toBuffer();
+        processedData = await image.jpeg({ quality: 85 }).toBuffer();
       }
 
       const attachment = await this.attachmentModel.create({
@@ -107,7 +105,7 @@ export class AttachmentsService {
       .populate('uploadedBy', 'username')
       .exec();
 
-    return attachments.map(attachment => ({
+    return attachments.map((attachment) => ({
       ...attachment.toObject(),
       url: `/api/tasks/attachments/${attachment._id}`,
     }));
@@ -125,7 +123,7 @@ export class AttachmentsService {
       .populate('uploadedBy', 'username')
       .exec();
 
-    return attachments.map(attachment => ({
+    return attachments.map((attachment) => ({
       ...attachment.toObject(),
       url: `/api/tasks/attachments/${attachment._id}`,
     }));
@@ -192,4 +190,4 @@ export class AttachmentsService {
       throw error;
     }
   }
-} 
+}

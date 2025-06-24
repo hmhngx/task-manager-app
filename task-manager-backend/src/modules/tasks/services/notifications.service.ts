@@ -1,8 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Task, TaskDocument } from '../schemas/task.schema';
 import { User, UserDocument } from '../../users/schemas/user.schema';
+import { NotificationService } from '../../notifications/services/notification.service';
+import {
+  NotificationType,
+  NotificationPriority,
+} from '../../../shared/interfaces/notification.interface';
 import * as nodemailer from 'nodemailer';
 
 interface PopulatedUser {
@@ -18,6 +23,8 @@ export class NotificationsService {
   constructor(
     @InjectModel(Task.name) private taskModel: Model<TaskDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @Inject(forwardRef(() => NotificationService))
+    private notificationService: NotificationService,
   ) {
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -58,7 +65,18 @@ export class NotificationsService {
       <p>Deadline: ${task.deadline?.toLocaleDateString()}</p>
     `;
 
+    // Send email notification
     await this.sendEmail(task.assignee.email, subject, html);
+
+    // Create in-app notification
+    await this.notificationService.createAndSendNotification(task.assignee._id.toString(), {
+      title: 'Task Assigned',
+      message: `You have been assigned to task: ${task.title}`,
+      type: NotificationType.TASK_ASSIGNED,
+      priority: this.mapPriorityToNotificationPriority(task.priority),
+      data: { taskId: task._id.toString() },
+      timestamp: new Date(),
+    });
   }
 
   async notifyTaskStatusChanged(taskId: string) {
@@ -83,11 +101,34 @@ export class NotificationsService {
       <p>Deadline: ${task.deadline?.toLocaleDateString()}</p>
     `;
 
+    // Send email notifications
     if (task.assignee) {
       await this.sendEmail(task.assignee.email, subject, html);
     }
     if (task.creator) {
       await this.sendEmail(task.creator.email, subject, html);
+    }
+
+    // Create in-app notifications
+    if (task.assignee) {
+      await this.notificationService.createAndSendNotification(task.assignee._id.toString(), {
+        title: 'Task Status Updated',
+        message: `Task "${task.title}" status changed to ${task.status}`,
+        type: NotificationType.TASK_STATUS_CHANGED,
+        priority: this.mapPriorityToNotificationPriority(task.priority),
+        data: { taskId: task._id.toString() },
+        timestamp: new Date(),
+      });
+    }
+    if (task.creator) {
+      await this.notificationService.createAndSendNotification(task.creator._id.toString(), {
+        title: 'Task Status Updated',
+        message: `Task "${task.title}" status changed to ${task.status}`,
+        type: NotificationType.TASK_STATUS_CHANGED,
+        priority: this.mapPriorityToNotificationPriority(task.priority),
+        data: { taskId: task._id.toString() },
+        timestamp: new Date(),
+      });
     }
   }
 
@@ -113,11 +154,34 @@ export class NotificationsService {
       <p>Deadline: ${task.deadline?.toLocaleDateString()}</p>
     `;
 
+    // Send email notifications
     if (task.assignee) {
       await this.sendEmail(task.assignee.email, subject, html);
     }
     if (task.creator) {
       await this.sendEmail(task.creator.email, subject, html);
+    }
+
+    // Create in-app notifications
+    if (task.assignee) {
+      await this.notificationService.createAndSendNotification(task.assignee._id.toString(), {
+        title: 'Deadline Approaching',
+        message: `Task "${task.title}" deadline is approaching`,
+        type: NotificationType.DEADLINE_APPROACHING,
+        priority: NotificationPriority.HIGH,
+        data: { taskId: task._id.toString() },
+        timestamp: new Date(),
+      });
+    }
+    if (task.creator) {
+      await this.notificationService.createAndSendNotification(task.creator._id.toString(), {
+        title: 'Deadline Approaching',
+        message: `Task "${task.title}" deadline is approaching`,
+        type: NotificationType.DEADLINE_APPROACHING,
+        priority: NotificationPriority.HIGH,
+        data: { taskId: task._id.toString() },
+        timestamp: new Date(),
+      });
     }
   }
 
@@ -144,11 +208,34 @@ export class NotificationsService {
       <p style="color: red; font-weight: bold;">Please take immediate action!</p>
     `;
 
+    // Send email notifications
     if (task.assignee) {
       await this.sendEmail(task.assignee.email, subject, html);
     }
     if (task.creator) {
       await this.sendEmail(task.creator.email, subject, html);
+    }
+
+    // Create in-app notifications
+    if (task.assignee) {
+      await this.notificationService.createAndSendNotification(task.assignee._id.toString(), {
+        title: 'Task Overdue',
+        message: `Task "${task.title}" is overdue! Please take immediate action.`,
+        type: NotificationType.TASK_OVERDUE,
+        priority: NotificationPriority.URGENT,
+        data: { taskId: task._id.toString() },
+        timestamp: new Date(),
+      });
+    }
+    if (task.creator) {
+      await this.notificationService.createAndSendNotification(task.creator._id.toString(), {
+        title: 'Task Overdue',
+        message: `Task "${task.title}" is overdue! Please take immediate action.`,
+        type: NotificationType.TASK_OVERDUE,
+        priority: NotificationPriority.URGENT,
+        data: { taskId: task._id.toString() },
+        timestamp: new Date(),
+      });
     }
   }
 
@@ -172,10 +259,20 @@ export class NotificationsService {
       <p>Please review and approve/reject this request.</p>
     `;
 
-    // Send to all admin users
+    // Send email to all admin users
     const adminUsers = await this.userModel.find({ role: 'admin' }).lean().exec();
     for (const admin of adminUsers) {
       await this.sendEmail(admin.email, subject, html);
+
+      // Create in-app notification for admin
+      await this.notificationService.createAndSendNotification(admin._id.toString(), {
+        title: 'New Task Request',
+        message: `New task request: "${task.title}" from ${task.creator?.username}`,
+        type: NotificationType.TASK_REQUEST,
+        priority: this.mapPriorityToNotificationPriority(task.priority),
+        data: { taskId: task._id.toString() },
+        timestamp: new Date(),
+      });
     }
   }
 
@@ -201,7 +298,18 @@ export class NotificationsService {
       <p>Status: ${approved ? 'Approved - Ready to work on' : 'Rejected'}</p>
     `;
 
+    // Send email notification
     await this.sendEmail(requester.email, subject, html);
+
+    // Create in-app notification
+    await this.notificationService.createAndSendNotification(requester._id.toString(), {
+      title: `Task Request ${approved ? 'Approved' : 'Rejected'}`,
+      message: `Your task request "${task.title}" was ${approved ? 'approved' : 'rejected'}`,
+      type: NotificationType.TASK_REQUEST_RESPONSE,
+      priority: this.mapPriorityToNotificationPriority(task.priority),
+      data: { taskId: task._id.toString() },
+      timestamp: new Date(),
+    });
   }
 
   /**
@@ -252,4 +360,22 @@ export class NotificationsService {
 
     console.log(`Found ${upcomingTasks.length} tasks with upcoming deadlines`);
   }
-} 
+
+  /**
+   * Helper method to map task priority to notification priority
+   */
+  private mapPriorityToNotificationPriority(taskPriority: string): NotificationPriority {
+    switch (taskPriority) {
+      case 'urgent':
+        return NotificationPriority.URGENT;
+      case 'high':
+        return NotificationPriority.HIGH;
+      case 'medium':
+        return NotificationPriority.MEDIUM;
+      case 'low':
+        return NotificationPriority.LOW;
+      default:
+        return NotificationPriority.MEDIUM;
+    }
+  }
+}

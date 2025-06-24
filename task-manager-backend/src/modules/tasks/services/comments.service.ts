@@ -10,6 +10,7 @@ import {
   NotificationType,
   NotificationPriority,
 } from '../../../shared/interfaces/notification.interface';
+import { CommentData } from '../../../shared/interfaces/websocket.interface';
 
 @Injectable()
 export class CommentsService {
@@ -22,6 +23,24 @@ export class CommentsService {
     @Inject(forwardRef(() => NotificationGateway))
     private notificationGateway: NotificationGateway,
   ) {}
+
+  /**
+   * Convert MongoDB Comment document to CommentData interface
+   */
+  private convertCommentToCommentData(comment: CommentDocument): CommentData {
+    return {
+      _id: comment._id.toString(),
+      content: comment.content,
+      author: comment.author.toString(),
+      task: comment.task.toString(),
+      mentions: comment.mentions?.map((id) => id.toString()) || [],
+      attachments: comment.attachments?.map((id) => id.toString()) || [],
+      isEdited: comment.isEdited || false,
+      editedAt: comment.editedAt,
+      createdAt: (comment as any).createdAt,
+      updatedAt: (comment as any).updatedAt,
+    };
+  }
 
   async createComment(taskId: string, content: string, authorId: string, mentions: string[] = []) {
     const task = await this.taskModel.findById(taskId);
@@ -47,7 +66,11 @@ export class CommentsService {
       .populate('mentions', 'username');
 
     // Emit WebSocket event for comment creation
-    await this.taskGateway.handleCommentAdded(populatedComment, taskId, authorId);
+    this.taskGateway.handleCommentAdded(
+      this.convertCommentToCommentData(populatedComment),
+      taskId,
+      authorId,
+    );
 
     // Notify task participants about the comment
     const participantIds = [
@@ -110,19 +133,23 @@ export class CommentsService {
 
     const updatedComment = await this.commentModel
       .findByIdAndUpdate(
-      commentId,
-      {
-        content,
-        isEdited: true,
-        editedAt: new Date(),
-      },
-      { new: true },
+        commentId,
+        {
+          content,
+          isEdited: true,
+          editedAt: new Date(),
+        },
+        { new: true },
       )
       .populate('author', 'username')
       .populate('mentions', 'username');
 
     // Emit WebSocket event for comment edit
-    await this.taskGateway.handleCommentEdited(updatedComment, comment.task.toString(), userId);
+    this.taskGateway.handleCommentEdited(
+      this.convertCommentToCommentData(updatedComment),
+      comment.task.toString(),
+      userId,
+    );
 
     return updatedComment;
   }
@@ -144,8 +171,8 @@ export class CommentsService {
     await this.commentModel.findByIdAndDelete(commentId);
 
     // Emit WebSocket event for comment deletion
-    await this.taskGateway.handleCommentDeleted(commentId, comment.task.toString(), userId);
+    this.taskGateway.handleCommentDeleted(commentId, comment.task.toString(), userId);
 
     return { message: 'Comment deleted successfully' };
   }
-} 
+}

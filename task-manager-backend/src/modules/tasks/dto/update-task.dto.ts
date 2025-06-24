@@ -1,4 +1,14 @@
-import { IsString, IsOptional, IsDate, IsEnum, IsArray, IsMongoId, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsDate,
+  IsEnum,
+  IsArray,
+  IsMongoId,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { TaskStatus, TaskType, TaskPriority } from '../schemas/task.schema';
 

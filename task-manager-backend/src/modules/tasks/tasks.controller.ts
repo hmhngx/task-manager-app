@@ -122,7 +122,11 @@ export class TasksController {
       return await this.tasksService.getWeeklyStats();
     } catch (error) {
       if (error instanceof Error) {
-        console.error('[TasksController] Error in /tasks/stats/weekly:', error.message, error.stack);
+        console.error(
+          '[TasksController] Error in /tasks/stats/weekly:',
+          error.message,
+          error.stack,
+        );
       } else {
         console.error('[TasksController] Unknown error in /tasks/stats/weekly:', error);
       }
@@ -136,7 +140,11 @@ export class TasksController {
       return await this.tasksService.getWeeklyStatsDetailed();
     } catch (error) {
       if (error instanceof Error) {
-        console.error('[TasksController] Error in /tasks/stats/weekly/detailed:', error.message, error.stack);
+        console.error(
+          '[TasksController] Error in /tasks/stats/weekly/detailed:',
+          error.message,
+          error.stack,
+        );
       } else {
         console.error('[TasksController] Unknown error in /tasks/stats/weekly/detailed:', error);
       }
@@ -150,7 +158,11 @@ export class TasksController {
       return await this.tasksService.getMonthlyStats();
     } catch (error) {
       if (error instanceof Error) {
-        console.error('[TasksController] Error in /tasks/stats/monthly:', error.message, error.stack);
+        console.error(
+          '[TasksController] Error in /tasks/stats/monthly:',
+          error.message,
+          error.stack,
+        );
       } else {
         console.error('[TasksController] Unknown error in /tasks/stats/monthly:', error);
       }
@@ -323,12 +335,10 @@ export class TasksController {
   }
 
   @Get('attachments/:id/download')
-  async downloadAttachment(
-    @Param('id') attachmentId: string,
-    @Res() res: Response,
-  ) {
+  async downloadAttachment(@Param('id') attachmentId: string, @Res() res: Response) {
     try {
-      const attachment: { data: Buffer; mimeType: string; originalName: string } = await this.attachmentsService.getAttachmentForDownload(attachmentId);
+      const attachment: { data: Buffer; mimeType: string; originalName: string } =
+        await this.attachmentsService.getAttachmentForDownload(attachmentId);
       res.set({
         'Content-Type': attachment.mimeType,
         'Content-Length': attachment.data.length,
@@ -338,7 +348,11 @@ export class TasksController {
       res.send(attachment.data);
     } catch (error) {
       if (error instanceof Error) {
-        console.error('[downloadAttachment] Error downloading attachment:', error.message, error.stack);
+        console.error(
+          '[downloadAttachment] Error downloading attachment:',
+          error.message,
+          error.stack,
+        );
       } else {
         console.error('[downloadAttachment] Unknown error:', error);
       }

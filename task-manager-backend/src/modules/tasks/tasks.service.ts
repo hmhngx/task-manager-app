@@ -12,12 +12,17 @@ import { Task, TaskDocument, TaskStatus, TaskType, TaskPriority } from './schema
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { WorkflowsService } from './services/workflows.service';
+import { NotificationsService } from './services/notifications.service';
 import { TaskGateway } from '../websocket/gateways/task.gateway';
 import { NotificationService } from '../notifications/services/notification.service';
-import { NotificationGateway } from '../websocket/gateways/notification.gateway';
+import { NotificationGateway } from '../notifications/notification.gateway';
 import { UsersService } from '../users/users.service';
 import { startOfWeek, startOfMonth } from 'date-fns';
-import { NotificationType, NotificationPriority } from '../../shared/interfaces/notification.interface';
+import {
+  NotificationType,
+  NotificationPriority,
+} from '../../shared/interfaces/notification.interface';
+import { TaskData } from '../../shared/interfaces/websocket.interface';
 
 type DateFn = {
   (date: Date | number): Date;
@@ -31,6 +36,7 @@ export class TasksService {
   constructor(
     @InjectModel(Task.name) private readonly taskModel: Model<TaskDocument>,
     private readonly workflowsService: WorkflowsService,
+    private readonly notificationsService: NotificationsService,
     @Inject(forwardRef(() => TaskGateway))
     private readonly taskGateway: TaskGateway,
     private readonly notificationService: NotificationService,
@@ -38,6 +44,35 @@ export class TasksService {
     private readonly notificationGateway: NotificationGateway,
     private readonly usersService: UsersService,
   ) {}
+
+  /**
+   * Convert MongoDB Task document to TaskData interface
+   */
+  private convertTaskToTaskData(task: TaskDocument): TaskData {
+    return {
+      _id: task._id.toString(),
+      title: task.title,
+      description: task.description,
+      type: task.type,
+      priority: task.priority,
+      labels: task.labels,
+      deadline: task.deadline,
+      status: task.status,
+      userId: task.userId.toString(),
+      assignee: task.assignee?.toString(),
+      creator: task.creator.toString(),
+      parentTask: task.parentTask?.toString(),
+      subtasks: task.subtasks.map((id) => id.toString()),
+      comments: task.comments.map((id) => id.toString()),
+      attachments: task.attachments.map((id) => id.toString()),
+      progress: task.progress,
+      watchers: task.watchers?.map((id) => id.toString()),
+      requesters: task.requesters?.map((id) => id.toString()),
+      workflow: task.workflow,
+      createdAt: (task as any).createdAt,
+      updatedAt: (task as any).updatedAt,
+    };
+  }
 
   async createTask(createTaskDto: CreateTaskDto, creatorId: string) {
     const task = await this.taskModel.create({
@@ -55,7 +90,7 @@ export class TasksService {
     }
 
     // Emit WebSocket event for task creation
-    await this.taskGateway.handleTaskCreated(task, creatorId);
+    await this.taskGateway.handleTaskCreated(this.convertTaskToTaskData(task), creatorId);
 
     // Notify all users (broadcast)
     const allUsers = await this.usersService.findAll();
@@ -69,7 +104,7 @@ export class TasksService {
           data: { taskId: task._id.toString() },
           timestamp: new Date(),
         });
-        
+
         // Send WebSocket notification
         this.notificationGateway.sendNotificationToUser(user._id.toString(), {
           id: task._id.toString(),
@@ -101,7 +136,10 @@ export class TasksService {
     });
 
     // Emit WebSocket event for task request
-    await this.taskGateway.handleTaskCreated(task, requesterId);
+    await this.taskGateway.handleTaskCreated(this.convertTaskToTaskData(task), requesterId);
+
+    // Send email notification using NotificationsService
+    await this.notificationsService.notifyTaskRequest(task._id.toString());
 
     // Notify all admins about the request
     const adminUsers = await this.usersService.findAdmins();
@@ -114,7 +152,7 @@ export class TasksService {
         data: { taskId: task._id.toString() },
         timestamp: new Date(),
       });
-      
+
       // Send WebSocket notification
       this.notificationGateway.sendNotificationToUser(admin._id.toString(), {
         id: task._id.toString(),
@@ -145,18 +183,23 @@ export class TasksService {
     }
 
     const newStatus = approved ? TaskStatus.TODO : TaskStatus.LATE; // Use LATE as rejected status
-    const updatedTask = await this.taskModel.findByIdAndUpdate(
+    const updatedTask = await this.taskModel
+      .findByIdAndUpdate(taskId, { status: newStatus }, { new: true })
+      .populate('creator', 'username');
+
+    // Send email notification using NotificationsService
+    await this.notificationsService.notifyTaskRequestResponse(
       taskId,
-      { status: newStatus },
-      { new: true }
-    ).populate('creator', 'username');
+      task.creator.toString(),
+      approved,
+    );
 
     // Notify the requester about the decision
     await this.taskGateway.handleTaskRequestResponse(
-      updatedTask,
+      this.convertTaskToTaskData(updatedTask),
       task.creator.toString(),
       approved,
-      adminId
+      adminId,
     );
 
     // Notify requester
@@ -328,11 +371,11 @@ export class TasksService {
 
       // Emit WebSocket events based on what changed
       const changes = { ...updateTaskDto };
-      
+
       // Handle status change
       if (updateTaskDto.status && updateTaskDto.status !== oldStatus) {
         await this.taskGateway.handleTaskStatusChanged(
-          updatedTask,
+          this.convertTaskToTaskData(updatedTask),
           oldStatus,
           updateTaskDto.status,
           userId,
@@ -342,15 +385,27 @@ export class TasksService {
       // Handle assignment change
       if (updateTaskDto.assignee !== undefined && updateTaskDto.assignee !== oldAssignee) {
         if (updateTaskDto.assignee) {
-          await this.taskGateway.handleTaskAssigned(updatedTask, updateTaskDto.assignee, userId);
+          await this.taskGateway.handleTaskAssigned(
+            this.convertTaskToTaskData(updatedTask),
+            updateTaskDto.assignee,
+            userId,
+          );
         }
       }
 
       // Emit general task update event
-      await this.taskGateway.handleTaskUpdated(updatedTask, userId, changes);
+      await this.taskGateway.handleTaskUpdated(
+        this.convertTaskToTaskData(updatedTask),
+        userId,
+        changes,
+      );
 
       // Notify all participants (assignee, creator, watchers)
-      const participantIds = [task.assignee?.toString(), task.creator?.toString(), ...(task.watchers || []).map((w) => w.toString())].filter(Boolean);
+      const participantIds = [
+        task.assignee?.toString(),
+        task.creator?.toString(),
+        ...(task.watchers || []).map((w) => w.toString()),
+      ].filter(Boolean);
       for (const userId of participantIds) {
         await this.notificationService.createAndSendNotification(userId, {
           type: NotificationType.TASK_STATUS_CHANGED,
@@ -396,7 +451,11 @@ export class TasksService {
     await this.taskGateway.handleTaskDeleted(id, userId);
 
     // Notify all participants (assignee, creator, watchers)
-    const participantIds = [task.assignee?.toString(), task.creator?.toString(), ...(task.watchers || []).map((w) => w.toString())].filter(Boolean);
+    const participantIds = [
+      task.assignee?.toString(),
+      task.creator?.toString(),
+      ...(task.watchers || []).map((w) => w.toString()),
+    ].filter(Boolean);
     for (const userId of participantIds) {
       await this.notificationService.createAndSendNotification(userId, {
         type: NotificationType.TASK_DELETED,
@@ -512,7 +571,8 @@ export class TasksService {
         todo: tasks.filter((task) => task.status && task.status === TaskStatus.TODO).length,
         done: tasks.filter((task) => task.status && task.status === TaskStatus.DONE).length,
         late: tasks.filter((task) => task.status && task.status === TaskStatus.LATE).length,
-        in_progress: tasks.filter((task) => task.status && task.status === TaskStatus.IN_PROGRESS).length,
+        in_progress: tasks.filter((task) => task.status && task.status === TaskStatus.IN_PROGRESS)
+          .length,
       };
     } catch (error) {
       console.error('[TasksService] Error in getTaskStats:', error);
@@ -532,18 +592,15 @@ export class TasksService {
       const currentDate = new Date();
       console.log('[TasksService] getWeeklyStats - currentDate:', currentDate);
       console.log('[TasksService] getWeeklyStats - startOfWeekDate:', startOfWeekDate);
-      
+
       // Get all tasks for comparison
       const allTasks = await this.taskModel.find().lean().exec();
       console.log('[TasksService] getWeeklyStats - all tasks count:', allTasks.length);
-      
+
       // Get tasks that were either created this week OR updated this week
       const weeklyTasks = await this.taskModel
         .find({
-          $or: [
-            { createdAt: { $gte: startOfWeekDate } },
-            { updatedAt: { $gte: startOfWeekDate } },
-          ],
+          $or: [{ createdAt: { $gte: startOfWeekDate } }, { updatedAt: { $gte: startOfWeekDate } }],
         })
         .lean()
         .exec();
@@ -561,10 +618,13 @@ export class TasksService {
       );
 
       // Check status distribution
-      const statusCounts = weeklyTasks.reduce((acc, task) => {
-        acc[task.status] = (acc[task.status] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      const statusCounts = weeklyTasks.reduce(
+        (acc, task) => {
+          acc[task.status] = (acc[task.status] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
       console.log('[TasksService] getWeeklyStats - status counts:', statusCounts);
 
       const result = {
@@ -590,26 +650,25 @@ export class TasksService {
     try {
       const startOfWeekFn = startOfWeek as DateFn;
       const startOfWeekDate = startOfWeekFn(new Date());
-      
+
       // Get all current tasks (regardless of when they were created)
       const allTasks = await this.taskModel.find().lean().exec();
-      
+
       // Get tasks created this week
       const createdThisWeek = await this.taskModel
         .find({ createdAt: { $gte: startOfWeekDate } })
         .lean()
         .exec();
-      
+
       // Get tasks updated this week
       const updatedThisWeek = await this.taskModel
         .find({ updatedAt: { $gte: startOfWeekDate } })
         .lean()
         .exec();
-      
+
       // Get tasks completed this week (status changed to DONE)
-      const completedThisWeek = updatedThisWeek.filter(task => 
-        task.status === TaskStatus.DONE && 
-        (task as any).updatedAt >= startOfWeekDate
+      const completedThisWeek = updatedThisWeek.filter(
+        (task) => task.status === TaskStatus.DONE && (task as any).updatedAt >= startOfWeekDate,
       );
 
       return {
@@ -623,7 +682,7 @@ export class TasksService {
           created: createdThisWeek.length,
           completed: completedThisWeek.length,
           updated: updatedThisWeek.length,
-        }
+        },
       };
     } catch (error) {
       console.error('Error in getWeeklyStatsDetailed:', error);
@@ -631,7 +690,12 @@ export class TasksService {
     }
   }
 
-  async getMonthlyStats(): Promise<{ todo: number; done: number; late: number; in_progress: number }> {
+  async getMonthlyStats(): Promise<{
+    todo: number;
+    done: number;
+    late: number;
+    in_progress: number;
+  }> {
     try {
       const startOfMonthFn = startOfMonth as DateFn;
       const startOfMonthDate = startOfMonthFn(new Date());
@@ -710,7 +774,12 @@ export class TasksService {
     });
 
     // Notify the participant
-    await this.taskGateway.handleParticipantChange(task, 'removed', participantId, adminId);
+    await this.taskGateway.handleParticipantChange(
+      this.convertTaskToTaskData(task),
+      'removed',
+      participantId,
+      adminId,
+    );
 
     // Notify the participant
     await this.notificationService.createAndSendNotification(participantId, {
@@ -759,7 +828,7 @@ export class TasksService {
   async getUpcomingDeadlineTasks() {
     const now = new Date();
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    
+
     return this.taskModel
       .find({
         deadline: { $gte: now, $lte: tomorrow },
@@ -776,9 +845,11 @@ export class TasksService {
    */
   async checkOverdueTasks() {
     const overdueTasks = await this.getOverdueTasks();
-    
+
     for (const task of overdueTasks) {
-      await this.taskGateway.handleOverdueTask(task);
+      await this.taskGateway.handleOverdueTask(this.convertTaskToTaskData(task));
+      // Send email notification using NotificationsService
+      await this.notificationsService.notifyOverdueTask(task._id.toString());
     }
   }
 
@@ -787,9 +858,11 @@ export class TasksService {
    */
   async checkUpcomingDeadlines() {
     const upcomingTasks = await this.getUpcomingDeadlineTasks();
-    
+
     for (const task of upcomingTasks) {
-      await this.taskGateway.handleDeadlineReminder(task);
+      await this.taskGateway.handleDeadlineReminder(this.convertTaskToTaskData(task));
+      // Send email notification using NotificationsService
+      await this.notificationsService.notifyTaskDeadlineApproaching(task._id.toString());
     }
   }
 
@@ -801,7 +874,10 @@ export class TasksService {
       { new: true },
     );
     if (!task) throw new NotFoundException('Task not found');
-    
+
+    // Send email notification using NotificationsService
+    await this.notificationsService.notifyTaskAssigned(taskId);
+
     // Notify assignee
     await this.notificationService.createAndSendNotification(assigneeId, {
       title: 'Task Assigned',
@@ -823,7 +899,7 @@ export class TasksService {
       read: false,
       timestamp: new Date(),
     });
-    
+
     return task;
   }
 
@@ -835,14 +911,17 @@ export class TasksService {
       { new: true },
     );
     if (!task) throw new NotFoundException('Task not found');
-    
+
+    // Send email notification using NotificationsService
+    await this.notificationsService.notifyTaskStatusChanged(taskId);
+
     // Notify all participants (assignee, creator, watchers)
     const participantIds = [
       task.assignee?.toString(),
       task.creator?.toString(),
       ...(task.watchers || []).map((w) => w.toString()),
     ].filter(Boolean);
-    
+
     for (const userId of participantIds) {
       if (userId !== updaterId) {
         await this.notificationService.createAndSendNotification(userId, {
@@ -867,7 +946,7 @@ export class TasksService {
         });
       }
     }
-    
+
     return task;
   }
 }

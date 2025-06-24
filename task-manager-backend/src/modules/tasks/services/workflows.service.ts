@@ -47,7 +47,7 @@ export class WorkflowsService {
       .findById(id)
       .populate('createdBy', 'username')
       .populate('approvers', 'username');
-    
+
     if (!workflow) {
       throw new NotFoundException('Workflow not found');
     }
@@ -55,11 +55,7 @@ export class WorkflowsService {
     return workflow;
   }
 
-  async updateWorkflow(
-    id: string,
-    updates: Partial<Workflow>,
-    userId: string,
-  ) {
+  async updateWorkflow(id: string, updates: Partial<Workflow>, userId: string) {
     const workflow = await this.workflowModel.findById(id);
     if (!workflow) {
       throw new NotFoundException('Workflow not found');
@@ -107,9 +103,7 @@ export class WorkflowsService {
       throw new NotFoundException('Workflow not found');
     }
 
-    const transition = workflow.transitions.find(
-      (t) => t.from === fromStatus && t.to === toStatus,
-    );
+    const transition = workflow.transitions.find((t) => t.from === fromStatus && t.to === toStatus);
 
     if (!transition) {
       throw new BadRequestException('Invalid transition');
@@ -136,7 +130,7 @@ export class WorkflowsService {
     }
 
     const userIdObj = new Types.ObjectId(userId);
-    if (task.requesters.some(requester => requester.toString() === userIdObj.toString())) {
+    if (task.requesters.some((requester) => requester.toString() === userIdObj.toString())) {
       throw new BadRequestException('User has already requested this task');
     }
 
@@ -161,7 +155,7 @@ export class WorkflowsService {
     }
 
     const requesterIdObj = new Types.ObjectId(requesterId);
-    if (!task.requesters.some(requester => requester.toString() === requesterIdObj.toString())) {
+    if (!task.requesters.some((requester) => requester.toString() === requesterIdObj.toString())) {
       throw new BadRequestException('User has not requested this task');
     }
 
@@ -187,7 +181,7 @@ export class WorkflowsService {
     }
 
     const requesterIdObj = new Types.ObjectId(requesterId);
-    if (!task.requesters.some(requester => requester.toString() === requesterIdObj.toString())) {
+    if (!task.requesters.some((requester) => requester.toString() === requesterIdObj.toString())) {
       throw new BadRequestException('User has not requested this task');
     }
 
@@ -200,4 +194,4 @@ export class WorkflowsService {
       { new: true },
     );
   }
-} 
+}
