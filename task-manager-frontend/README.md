@@ -1,40 +1,102 @@
 # Task Manager Frontend
 
-A modern, feature-rich task management frontend built with React, TypeScript, Redux Toolkit, and Material-UI, featuring **real-time WebSocket integration** and **comprehensive notification system** for live collaboration.
+A modern React frontend for the Task Manager app, built with TypeScript, Redux Toolkit, and Tailwind CSS. Features **real-time WebSocket integration**, **comprehensive notification system**, and **responsive design** for optimal user experience.
 
 ---
 
 ## Features
 
-- User authentication (login/register)
-- Admin and user dashboards
-- Create, read, update, and delete tasks
-- Task assignment, request, and approval workflow
+### Core Task Management
+- User authentication with JWT and refresh tokens
+- Admin and user roles with role-based access control
+- Create, read, update, delete (CRUD) tasks
+- Task assignment and approval workflow
+- Task request/approval/rejection interface
 - Comments and file attachments on tasks
 - Task status management (todo, in progress, done, late, etc.)
-- **Real-time WebSocket integration**
+- Task workflows with custom transitions
+- Task watchers and requesters
+- Subtask support and parent-child relationships
+- Task labels and priority levels
+- Deadline management and progress tracking
+
+### Real-Time Collaboration
+- **Real-time WebSocket integration** for live updates
 - **Live task updates and notifications**
 - **Real-time comments and mentions**
 - **Admin dashboard with live monitoring**
 - **Live activity feed**
-- **Comprehensive notification system**
-- **Web Push notifications**
-- **Email notifications**
-- **Scheduled notifications**
+- **Real-time task statistics and reporting**
+- **Live user presence and activity tracking**
+- **Real-time notification count updates**
+
+### Comprehensive Notification System
+- **Multi-channel notification delivery**
+- **Web Push notifications with VAPID protocol**
+- **Email notifications via SMTP**
+- **Scheduled notifications (deadlines, overdue)**
 - **Notification preferences and management**
-- **Notification box with filtering and search**
-- Sidebar navigation (customizable)
-- Responsive design
-- Modern UI with Material-UI and Tailwind CSS
-- State management with Redux Toolkit
+- **Notification filtering and search**
+- **Mark as read functionality (individual and bulk)**
+- **Notification templates and customization**
+- **Notification delivery tracking and analytics**
+- **Notification Box with comprehensive interface**
+- **Real-time notification updates**
+
+### Advanced Features
+- Dashboard and reporting with data visualization
 - Excel export functionality
-- Advanced reporting and data visualization
+- Advanced filtering and pagination
+- File upload and attachment management
+- User management and profile settings
+- Audit trails and activity logging
+- Performance monitoring and optimization
+- Responsive UI with Tailwind CSS
+- State management with Redux Toolkit
+- API documentation with Swagger
+
+---
+
+## Tech Stack
+
+### Core Framework
+- **React 18** with TypeScript for type safety and modern React features
+- **React Router v6** for navigation and routing
+- **Redux Toolkit** for state management with RTK Query
+- **TypeScript** for type safety and better development experience
+
+### UI & Styling
+- **Tailwind CSS** for utility-first styling
+- **React Icons** for comprehensive icon library
+- **React Hot Toast** for user notifications
+- **React Hook Form** for form management
+- **React Query** for server state management
+- **React Datepicker** for date selection
+
+### Real-Time Communication
+- **Socket.IO client** for real-time WebSocket communication
+- **Service Worker** for push notifications and offline support
+- **Web Push API** for browser notifications
+- **WebSocket Context** for connection management
+
+### Data & API
+- **Axios** for HTTP client and API calls
+- **XLSX** for Excel export functionality
+- **Day.js** for date handling and formatting
+- **React Query** for caching and synchronization
+
+### Development Tools
+- **ESLint** for code linting
+- **Prettier** for code formatting
+- **TypeScript** for type safety
+- **Webpack** for module bundling
+- **Babel** for JavaScript compilation
 
 ---
 
 ## Notification System
 
-The application includes a comprehensive real-time notification system with multiple delivery channels:
+The frontend includes a comprehensive real-time notification system with multiple delivery channels.
 
 ### WebSocket Notifications
 - **Live Task Updates**: All task changes are broadcast instantly to relevant users
@@ -42,6 +104,8 @@ The application includes a comprehensive real-time notification system with mult
 - **Task Request Alerts**: Admins are notified of new task requests, and users receive real-time updates on the status of their requests
 - **Comment Notifications**: Real-time alerts when comments are added, edited, or deleted
 - **Participant Changes**: Notifications when users are added to or removed from tasks
+- **Status Change Notifications**: Real-time alerts for task status transitions
+- **Deadline Notifications**: Immediate alerts for deadline changes
 
 ### Web Push Notifications
 - **Browser Notifications**: Desktop notifications even when the app is closed
@@ -50,439 +114,611 @@ The application includes a comprehensive real-time notification system with mult
 - **Notification Actions**: Click to navigate directly to tasks
 - **Permission Management**: User-controlled notification preferences
 - **Subscription Management**: Automatic subscription handling
-
-### Email Notifications
-- **SMTP Integration**: Email delivery via backend
-- **HTML Templates**: Rich email notifications with task details
-- **Deadline Reminders**: Automated email reminders for upcoming deadlines
-- **Overdue Alerts**: Email notifications for overdue tasks
+- **Cross-platform Support**: Works on desktop and mobile browsers
 
 ### Notification Management
 - **Notification Box**: Comprehensive notification interface with filtering
-- **Mark as Read**: Individual and bulk mark-as-read functionality
-- **Notification Preferences**: User-controlled notification settings
 - **Real-time Updates**: Live notification count and status updates
+- **Notification Preferences**: User-controlled notification settings
+- **Notification History**: Persistent notification storage
+- **Notification Analytics**: Delivery success rates and user engagement
+
+### WebSocket Events
+
+#### Client to Server
+- `subscribe:task` - Subscribe to specific task updates
+- `unsubscribe:task` - Unsubscribe from task updates
+- `subscribe:all-tasks` - Subscribe to all tasks (admin only)
+- `subscribe:notifications` - Subscribe to notifications
+- `mark:read` - Mark notification as read
+- `mark-all-read` - Mark all notifications as read
+- `get-count` - Get unread notification count
+- `subscribe:dashboard` - Subscribe to admin dashboard (admin only)
+- `subscribe:user-activity` - Subscribe to user activity (admin only)
+- `subscribe:stats` - Subscribe to statistics updates (admin only)
+
+#### Server to Client
+- `notification:new` - New notification received
+- `notification:marked_read` - Notification marked as read
+- `notification:all_marked_read` - All notifications marked as read
+- `notification:count` - Unread notification count update
+- `task:created` - New task created
+- `task:updated` - Task updated
+- `task:deleted` - Task deleted
+- `task:assigned` - Task assigned to user
+- `task:status_changed` - Task status changed
+- `comment:added` - New comment added
+- `comment:edited` - Comment edited
+- `comment:deleted` - Comment deleted
+- `admin:task_activity` - Admin dashboard activity
+- `admin:task_request` - New task request (admin only)
+- `deadline:reminder` - Deadline reminder notification
+- `overdue:alert` - Overdue task alert
 
 ---
 
-## WebSocket Integration
+## Setup
 
-### Architecture
-```
-src/
-├── contexts/
-│   ├── WebSocketContext.tsx     # Centralized WebSocket context
-│   └── NotificationContext.tsx  # Notification-specific context
-├── hooks/
-│   ├── useTaskSocket.ts         # Task-specific WebSocket hook
-│   ├── useCommentSocket.ts      # Comment-specific WebSocket hook
-│   └── useNotificationSocket.ts # Notification WebSocket hook
-├── components/
-│   ├── NotificationBox.tsx      # Comprehensive notification interface
-│   └── NotificationToast.tsx    # Real-time notification UI
-├── services/
-│   └── pushService.ts           # Push notification service
-├── store/
-│   └── notificationSlice.ts     # Notification state management
-└── shared/
-    └── interfaces/
-        └── notification.interface.ts # TypeScript interfaces
-```
+1. Clone the repository:
+   ```bash
+   git clone <repo-url>
+   cd task-manager-frontend
+   ```
 
-### WebSocket Hooks
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-#### useTaskSocket Hook
-```typescript
-const { isConnected } = useTaskSocket({
-  taskId: 'task-123', // Optional: subscribe to specific task
-  onTaskUpdate: (task) => console.log('Task updated:', task),
-  onTaskCreated: (task) => console.log('Task created:', task),
-  onTaskDeleted: (taskId) => console.log('Task deleted:', taskId),
-  onStatusChange: (taskId, oldStatus, newStatus) => 
-    console.log(`Status changed: ${oldStatus} → ${newStatus}`),
-  onAssignment: (taskId, assigneeId, assignerId) => 
-    console.log(`Task assigned to ${assigneeId} by ${assignerId}`),
-});
-```
-
-#### useNotificationSocket Hook
-```typescript
-const { notifications, unreadCount, markAsRead } = useNotificationSocket({
-  onNotification: (notification) => console.log('New notification:', notification),
-  onTaskAssigned: (task, assigner) => console.log('Task assigned:', task),
-  onMention: (comment, taskId, author) => console.log('Mentioned in comment'),
-});
-```
-
-#### useCommentSocket Hook
-```typescript
-const { comments, setComments } = useCommentSocket({
-  taskId: 'task-123',
-  onCommentAdded: (comment) => console.log('Comment added:', comment),
-  onCommentEdited: (comment) => console.log('Comment edited:', comment),
-  onCommentDeleted: (commentId) => console.log('Comment deleted:', commentId),
-});
-```
-
-### Real-Time Features
-- **Live Task Updates**: Status changes, assignments, and modifications broadcast instantly
-- **Real-Time Comments**: New comments appear instantly with mention notifications
-- **Live Notifications**: Task assignments, status changes, and deadline reminders
-- **Admin Dashboard Monitoring**: Real-time user activity and system statistics
-- **Live Activity Feed**: System-wide events and collaboration awareness
-- **Notification Management**: Real-time notification count and status updates
-
----
-
-## Push Notification Service
-
-### Service Worker
-The application includes a service worker (`public/service-worker.js`) that handles:
-- Push notification reception
-- Notification click handling
-- Background sync capabilities
-- Offline functionality
-
-### Push Service Features
-```typescript
-// Initialize push notifications
-await pushService.initializePushNotifications();
-
-// Request notification permission
-const hasPermission = await pushService.requestPermission();
-
-// Subscribe to push notifications
-const subscription = await pushService.subscribeToPushNotifications();
-
-// Send subscription to backend
-await pushService.sendSubscriptionToBackend(subscription);
-
-// Unsubscribe from push notifications
-await pushService.unsubscribeFromPushNotifications(endpoint);
-```
-
-### Notification Types
-- **Task Created**: New task notifications
-- **Task Assigned**: Assignment notifications
-- **Task Status Changed**: Status update notifications
-- **Task Request**: Request notifications (admin)
-- **Task Request Response**: Approval/rejection notifications
-- **Comment Added**: Comment notifications
-- **Participant Added/Removed**: Participant change notifications
-- **Deadline Approaching**: Deadline reminder notifications
-- **Task Overdue**: Overdue task notifications
-
----
-
-## Prerequisites
-
-- Node.js (v16 or higher)
-- npm or yarn
-- Backend API running (see backend README)
-- HTTPS in production (required for push notifications)
-
----
-
-## Environment Setup
-
-1. Create a `.env` file in the root directory:
+3. Create a `.env` file:
    ```
    REACT_APP_BACKEND_URL=http://localhost:3000
    REACT_APP_ENV=development
    ```
 
-2. Adjust `REACT_APP_BACKEND_URL` if your backend is running on a different port or host.
-
-3. For production, ensure HTTPS is configured (required for push notifications).
-
----
-
-## Installation
-
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-2. Start the development server:
+4. Start the development server:
    ```bash
    npm start
    ```
 
-The application will be available at [http://localhost:3001](http://localhost:3001) (or as configured).
+5. Open [http://localhost:3001](http://localhost:3001) to view it in the browser.
 
 ---
 
 ## Project Structure
+
 ```
 src/
-├── components/          # Reusable UI components
+├── components/           # Reusable UI components
+│   ├── ui/              # Base UI components
+│   │   └── Button.tsx
+│   ├── AdminDashboard.tsx
+│   ├── AdminTasksDashboard.tsx
+│   ├── Navbar.tsx
 │   ├── NotificationBox.tsx
 │   ├── NotificationToast.tsx
+│   ├── PrivateRoute.tsx
+│   ├── Reports/
+│   │   └── ReportScreen.tsx
 │   ├── Sidebar.tsx
-│   ├── Navbar.tsx
-│   └── TaskDetails.tsx
-├── contexts/           # React contexts
+│   ├── StatsPanel.tsx
+│   ├── TaskCard.tsx
+│   ├── TaskDetails.tsx
+│   ├── TaskForm.tsx
+│   ├── TaskList.tsx
+│   └── UserAvatar.tsx
+├── contexts/            # React contexts for state management
 │   ├── AuthContext.tsx
-│   ├── WebSocketContext.tsx
-│   └── NotificationContext.tsx
-├── hooks/             # Custom hooks including WebSocket hooks
-│   ├── useTaskSocket.ts
+│   ├── NotificationContext.tsx
+│   └── WebSocketContext.tsx
+├── hooks/               # Custom React hooks
+│   ├── useCommentSocket.ts
 │   ├── useNotificationSocket.ts
-│   └── useCommentSocket.ts
-├── pages/             # Page components
-├── services/          # API services
-│   └── pushService.ts
-├── store/             # Redux store configuration and slices
+│   └── useTaskSocket.ts
+├── pages/               # Page components
+│   ├── auth/
+│   │   ├── Login.tsx
+│   │   └── Register.tsx
+│   ├── Dashboard.tsx
+│   ├── TaskDetailsPage.tsx
+│   └── TaskListPage.tsx
+├── services/            # API and external services
+│   ├── authService.ts
+│   ├── pushService.ts
+│   ├── taskService.ts
+│   └── userService.ts
+├── store/               # Redux store and slices
 │   ├── index.ts
-│   ├── tasksSlice.ts
 │   ├── notificationSlice.ts
-│   └── statsSlice.ts
-├── types/             # TypeScript type definitions
-├── shared/            # Shared interfaces and utilities
+│   ├── statsSlice.ts
+│   └── tasksSlice.ts
+├── shared/              # Shared utilities and interfaces
 │   └── interfaces/
 │       └── notification.interface.ts
-└── utils/             # Utility functions
+├── types/               # TypeScript type definitions
+│   ├── index.d.ts
+│   ├── index.ts
+│   ├── react-datepicker.d.ts
+│   ├── Task.ts
+│   └── user.ts
+├── config/              # Configuration files
+│   └── api.config.ts
+├── App.tsx              # Main App component
+├── Auth.tsx             # Authentication wrapper
+└── index.tsx            # Application entry point
 ```
 
 ---
 
-## Available Scripts
+## Key Components
 
-- `npm start` — Runs the app in development mode
-- `npm test` — Launches the test runner
-- `npm run build` — Builds the app for production
-- `npm run eject` — Ejects from Create React App
+### Authentication
+- **AuthContext**: Manages authentication state and user information
+- **Login/Register**: User authentication forms with validation
+- **PrivateRoute**: Route protection for authenticated users
+- **JWT Token Management**: Automatic token refresh and storage
+
+### Task Management
+- **TaskList**: Displays all tasks with filtering and pagination
+- **TaskCard**: Individual task display with status and actions
+- **TaskForm**: Create and edit task forms with validation
+- **TaskDetails**: Detailed task view with comments and attachments
+- **TaskDetailsPage**: Full-page task details with real-time updates
+
+### Notifications
+- **NotificationBox**: Comprehensive notification interface
+- **NotificationToast**: Toast notifications for immediate feedback
+- **NotificationContext**: Manages notification state and WebSocket connection
+- **Push Service**: Handles Web Push notification subscriptions
+
+### Real-Time Features
+- **WebSocketContext**: Manages WebSocket connections and events
+- **useTaskSocket**: Custom hook for task-related WebSocket events
+- **useNotificationSocket**: Custom hook for notification WebSocket events
+- **useCommentSocket**: Custom hook for comment-related WebSocket events
+
+### Admin Features
+- **AdminDashboard**: Admin overview with statistics and monitoring
+- **AdminTasksDashboard**: Admin task management interface
+- **StatsPanel**: Real-time statistics display
+- **ReportScreen**: Comprehensive reporting interface
+
+### UI Components
+- **Navbar**: Navigation bar with user menu and notifications
+- **Sidebar**: Side navigation for different sections
+- **Button**: Reusable button component with variants
+- **UserAvatar**: User avatar display component
 
 ---
 
-## Key Technologies
+## State Management
 
-- **React** with TypeScript for type safety
-- **Redux Toolkit** for state management
-- **Material-UI** for UI components
-- **Tailwind CSS** for custom styling
-- **React Router** for navigation
-- **Axios** for API calls
-- **Socket.IO client** for real-time WebSocket communication
-- **Service Worker** for push notifications
-- **Web Push API** for browser notifications
-- **XLSX** for Excel export functionality
-- **Day.js** for date handling
-
----
-
-## WebSocket Configuration
-
-### Connection Setup
+### Redux Store Structure
 ```typescript
-// WebSocket connection with authentication
+interface RootState {
+  auth: AuthState;
+  tasks: TasksState;
+  notifications: NotificationState;
+  stats: StatsState;
+}
+```
+
+### Slices
+- **authSlice**: Authentication state and user information
+- **tasksSlice**: Task data and management
+- **notificationSlice**: Notification state and management
+- **statsSlice**: Statistics and reporting data
+
+### Context Providers
+- **AuthContext**: Authentication state and methods
+- **NotificationContext**: Notification state and WebSocket management
+- **WebSocketContext**: WebSocket connection and event management
+
+---
+
+## WebSocket Integration
+
+### Connection Management
+```typescript
+// WebSocket connection setup
 const socket = io(`${backendUrl}/tasks`, {
   auth: { token: jwtToken },
-  transports: ['websocket', 'polling'],
+  transports: ['websocket'],
 });
 ```
 
 ### Event Handling
-The application handles various WebSocket events:
-- Task events: creation, updates, deletion, assignment
-- Comment events: addition, editing, deletion
-- Notification events: assignments, mentions, reminders
-- Admin events: user activity, system statistics
-
-### Fallback Strategy
-- WebSocket connection failures fall back to polling
-- Existing REST API endpoints remain functional
-- UI gracefully handles connection state changes
-- Connection status indicators for user feedback
-
----
-
-## Notification Components
-
-### NotificationBox
-A comprehensive notification interface that provides:
-- **Filtering**: All notifications vs unread notifications
-- **Search**: Search through notification content
-- **Bulk Actions**: Mark all as read functionality
-- **Real-time Updates**: Live notification count and status
-- **Responsive Design**: Works on desktop and mobile
-
-### NotificationToast
-Real-time notification display that shows:
-- **Instant Notifications**: Immediate display of new notifications
-- **Priority Levels**: Visual indicators for notification priority
-- **Action Buttons**: Quick actions for notifications
-- **Auto-dismiss**: Automatic hiding after a set time
-
-### Notification Context
-Centralized notification management providing:
-- **WebSocket Integration**: Real-time notification updates
-- **State Management**: Notification state and actions
-- **Connection Management**: WebSocket connection handling
-- **Error Handling**: Graceful error handling and reconnection
-
----
-
-## Redux Integration
-
-### Notification Slice
 ```typescript
-// Notification state management
-const notificationSlice = createSlice({
-  name: 'notifications',
-  initialState,
-  reducers: {
-    addNotification: (state, action) => {
-      state.notifications.unshift(action.payload);
-      if (!action.payload.read) {
-        state.unreadCount += 1;
-      }
-    },
-    markAsRead: (state, action) => {
-      // Mark notification as read logic
-    },
-    markAllAsRead: (state) => {
-      // Mark all notifications as read logic
-    },
-  },
+// Subscribe to task updates
+socket.emit('subscribe:task', { taskId });
+
+// Listen for task updates
+socket.on('task:updated', (task) => {
+  // Update task in Redux store
+});
+
+// Listen for notifications
+socket.on('notification:new', (notification) => {
+  // Add notification to state
 });
 ```
 
-### Async Thunks
-- `fetchNotifications`: Load notifications from API
-- `markNotificationAsRead`: Mark individual notification as read
-- `markAllNotificationsAsRead`: Mark all notifications as read
+### Custom Hooks
+- **useTaskSocket**: Manages task-related WebSocket events
+- **useNotificationSocket**: Manages notification WebSocket events
+- **useCommentSocket**: Manages comment-related WebSocket events
+
+### Reconnection Logic
+- **Automatic reconnection** on connection loss
+- **Token refresh** on authentication errors
+- **Event replay** for missed updates
+- **Connection state monitoring**
 
 ---
 
-## Customization
-
-- **Sidebar:** You can easily add or remove navigation elements in `src/components/Sidebar.tsx`.
-- **UI:** Styling is done with a combination of Material-UI and Tailwind CSS.
-- **State Management:** Redux store configuration can be modified in `src/store/`.
-- **WebSocket:** WebSocket context and hooks can be customized in `src/contexts/` and `src/hooks/`.
-- **Notifications:** Notification components and logic can be customized in `src/components/` and `src/store/`.
-
----
-
-## Browser Compatibility
-
-### WebSocket Support
-- Modern browsers with WebSocket support
-- Fallback to polling for older browsers
-- Graceful degradation for connection issues
-
-### Push Notifications
-- Chrome 42+
-- Firefox 44+
-- Safari 16+
-- Edge 17+
-- Requires HTTPS in production
+## Push Notifications
 
 ### Service Worker
-- Chrome 40+
-- Firefox 44+
-- Safari 11.1+
-- Edge 17+
+```javascript
+// service-worker.js
+self.addEventListener('push', (event) => {
+  const options = {
+    body: event.data.text(),
+    icon: '/logo192.png',
+    badge: '/logo192.png',
+    actions: [
+      {
+        action: 'open',
+        title: 'Open Task',
+      },
+    ],
+  };
+  
+  event.waitUntil(
+    self.registration.showNotification('Task Manager', options)
+  );
+});
+```
+
+### Subscription Management
+```typescript
+// Subscribe to push notifications
+const subscribeToPushNotifications = async () => {
+  const registration = await navigator.serviceWorker.register('/service-worker.js');
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: vapidPublicKey,
+  });
+  
+  await pushService.subscribe(subscription);
+};
+```
+
+### Permission Handling
+- **Permission requests** with user-friendly prompts
+- **Permission state monitoring** and updates
+- **Graceful degradation** when permissions are denied
+- **Permission restoration** after browser updates
+
+---
+
+## API Integration
+
+### Service Layer
+- **authService**: Authentication API calls
+- **taskService**: Task management API calls
+- **userService**: User management API calls
+- **pushService**: Push notification API calls
+
+### Error Handling
+- **Global error handling** with toast notifications
+- **Network error recovery** with retry logic
+- **Authentication error handling** with automatic logout
+- **Validation error display** in forms
+
+### Request/Response Interceptors
+```typescript
+// Axios interceptors for authentication
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // Handle token refresh or logout
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
+---
+
+## Styling & UI
+
+### Tailwind CSS
+- **Utility-first approach** for rapid development
+- **Custom design system** with consistent spacing and colors
+- **Responsive design** for all screen sizes
+- **Dark mode support** (planned feature)
+
+### Component Design
+- **Consistent spacing** and typography
+- **Accessible design** with proper ARIA labels
+- **Loading states** and skeleton screens
+- **Error states** with helpful messages
+- **Success feedback** with toast notifications
+
+### Responsive Design
+- **Mobile-first approach** with progressive enhancement
+- **Breakpoint system** for different screen sizes
+- **Touch-friendly interfaces** for mobile devices
+- **Keyboard navigation** support for accessibility
 
 ---
 
 ## Performance Optimization
 
-### WebSocket Optimization
-- Connection pooling and reuse
-- Event debouncing for high-frequency updates
-- Selective subscriptions to reduce unnecessary updates
-- Memory leak prevention with proper cleanup
-
-### Notification Optimization
-- Lazy loading of notification history
-- Pagination for large notification lists
-- Efficient state updates with Redux
-- Background sync for offline notifications
+### Code Splitting
+```typescript
+// Lazy loading for routes
+const TaskDetailsPage = lazy(() => import('./pages/TaskDetailsPage'));
+const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
+```
 
 ### Bundle Optimization
-- Code splitting for better load times
-- Tree shaking for unused code removal
-- Service worker caching for static assets
-- Optimized imports and dependencies
+- **Tree shaking** for unused code removal
+- **Dynamic imports** for code splitting
+- **Image optimization** and compression
+- **Service worker caching** for static assets
+
+### Memory Management
+- **Component cleanup** in useEffect hooks
+- **Event listener cleanup** for WebSocket connections
+- **Redux state optimization** with selective subscriptions
+- **Image lazy loading** for better performance
+
+### Caching Strategies
+- **React Query caching** for API responses
+- **Service worker caching** for static assets
+- **Local storage caching** for user preferences
+- **Session storage** for temporary data
+
+---
+
+## Testing
+
+### Unit Testing
+```bash
+# Run unit tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
+```
+
+### Testing Libraries
+- **Jest** for test framework
+- **React Testing Library** for component testing
+- **MSW (Mock Service Worker)** for API mocking
+- **User Event** for user interaction testing
+
+### Test Coverage
+- **Component testing** for UI components
+- **Hook testing** for custom hooks
+- **Service testing** for API calls
+- **Integration testing** for user workflows
+- **WebSocket testing** for real-time features
+
+---
+
+## Environment Configuration
+
+### Development
+```bash
+REACT_APP_BACKEND_URL=http://localhost:3000
+REACT_APP_ENV=development
+```
+
+### Production
+```bash
+REACT_APP_BACKEND_URL=https://your-api-domain.com
+REACT_APP_ENV=production
+```
+
+### Environment Variables
+- `REACT_APP_BACKEND_URL`: Backend API URL
+- `REACT_APP_ENV`: Environment (development/production)
+- `REACT_APP_VERSION`: Application version
+- `REACT_APP_NAME`: Application name
+
+---
+
+## Build & Deployment
+
+### Build Process
+```bash
+# Create production build
+npm run build
+
+# Analyze bundle size
+npm run analyze
+
+# Build for different environments
+npm run build:staging
+npm run build:production
+```
+
+### Deployment Options
+- **Static hosting** (Netlify, Vercel, GitHub Pages)
+- **Docker containers** for containerized deployment
+- **CDN integration** for static assets
+- **Service worker** for offline support
+
+### Build Optimization
+- **Code splitting** for better load times
+- **Bundle analysis** for size optimization
+- **Compression** for smaller file sizes
+- **Cache busting** for version control
+
+---
+
+## Browser Support
+
+### Supported Browsers
+- **Chrome** 90+
+- **Firefox** 88+
+- **Safari** 14+
+- **Edge** 90+
+
+### Feature Detection
+- **Service Worker** support for push notifications
+- **Web Push API** support for browser notifications
+- **WebSocket** support for real-time features
+- **Local Storage** support for data persistence
+
+### Polyfills
+- **Core-js** for JavaScript polyfills
+- **Regenerator-runtime** for async/await support
+- **Intersection Observer** for lazy loading
+- **Resize Observer** for responsive design
+
+---
+
+## Accessibility
+
+### ARIA Support
+- **Proper ARIA labels** for screen readers
+- **Keyboard navigation** support
+- **Focus management** for modals and forms
+- **Color contrast** compliance
+
+### Screen Reader Support
+- **Semantic HTML** structure
+- **Alt text** for images
+- **Form labels** and descriptions
+- **Status announcements** for dynamic content
+
+### Keyboard Navigation
+- **Tab order** optimization
+- **Keyboard shortcuts** for common actions
+- **Focus indicators** for interactive elements
+- **Escape key** handling for modals
+
+---
+
+## Security
+
+### Authentication Security
+- **JWT token storage** in secure HTTP-only cookies
+- **Token refresh** for session management
+- **Automatic logout** on token expiration
+- **CSRF protection** for API calls
+
+### Data Security
+- **Input validation** and sanitization
+- **XSS prevention** with proper escaping
+- **Secure communication** with HTTPS
+- **Data encryption** for sensitive information
+
+### WebSocket Security
+- **JWT authentication** for WebSocket connections
+- **User isolation** through personal rooms
+- **Input validation** for all WebSocket events
+- **Rate limiting** for WebSocket events
+
+---
+
+## Monitoring & Analytics
+
+### Error Tracking
+- **Error boundaries** for React components
+- **Global error handling** with logging
+- **Performance monitoring** for user experience
+- **Crash reporting** for debugging
+
+### User Analytics
+- **Page view tracking** for user behavior
+- **Feature usage** monitoring
+- **Performance metrics** collection
+- **User engagement** tracking
+
+### Performance Monitoring
+- **Core Web Vitals** tracking
+- **Bundle size** monitoring
+- **Load time** optimization
+- **Memory usage** tracking
 
 ---
 
 ## Troubleshooting
 
-### General Issues
-- **Blank screen after update:** Check browser console for errors, ensure backend is running
-- **API 500 errors:** Check backend logs for stack traces
-- **React key warnings:** Ensure all `.map()` calls use unique keys
-- **Redux state issues:** Use Redux DevTools to debug state updates and actions
+### Common Issues
+- **WebSocket connection issues**: Check backend URL and authentication
+- **Push notification failures**: Verify VAPID keys and permissions
+- **Build errors**: Check TypeScript types and dependencies
+- **Performance issues**: Analyze bundle size and optimize imports
 
-### WebSocket Issues
-- **WebSocket connection issues:** Check CORS configuration and JWT token validity
-- **Real-time events not working:** Verify WebSocket connection status and room subscriptions
-- **Connection drops:** Check network stability and reconnection logic
-
-### Notification Issues
-- **Push notifications not working:** Verify VAPID keys and browser permissions
-- **Email notifications failing:** Check SMTP configuration and credentials
-- **Scheduled notifications missing:** Verify cron job configuration and MongoDB connection
-- **WebSocket notifications delayed:** Check connection status and event handling
+### Debug Tools
+- **React DevTools** for component debugging
+- **Redux DevTools** for state management
+- **Network tab** for API debugging
+- **Console logging** for WebSocket events
 
 ### Browser-Specific Issues
-- **Safari push notifications:** Ensure proper VAPID configuration
-- **Firefox service worker:** Check service worker registration
-- **Chrome notifications:** Verify notification permissions
-- **Mobile browser support:** Test on various mobile browsers
+- **Safari push notifications**: Ensure proper VAPID configuration
+- **Firefox service worker**: Check service worker registration
+- **Chrome notifications**: Verify notification permissions
+- **Mobile browser support**: Test on various mobile browsers
 
 ---
 
-## Production Deployment
+## Contributing
 
-### Build Process
-```bash
-npm run build
-```
+### Development Setup
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
 
-### Environment Variables
-Ensure all required environment variables are set:
-- `REACT_APP_BACKEND_URL`: Backend API URL
-- `REACT_APP_ENV`: Environment (development/production)
+### Code Standards
+- **TypeScript** for type safety
+- **ESLint** for code quality
+- **Prettier** for code formatting
+- **Conventional commits** for commit messages
+- **JSDoc** for documentation
 
-### HTTPS Requirements
-- Web Push notifications require HTTPS in production
-- Configure SSL certificates for the frontend
-- Update service worker for production URLs
-
-### Service Worker
-- Ensure service worker is properly registered
-- Test push notifications in production environment
-- Monitor service worker updates and caching
-
----
-
-## Security Considerations
-
-### WebSocket Security
-- JWT authentication for all WebSocket connections
-- Input validation for all WebSocket events
-- Rate limiting for WebSocket events
-- Secure WebSocket URLs (WSS in production)
-
-### Push Notifications
-- VAPID key security (handled by backend)
-- User permission verification
-- Notification content sanitization
-- Secure subscription management
-
-### General Security
-- HTTPS enforcement in production
-- Content Security Policy (CSP) headers
-- XSS prevention with proper sanitization
-- CSRF protection for API calls
+### Testing Requirements
+- **Unit tests** for new components
+- **Integration tests** for new features
+- **Accessibility testing** for UI components
+- **Cross-browser testing** for compatibility
 
 ---
 
 ## License
 
-MIT
+MIT License - see LICENSE file for details
+
+---
+
+## Support
+
+For support and questions:
+- Create an issue in the GitHub repository
+- Check the documentation and troubleshooting guides
+- Review the component documentation
+- Contact the development team
+
+---
