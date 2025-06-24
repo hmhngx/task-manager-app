@@ -33,7 +33,7 @@ export class WebSocketService {
    */
   broadcastToRoom(room: string, event: string, data: any, excludeUserId?: string) {
     if (!this.server) return;
-    
+
     const roomSockets = this.server.in(room);
     if (excludeUserId) {
       roomSockets.except(excludeUserId).emit(event, data);
@@ -55,7 +55,7 @@ export class WebSocketService {
    */
   broadcastToUsers(userIds: string[], event: string, data: any) {
     if (!this.server) return;
-    userIds.forEach(userId => {
+    userIds.forEach((userId) => {
       this.server.to(userId).emit(event, data);
     });
   }
@@ -65,7 +65,7 @@ export class WebSocketService {
    */
   broadcastToAll(event: string, data: any, excludeUserId?: string) {
     if (!this.server) return;
-    
+
     if (excludeUserId) {
       this.server.except(excludeUserId).emit(event, data);
     } else {
@@ -100,7 +100,7 @@ export class WebSocketService {
    */
   sendUrgentNotification(notification: NotificationData, excludeUserId?: string) {
     if (!this.server) return;
-    
+
     const eventData = { ...notification, priority: 'urgent' };
     if (excludeUserId) {
       this.server.except(excludeUserId).emit('notification:urgent', eventData);
@@ -121,9 +121,9 @@ export class WebSocketService {
       data: taskData,
       timestamp: new Date(),
       read: false,
-      priority: 'high'
+      priority: 'high',
     };
-    
+
     this.sendNotificationToUsers(userIds, notification);
   }
 
@@ -139,9 +139,9 @@ export class WebSocketService {
       data: taskData,
       timestamp: new Date(),
       read: false,
-      priority: 'urgent'
+      priority: 'urgent',
     };
-    
+
     this.sendNotificationToUsers(userIds, notification);
   }
 
@@ -157,16 +157,21 @@ export class WebSocketService {
       data: { task: taskData, requesterId },
       timestamp: new Date(),
       read: false,
-      priority: 'medium'
+      priority: 'medium',
     };
-    
+
     this.broadcastToAdmins('notification:new', notification);
   }
 
   /**
    * Send task approval/rejection notification to requester
    */
-  sendTaskRequestResponseNotification(requesterId: string, taskData: any, approved: boolean, adminId: string) {
+  sendTaskRequestResponseNotification(
+    requesterId: string,
+    taskData: any,
+    approved: boolean,
+    adminId: string,
+  ) {
     const notification: NotificationData = {
       id: `response-${taskData._id}-${Date.now()}`,
       type: approved ? 'task_approved' : 'task_rejected',
@@ -175,16 +180,21 @@ export class WebSocketService {
       data: { task: taskData, approved, adminId },
       timestamp: new Date(),
       read: false,
-      priority: 'medium'
+      priority: 'medium',
     };
-    
+
     this.sendNotification(requesterId, notification);
   }
 
   /**
    * Send participant change notification
    */
-  sendParticipantChangeNotification(taskData: any, action: 'added' | 'removed', participantId: string, adminId: string) {
+  sendParticipantChangeNotification(
+    taskData: any,
+    action: 'added' | 'removed',
+    participantId: string,
+    adminId: string,
+  ) {
     const notification: NotificationData = {
       id: `participant-${taskData._id}-${Date.now()}`,
       type: 'participant_change',
@@ -193,9 +203,9 @@ export class WebSocketService {
       data: { task: taskData, action, participantId, adminId },
       timestamp: new Date(),
       read: false,
-      priority: 'medium'
+      priority: 'medium',
     };
-    
+
     this.sendNotification(participantId, notification);
   }
 
@@ -230,4 +240,4 @@ export class WebSocketService {
     });
     return connectedUsers;
   }
-} 
+}

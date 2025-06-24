@@ -13,7 +13,7 @@ import { NotificationPayload } from '../../../shared/interfaces/notification.int
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
     credentials: true,
   },
   namespace: '/notifications',
@@ -36,7 +36,7 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
       }
       this.userSockets.get(userId)?.push(client);
       client.join(`user:${userId}`);
-      
+
       // Join admin room if user is admin
       if (user.role === 'admin') {
         client.join('admins');
@@ -66,7 +66,7 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
   }
 
   sendNotificationToUsers(userIds: string[], notification: NotificationPayload): void {
-    userIds.forEach(userId => {
+    userIds.forEach((userId) => {
       this.sendNotificationToUser(userId, notification);
     });
   }
@@ -113,4 +113,4 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
       client.emit('unreadCount', { count });
     }
   }
-} 
+}

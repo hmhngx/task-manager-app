@@ -18,4 +18,4 @@ import { NotificationModule } from '../notifications/notification.module';
   providers: [TaskGateway, NotificationGateway, AdminGateway, WebSocketService],
   exports: [WebSocketService, TaskGateway, NotificationGateway, AdminGateway],
 })
-export class WebSocketModule {} 
+export class WebSocketModule {}
