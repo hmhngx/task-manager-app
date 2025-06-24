@@ -48,12 +48,38 @@ export interface ServerToClientEvents {
   notification: (notification: NotificationPayload) => void;
   'task:created': (data: { task: any; creator: string; timestamp: Date }) => void;
   'task:updated': (data: { task: any; updater: string; changes: any; timestamp: Date }) => void;
-  'task:assigned': (data: { task: any; assignee: string; assigner: string; timestamp: Date }) => void;
-  'task:status_changed': (data: { task: any; oldStatus: string; newStatus: string; updater: string; timestamp: Date }) => void;
+  'task:assigned': (data: {
+    task: any;
+    assignee: string;
+    assigner: string;
+    timestamp: Date;
+  }) => void;
+  'task:status_changed': (data: {
+    task: any;
+    oldStatus: string;
+    newStatus: string;
+    updater: string;
+    timestamp: Date;
+  }) => void;
   'task:deleted': (data: { taskId: string; deleter: string; timestamp: Date }) => void;
-  'comment:added': (data: { comment: any; taskId: string; author: string; timestamp: Date }) => void;
-  'comment:edited': (data: { comment: any; taskId: string; editor: string; timestamp: Date }) => void;
-  'comment:deleted': (data: { commentId: string; taskId: string; deleter: string; timestamp: Date }) => void;
+  'comment:added': (data: {
+    comment: any;
+    taskId: string;
+    author: string;
+    timestamp: Date;
+  }) => void;
+  'comment:edited': (data: {
+    comment: any;
+    taskId: string;
+    editor: string;
+    timestamp: Date;
+  }) => void;
+  'comment:deleted': (data: {
+    commentId: string;
+    taskId: string;
+    deleter: string;
+    timestamp: Date;
+  }) => void;
   'admin:task_activity': (data: { type: string; task: any; user: string; timestamp: Date }) => void;
   'admin:task_request': (data: { task: any; requester: string; timestamp: Date }) => void;
   'deadline:reminder': (data: { task: any; timestamp: Date }) => void;
@@ -82,4 +108,4 @@ export interface SocketData {
     email: string;
     role: string;
   };
-} 
+}

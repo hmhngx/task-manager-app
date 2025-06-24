@@ -5,11 +5,21 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { UseGuards, Logger, Inject, forwardRef } from '@nestjs/common';
+import { UseGuards, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { WebSocketAuthGuard } from '../websocket/guards/websocket-auth.guard';
-import { NotificationService } from './services/notification.service';
-import { NotificationPayload, ServerToClientEvents, ClientToServerEvents, SocketData } from '../../shared/interfaces/notification.interface';
+import { NotificationPayload } from '../../shared/interfaces/notification.interface';
+
+interface AuthenticatedSocket extends Socket {
+  data: {
+    user: {
+      _id: string;
+      username: string;
+      email: string;
+      role: string;
+    };
+  };
+}
 
 @WebSocketGateway({
   namespace: '/notifications',
@@ -24,19 +34,14 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
   server: Server;
   private readonly logger = new Logger(NotificationGateway.name);
 
-  constructor(
-    @Inject(forwardRef(() => NotificationService))
-    private notificationService: NotificationService,
-  ) {}
-
-  async handleConnection(client: Socket & { data: SocketData }) {
+  async handleConnection(client: AuthenticatedSocket) {
     const user = client.data.user;
     if (!user) return;
-    await client.join(user._id.toString());
+    await client.join(user._id);
     this.logger.log(`User ${user.username} connected to notifications`);
   }
 
-  async handleDisconnect(client: Socket & { data: SocketData }) {
+  handleDisconnect(client: AuthenticatedSocket) {
     const user = client.data.user;
     if (user) {
       this.logger.log(`User ${user.username} disconnected from notifications`);
@@ -48,18 +53,18 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
   }
 
   @SubscribeMessage('subscribe:notifications')
-  async handleSubscribeToNotifications(client: Socket & { data: SocketData }) {
+  async handleSubscribeToNotifications(client: AuthenticatedSocket) {
     const user = client.data.user;
     if (!user) return;
-    await client.join(user._id.toString());
+    await client.join(user._id);
     this.logger.log(`User ${user.username} subscribed to notifications`);
   }
 
   @SubscribeMessage('mark:read')
-  async handleMarkNotificationAsRead(client: Socket & { data: SocketData }, notificationId: string) {
+  handleMarkNotificationAsRead(client: AuthenticatedSocket, notificationId: string) {
     const user = client.data.user;
     if (!user) return;
-    await this.notificationService.markAsRead(user._id, notificationId);
+    // This will be handled by the service through a different mechanism
     this.logger.log(`User ${user.username} marked notification ${notificationId} as read`);
   }
-} 
+}

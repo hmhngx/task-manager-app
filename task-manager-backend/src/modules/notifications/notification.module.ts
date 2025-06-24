@@ -26,12 +26,7 @@ import { AuthModule } from '../auth/auth.module';
     forwardRef(() => AuthModule),
   ],
   controllers: [NotificationController],
-  providers: [
-    NotificationService, 
-    PushService, 
-    NotificationGateway, 
-    NotificationCronService
-  ],
+  providers: [NotificationService, PushService, NotificationGateway, NotificationCronService],
   exports: [NotificationService, PushService, NotificationGateway],
 })
-export class NotificationModule {} 
+export class NotificationModule {}
