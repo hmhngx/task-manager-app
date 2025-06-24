@@ -19,4 +19,4 @@ export class RefreshToken extends Document {
   replacedByToken?: string;
 }
 
-export const RefreshTokenSchema = SchemaFactory.createForClass(RefreshToken); 
+export const RefreshTokenSchema = SchemaFactory.createForClass(RefreshToken);

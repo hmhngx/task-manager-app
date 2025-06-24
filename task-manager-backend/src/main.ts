@@ -30,7 +30,7 @@ async function bootstrap() {
       transform: true,
       forbidNonWhitelisted: true,
       exceptionFactory: (errors) => {
-        const messages = errors.map(error => {
+        const messages = errors.map((error) => {
           const constraints = error.constraints;
           if (constraints) {
             return Object.values(constraints)[0];

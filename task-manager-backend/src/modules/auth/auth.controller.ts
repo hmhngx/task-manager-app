@@ -58,7 +58,7 @@ export class AuthController {
 
     // Create new regular user (not admin)
     await this.usersService.create(registerDto.username, registerDto.password);
-    
+
     // Fetch the full user object
     const user = await this.usersService.findByUsername(registerDto.username);
     if (!user) {
@@ -80,7 +80,7 @@ export class AuthController {
 
     // Create new admin user
     await this.usersService.createAdmin(registerDto.username, registerDto.password);
-    
+
     // Fetch the full user object
     const user = await this.usersService.findByUsername(registerDto.username);
     if (!user) {
@@ -91,7 +91,9 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body(new ValidationPipe({ transform: true })) loginDto: LoginDto): Promise<LoginResponse> {
+  async login(
+    @Body(new ValidationPipe({ transform: true })) loginDto: LoginDto,
+  ): Promise<LoginResponse> {
     const user = await this.usersService.findByUsername(loginDto.username);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -144,7 +146,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async subscribeToPush(
     @Request() req,
-    @Body() subscription: {
+    @Body()
+    subscription: {
       endpoint: string;
       keys: { p256dh: string; auth: string };
     },
@@ -152,17 +155,17 @@ export class AuthController {
     try {
       const userId = req.user._id;
       const userAgent = req.headers['user-agent'];
-      
+
       const savedSubscription = await this.pushService.saveSubscription(
         userId,
         subscription,
         userAgent,
       );
-      
+
       this.logger.log(`Push subscription registered for user ${userId}`);
-      return { 
+      return {
         message: 'Push subscription registered successfully',
-        subscriptionId: savedSubscription._id 
+        subscriptionId: savedSubscription._id,
       };
     } catch (error) {
       this.logger.error('Failed to register push subscription:', error);
@@ -191,10 +194,7 @@ export class AuthController {
   @ApiBearerAuth()
   @Delete('push/unsubscribe/:endpoint')
   @UseGuards(JwtAuthGuard)
-  async unsubscribeFromPush(
-    @Request() req,
-    @Param('endpoint') endpoint: string,
-  ) {
+  async unsubscribeFromPush(@Request() req, @Param('endpoint') endpoint: string) {
     try {
       await this.pushService.removeSubscription(endpoint);
       this.logger.log(`Push subscription unregistered for user ${req.user._id}`);

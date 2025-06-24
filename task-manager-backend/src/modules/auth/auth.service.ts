@@ -57,10 +57,7 @@ export class AuthService {
   }
 
   private async revokeRefreshToken(token: string, replacedByToken?: string): Promise<void> {
-    await this.refreshTokenModel.updateOne(
-      { token },
-      { isRevoked: true, replacedByToken },
-    );
+    await this.refreshTokenModel.updateOne({ token }, { isRevoked: true, replacedByToken });
   }
 
   async validateUser(username: string, password: string): Promise<UserResponse | null> {
@@ -100,7 +97,7 @@ export class AuthService {
         sub: this.getIdString(user._id),
         role: user.role,
       };
-      
+
       const [accessToken, refreshToken] = await Promise.all([
         this.jwtService.signAsync(payload),
         this.generateRefreshToken(user._id),
