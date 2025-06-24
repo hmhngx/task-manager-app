@@ -720,5 +720,3 @@ For support and questions:
 - Check the documentation and troubleshooting guides
 - Review the component documentation
 - Contact the development team
-
----
