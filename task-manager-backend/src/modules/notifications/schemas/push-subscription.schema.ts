@@ -31,4 +31,4 @@ export const PushSubscriptionSchema = SchemaFactory.createForClass(PushSubscript
 
 // Index for efficient queries
 PushSubscriptionSchema.index({ userId: 1 });
-PushSubscriptionSchema.index({ endpoint: 1 }, { unique: true }); 
+PushSubscriptionSchema.index({ endpoint: 1 }, { unique: true });

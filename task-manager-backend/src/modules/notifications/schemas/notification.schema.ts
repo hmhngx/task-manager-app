@@ -1,6 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { NotificationType, NotificationPriority } from '../../../shared/interfaces/notification.interface';
+import {
+  NotificationType,
+  NotificationPriority,
+} from '../../../shared/interfaces/notification.interface';
 
 export type NotificationDocument = Notification & Document;
 
@@ -47,4 +50,4 @@ NotificationSchema.index({ userId: 1, read: 1 });
 NotificationSchema.index({ userId: 1, createdAt: -1 });
 NotificationSchema.index({ taskId: 1 });
 NotificationSchema.index({ type: 1 });
-NotificationSchema.index({ sent: 1, createdAt: 1 }); // For unsent notifications 
+NotificationSchema.index({ sent: 1, createdAt: 1 }); // For unsent notifications

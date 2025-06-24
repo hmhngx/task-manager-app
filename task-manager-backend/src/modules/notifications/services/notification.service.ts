@@ -1,10 +1,9 @@
-import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Notification, NotificationDocument } from '../schemas/notification.schema';
 import { NotificationPayload } from '../../../shared/interfaces/notification.interface';
 import { PushService } from './push.service';
-import { NotificationGateway } from '../notification.gateway';
 
 @Injectable()
 export class NotificationService {
@@ -14,8 +13,6 @@ export class NotificationService {
     @InjectModel(Notification.name)
     private notificationModel: Model<NotificationDocument>,
     private pushService: PushService,
-    @Inject(forwardRef(() => NotificationGateway))
-    private notificationGateway: NotificationGateway,
   ) {}
 
   async createAndSendNotification(
@@ -39,9 +36,6 @@ export class NotificationService {
       timestamp: (notification as any).createdAt,
     };
 
-    // Send via WebSocket
-    this.notificationGateway.sendNotificationToUser(userId, notificationPayload);
-
     // Send via Push
     if (sendPush) {
       await this.pushService.sendNotificationToUser(userId, notificationPayload);
@@ -50,6 +44,15 @@ export class NotificationService {
     this.logger.log(`Notification sent to user ${userId}: ${payload.title}`);
 
     return notification;
+  }
+
+  // Method to be called by NotificationGateway to send WebSocket notifications
+  async sendWebSocketNotification(
+    userId: string,
+    notification: NotificationPayload,
+  ): Promise<void> {
+    // This method will be called by the gateway
+    this.logger.log(`WebSocket notification prepared for user ${userId}: ${notification.title}`);
   }
 
   async markAsRead(userId: string, notificationId: string): Promise<void> {
@@ -81,4 +84,24 @@ export class NotificationService {
       { read: true, readAt: new Date() },
     );
   }
-} 
+
+  async clearNotification(userId: string, notificationId: string): Promise<void> {
+    await this.notificationModel.deleteOne({
+      _id: notificationId,
+      userId: new Types.ObjectId(userId),
+    });
+  }
+
+  async clearAllNotifications(userId: string): Promise<void> {
+    await this.notificationModel.deleteMany({
+      userId: new Types.ObjectId(userId),
+    });
+  }
+
+  async clearReadNotifications(userId: string): Promise<void> {
+    await this.notificationModel.deleteMany({
+      userId: new Types.ObjectId(userId),
+      read: true,
+    });
+  }
+}

@@ -3,7 +3,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as webpush from 'web-push';
 import { PushSubscription, PushSubscriptionDocument } from '../schemas/push-subscription.schema';
-import { NotificationPayload, NotificationPriority } from '../../../shared/interfaces/notification.interface';
+import {
+  NotificationPayload,
+  NotificationPriority,
+} from '../../../shared/interfaces/notification.interface';
 
 @Injectable()
 export class PushService {
@@ -91,10 +94,7 @@ export class PushService {
     }
   }
 
-  async sendNotificationToUser(
-    userId: string,
-    notification: NotificationPayload,
-  ): Promise<void> {
+  async sendNotificationToUser(userId: string, notification: NotificationPayload): Promise<void> {
     try {
       const subscriptions = await this.pushSubscriptionModel.find({
         userId: new Types.ObjectId(userId),
@@ -178,9 +178,7 @@ export class PushService {
     userIds: string[],
     notification: NotificationPayload,
   ): Promise<void> {
-    const promises = userIds.map((userId) =>
-      this.sendNotificationToUser(userId, notification),
-    );
+    const promises = userIds.map((userId) => this.sendNotificationToUser(userId, notification));
     await Promise.allSettled(promises);
   }
 
@@ -206,4 +204,4 @@ export class PushService {
     );
     this.logger.log(`All push subscriptions deactivated for user ${userId}`);
   }
-} 
+}

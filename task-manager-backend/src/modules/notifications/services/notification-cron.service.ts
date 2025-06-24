@@ -4,7 +4,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Task, TaskDocument } from '../../tasks/schemas/task.schema';
 import { NotificationService } from './notification.service';
-import { NotificationType, NotificationPriority } from '../../../shared/interfaces/notification.interface';
+import {
+  NotificationType,
+  NotificationPriority,
+} from '../../../shared/interfaces/notification.interface';
 
 @Injectable()
 export class NotificationCronService {
@@ -114,4 +117,4 @@ export class NotificationCronService {
       this.logger.error('Error cleaning up old notifications:', error);
     }
   }
-} 
+}
