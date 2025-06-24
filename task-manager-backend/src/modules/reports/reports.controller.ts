@@ -18,4 +18,4 @@ export class ReportsController {
     }
     return this.reportsService.getFilteredTasks(startDate, endDate, type);
   }
-} 
+}

@@ -5,9 +5,7 @@ import { Task } from '../tasks/schemas/task.schema';
 
 @Injectable()
 export class ReportsService {
-  constructor(
-    @InjectModel(Task.name) private readonly taskModel: Model<Task>,
-  ) {}
+  constructor(@InjectModel(Task.name) private readonly taskModel: Model<Task>) {}
 
   async getFilteredTasks(startDate: Date, endDate: Date, type?: string) {
     const query: any = {
@@ -23,4 +21,4 @@ export class ReportsService {
 
     return this.taskModel.find(query).sort({ createdAt: -1 }).exec();
   }
-} 
+}

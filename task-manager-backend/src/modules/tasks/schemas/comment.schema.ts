@@ -27,4 +27,4 @@ export class Comment {
   editedAt: Date;
 }
 
-export const CommentSchema = SchemaFactory.createForClass(Comment); 
+export const CommentSchema = SchemaFactory.createForClass(Comment);

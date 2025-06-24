@@ -39,4 +39,4 @@ export class Attachment {
   comment: string;
 }
 
-export const AttachmentSchema = SchemaFactory.createForClass(Attachment); 
+export const AttachmentSchema = SchemaFactory.createForClass(Attachment);

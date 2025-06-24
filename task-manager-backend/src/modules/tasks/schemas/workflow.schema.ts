@@ -45,4 +45,4 @@ export class Workflow {
   approvers: string[];
 }
 
-export const WorkflowSchema = SchemaFactory.createForClass(Workflow); 
+export const WorkflowSchema = SchemaFactory.createForClass(Workflow);
