@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { RootState, useAppDispatch } from '../store';
 import { 
   fetchNotifications, 
   markNotificationAsRead, 
-  markAllNotificationsAsRead 
+  markAllNotificationsAsRead,
+  clearNotification,
+  clearAllNotifications,
+  clearReadNotifications
 } from '../store/notificationSlice';
 
 interface NotificationBoxProps {
@@ -14,8 +18,10 @@ interface NotificationBoxProps {
 
 const NotificationBox: React.FC<NotificationBoxProps> = ({ isOpen, onClose }) => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { notifications, unreadCount, loading } = useSelector((state: RootState) => state.notifications);
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
+  const [showClearOptions, setShowClearOptions] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -23,12 +29,55 @@ const NotificationBox: React.FC<NotificationBoxProps> = ({ isOpen, onClose }) =>
     }
   }, [isOpen, dispatch]);
 
+  // Close clear options when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showClearOptions) {
+        setShowClearOptions(false);
+      }
+    };
+
+    if (showClearOptions) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showClearOptions]);
+
   const handleMarkAsRead = (notificationId: string) => {
     dispatch(markNotificationAsRead(notificationId));
   };
 
   const handleMarkAllAsRead = () => {
     dispatch(markAllNotificationsAsRead());
+  };
+
+  const handleClearNotification = (notificationId: string) => {
+    dispatch(clearNotification(notificationId));
+  };
+
+  const handleClearAllNotifications = () => {
+    if (window.confirm('Are you sure you want to clear all notifications? This action cannot be undone.')) {
+      dispatch(clearAllNotifications());
+      setShowClearOptions(false);
+    }
+  };
+
+  const handleClearReadNotifications = () => {
+    if (window.confirm('Are you sure you want to clear all read notifications? This action cannot be undone.')) {
+      dispatch(clearReadNotifications());
+      setShowClearOptions(false);
+    }
+  };
+
+  const handleViewTask = (taskId: string) => {
+    // Close the notification box
+    onClose();
+    
+    // Navigate to task details page
+    navigate(`/tasks/${taskId}`);
   };
 
   const getNotificationIcon = (type: string) => {
@@ -140,15 +189,52 @@ const NotificationBox: React.FC<NotificationBoxProps> = ({ isOpen, onClose }) =>
               </span>
             )}
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded"
-            title="Close notifications"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center space-x-2">
+            {notifications.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowClearOptions(!showClearOptions);
+                  }}
+                  className="p-1 hover:bg-gray-100 rounded"
+                  title="Clear options"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+                {showClearOptions && (
+                  <div 
+                    className="absolute right-0 top-8 bg-white border rounded-lg shadow-lg z-10 min-w-48"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={handleClearReadNotifications}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 border-b"
+                    >
+                      Clear Read
+                    </button>
+                    <button
+                      onClick={handleClearAllNotifications}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 text-red-600"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-gray-100 rounded"
+              title="Close notifications"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -226,24 +312,32 @@ const NotificationBox: React.FC<NotificationBoxProps> = ({ isOpen, onClose }) =>
                             {new Date(notification.timestamp).toLocaleString()}
                           </p>
                         </div>
-                        {!notification.read && (
+                        <div className="flex items-center space-x-1">
+                          {!notification.read && (
+                            <button
+                              onClick={() => handleMarkAsRead(notification.id)}
+                              className="p-1 hover:bg-gray-200 rounded"
+                              title="Mark as read"
+                            >
+                              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleMarkAsRead(notification.id)}
-                            className="ml-2 p-1 hover:bg-gray-200 rounded"
-                            title="Mark as read"
+                            onClick={() => handleClearNotification(notification.id)}
+                            className="p-1 hover:bg-gray-200 rounded"
+                            title="Clear notification"
                           >
                             <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
-                        )}
+                        </div>
                       </div>
                       {notification.data?.taskId && (
                         <button
-                          onClick={() => {
-                            // Navigate to task details
-                            console.log('Navigate to task:', notification.data?.taskId);
-                          }}
+                          onClick={() => handleViewTask(notification.data?.taskId)}
                           className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
                         >
                           View Task

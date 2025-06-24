@@ -10,6 +10,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Dashboard from './pages/Dashboard';
+import TaskDetailsPage from './pages/TaskDetailsPage';
 import AdminDashboard from './components/AdminDashboard';
 import PrivateRoute from './components/PrivateRoute';
 import AdminTasksDashboard from './components/AdminTasksDashboard';
@@ -18,6 +19,7 @@ import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import ReportScreen from './components/Reports/ReportScreen';
 import { getTasks } from './services/taskService';
+import NotificationBox from './components/NotificationBox';
 import './App.css';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -76,29 +78,31 @@ function App() {
     <AuthProvider>
       <WebSocketProvider>
         <NotificationProvider>
-          <Router>
-            <Routes>
-              {/* Auth pages: no layout, just the box */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+      <Router>
+        <Routes>
+          {/* Auth pages: no layout, just the box */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-              {/* Main app pages: wrapped in Layout */}
-              <Route
-                path="/*"
-                element={
-                  <Layout>
-                    <Routes>
-                      <Route path="dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-                      <Route path="admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
-                      <Route path="admin/tasks" element={<PrivateRoute><AdminTasksDashboard /></PrivateRoute>} />
-                      <Route path="reports" element={<PrivateRoute><ReportScreen /></PrivateRoute>} />
-                      <Route path="" element={<TaskList selectedDate={null} isAdmin={false} />} />
-                    </Routes>
-                  </Layout>
-                }
-              />
-            </Routes>
-          </Router>
+          {/* Main app pages: wrapped in Layout */}
+          <Route
+            path="/*"
+            element={
+              <Layout>
+                <Routes>
+                  <Route path="dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+                  <Route path="tasks/:taskId" element={<PrivateRoute><TaskDetailsPage /></PrivateRoute>} />
+                  <Route path="admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
+                  <Route path="admin/tasks" element={<PrivateRoute><AdminTasksDashboard /></PrivateRoute>} />
+                  <Route path="reports" element={<PrivateRoute><ReportScreen /></PrivateRoute>} />
+                  <Route path="" element={<TaskList selectedDate={null} isAdmin={false} />} />
+                  <Route path="notifications" element={<PrivateRoute><NotificationBox isOpen={true} onClose={() => {}} /></PrivateRoute>} />
+                </Routes>
+              </Layout>
+            }
+          />
+        </Routes>
+      </Router>
         </NotificationProvider>
       </WebSocketProvider>
     </AuthProvider>

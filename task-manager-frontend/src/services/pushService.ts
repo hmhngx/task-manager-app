@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { API_URL } from '../config';
 
 interface PushSubscription {
   endpoint: string;
@@ -9,8 +10,6 @@ interface PushSubscription {
 }
 
 class PushService {
-  private apiBaseUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3000';
-
   async requestPermission(): Promise<boolean> {
     if (!('Notification' in window)) {
       console.log('This browser does not support notifications');
@@ -80,7 +79,7 @@ class PushService {
 
   async getVapidPublicKey(): Promise<string> {
     try {
-      const response = await axios.get(`${this.apiBaseUrl}/auth/push/vapid-public-key`);
+      const response = await axios.get(`${API_URL}/auth/push/vapid-public-key`);
       return response.data.publicKey;
     } catch (error) {
       console.error('Failed to get VAPID public key:', error);
@@ -96,7 +95,7 @@ class PushService {
       }
 
       await axios.post(
-        `${this.apiBaseUrl}/auth/push/subscribe`,
+        `${API_URL}/auth/push/subscribe`,
         subscription,
         {
           headers: {
@@ -120,7 +119,7 @@ class PushService {
       }
 
       await axios.delete(
-        `${this.apiBaseUrl}/auth/push/unsubscribe/${encodeURIComponent(endpoint)}`,
+        `${API_URL}/auth/push/unsubscribe/${encodeURIComponent(endpoint)}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -141,7 +140,7 @@ class PushService {
         throw new Error('No authentication token found');
       }
 
-      await axios.delete(`${this.apiBaseUrl}/auth/push/subscriptions`, {
+      await axios.delete(`${API_URL}/auth/push/subscriptions`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { NotificationPayload } from '../shared/interfaces/notification.interface';
+import { API_URL } from '../config';
 
 interface NotificationState {
   notifications: NotificationPayload[];
@@ -30,7 +31,7 @@ const getErrorMessage = (error: unknown): string => {
 export const fetchNotifications = createAsyncThunk(
   'notifications/fetchNotifications',
   async () => {
-    const response = await fetch('/notifications', {
+    const response = await fetch(`${API_URL}/notifications`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
         'Content-Type': 'application/json',
@@ -45,7 +46,7 @@ export const fetchNotifications = createAsyncThunk(
 export const markNotificationAsRead = createAsyncThunk(
   'notifications/markAsRead',
   async (notificationId: string) => {
-    const response = await fetch(`/notifications/${notificationId}/read`, {
+    const response = await fetch(`${API_URL}/notifications/${notificationId}/read`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -60,7 +61,7 @@ export const markNotificationAsRead = createAsyncThunk(
 export const markAllNotificationsAsRead = createAsyncThunk(
   'notifications/markAllAsRead',
   async () => {
-    const response = await fetch('/notifications/read-all', {
+    const response = await fetch(`${API_URL}/notifications/read-all`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -68,6 +69,49 @@ export const markAllNotificationsAsRead = createAsyncThunk(
       },
     });
     if (!response.ok) throw new Error('Failed to mark all notifications as read');
+  }
+);
+
+export const clearNotification = createAsyncThunk(
+  'notifications/clearNotification',
+  async (notificationId: string) => {
+    const response = await fetch(`${API_URL}/notifications/${notificationId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) throw new Error('Failed to clear notification');
+    return notificationId;
+  }
+);
+
+export const clearAllNotifications = createAsyncThunk(
+  'notifications/clearAll',
+  async () => {
+    const response = await fetch(`${API_URL}/notifications`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) throw new Error('Failed to clear all notifications');
+  }
+);
+
+export const clearReadNotifications = createAsyncThunk(
+  'notifications/clearRead',
+  async () => {
+    const response = await fetch(`${API_URL}/notifications/read`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) throw new Error('Failed to clear read notifications');
   }
 );
 
@@ -129,6 +173,18 @@ const notificationSlice = createSlice({
           notification.read = true;
         });
         state.unreadCount = 0;
+      })
+      .addCase(clearNotification.fulfilled, (state, action) => {
+        state.notifications = state.notifications.filter(n => n.id !== action.payload);
+        state.unreadCount = state.notifications.filter(n => !n.read).length;
+      })
+      .addCase(clearAllNotifications.fulfilled, (state) => {
+        state.notifications = [];
+        state.unreadCount = 0;
+      })
+      .addCase(clearReadNotifications.fulfilled, (state) => {
+        state.notifications = state.notifications.filter(n => !n.read);
+        // unreadCount remains the same since we only removed read notifications
       });
   },
 });
