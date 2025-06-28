@@ -61,20 +61,27 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
     notificationSocket.on('connect', () => {
       console.log('Notification WebSocket connected');
+      console.log('Socket ID:', notificationSocket.id);
       setIsConnected(true);
       setConnectionError(null);
       
       // Subscribe to notifications
       notificationSocket.emit('subscribe:notifications');
+      console.log('Subscribed to notifications');
     });
 
-    notificationSocket.on('disconnect', () => {
-      console.log('Notification WebSocket disconnected');
+    notificationSocket.on('disconnect', (reason) => {
+      console.log('Notification WebSocket disconnected:', reason);
       setIsConnected(false);
     });
 
     notificationSocket.on('connect_error', (error) => {
       console.error('Notification WebSocket connection error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+      });
       setConnectionError('Failed to connect to notifications');
       setIsConnected(false);
     });
@@ -101,7 +108,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     // Handle incoming notifications
     notificationSocket.on('notification', (notification: NotificationPayload) => {
       console.log('Received notification:', notification);
+      console.log('Notification type:', notification.type);
+      console.log('Notification title:', notification.title);
+      console.log('Notification message:', notification.message);
+      console.log('Dispatching to Redux store...');
       dispatch(addNotification(notification));
+      console.log('Notification dispatched successfully');
     });
 
     setSocket(notificationSocket);

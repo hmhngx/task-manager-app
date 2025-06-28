@@ -15,9 +15,11 @@ export enum NotificationType {
   TASK_CREATED = 'task_created',
   TASK_UPDATED = 'task_updated',
   TASK_ASSIGNED = 'task_assigned',
+  TASK_ASSIGNMENT_REMOVED = 'task_assignment_removed',
   TASK_STATUS_CHANGED = 'task_status_changed',
   TASK_DELETED = 'task_deleted',
   TASK_REQUEST = 'task_request',
+  TASK_REQUEST_CONFIRMATION = 'task_request_confirmation',
   TASK_REQUEST_RESPONSE = 'task_request_response',
   COMMENT_ADDED = 'comment_added',
   COMMENT_EDITED = 'comment_edited',
@@ -49,6 +51,7 @@ export interface ServerToClientEvents {
   'task:created': (data: { task: any; creator: string; timestamp: Date }) => void;
   'task:updated': (data: { task: any; updater: string; changes: any; timestamp: Date }) => void;
   'task:assigned': (data: { task: any; assignee: string; assigner: string; timestamp: Date }) => void;
+  'task:assignment_removed': (data: { task: any; removedAssignee: string; remover: string; timestamp: Date }) => void;
   'task:status_changed': (data: { task: any; oldStatus: string; newStatus: string; updater: string; timestamp: Date }) => void;
   'task:deleted': (data: { taskId: string; deleter: string; timestamp: Date }) => void;
   'comment:added': (data: { comment: any; taskId: string; author: string; timestamp: Date }) => void;
