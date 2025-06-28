@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Task, Comment, Attachment } from '../types/Task';
-import { User, getUserId, getUserDisplayName } from '../types/user';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Task, User } from '../types/Task';
+import { getUserId, getUserDisplayName } from '../types/user';
 import { useAuth } from '../contexts/AuthContext';
 import taskService from '../services/taskService';
 import TaskForm from './TaskForm';
@@ -23,16 +23,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   const [selectedAssignee, setSelectedAssignee] = useState<string>('');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchTaskDetails();
-    if (user?.role === 'admin') {
-      taskService.getAvailableUsers().then((users) => {
-        setAvailableUsers(users.filter((u: any) => u.role === 'user'));
-      });
-    }
-  }, [taskId, user]);
-
-  const fetchTaskDetails = async () => {
+  const fetchTaskDetails = useCallback(async () => {
     try {
       const taskData = await taskService.getTaskById(taskId);
       if (!taskData || !taskData.title) {
@@ -45,7 +36,16 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [taskId]);
+
+  useEffect(() => {
+    fetchTaskDetails();
+    if (user?.role === 'admin') {
+      taskService.getAvailableUsers().then((users) => {
+        setAvailableUsers(users.filter((u: any) => u.role === 'user'));
+      });
+    }
+  }, [fetchTaskDetails, user]);
 
   const handleUpdateTask = async (updatedTask: any) => {
     try {
@@ -84,29 +84,52 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   };
 
   const handleRequestTask = async () => {
+    console.log('🔄 User clicked "Request Assignment" button');
+    console.log('📋 Task ID:', taskId);
+    console.log('👤 Current user object:', user);
+    console.log('⏰ Timestamp:', new Date().toISOString());
+    
     try {
+      console.log('📡 Sending task request to backend...');
       await taskService.requestTask(taskId);
+      console.log('✅ Task request sent successfully');
       fetchTaskDetails();
     } catch (error) {
-      console.error('Error requesting task:', error);
+      console.error('❌ Error requesting task:', error);
     }
   };
 
   const handleApproveRequest = async (requesterId: string) => {
+    console.log('✅ Admin clicked "Approve" button');
+    console.log('📋 Task ID:', taskId);
+    console.log('👤 Requester ID:', requesterId);
+    console.log('👨‍💼 Admin user object:', user);
+    console.log('⏰ Timestamp:', new Date().toISOString());
+    
     try {
+      console.log('📡 Sending approval request to backend...');
       await taskService.approveRequest(taskId, requesterId);
+      console.log('✅ Request approved successfully');
       await fetchTaskDetails();
     } catch (error) {
-      console.error('Error approving request:', error);
+      console.error('❌ Error approving request:', error);
     }
   };
 
   const handleRejectRequest = async (requesterId: string) => {
+    console.log('❌ Admin clicked "Reject" button');
+    console.log('📋 Task ID:', taskId);
+    console.log('👤 Requester ID:', requesterId);
+    console.log('👨‍💼 Admin user object:', user);
+    console.log('⏰ Timestamp:', new Date().toISOString());
+    
     try {
+      console.log('📡 Sending rejection request to backend...');
       await taskService.rejectRequest(taskId, requesterId);
+      console.log('✅ Request rejected successfully');
       await fetchTaskDetails();
     } catch (error) {
-      console.error('Error rejecting request:', error);
+      console.error('❌ Error rejecting request:', error);
     }
   };
 
@@ -228,6 +251,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
                     ? 'bg-green-100 text-green-800'
                     : task.status === 'late'
                     ? 'bg-red-100 text-red-800'
+                    : task.status === 'pending_approval'
+                    ? 'bg-orange-100 text-orange-800'
                     : 'bg-blue-100 text-blue-800'
                 }`}>
                   {task.status}
@@ -309,7 +334,6 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
               <div className="flex justify-between items-start">
                 <div>
                   <span className="font-medium">{getUserDisplayName(comment.author)}</span>
-                  <span className="font-medium">{comment.author.username}</span>
                   <span className="text-sm text-gray-500 ml-2">
                     {new Date(comment.createdAt).toLocaleString()}
                   </span>
@@ -453,7 +477,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
             >
               <option value="">Unassigned</option>
               {availableUsers.map((u) => (
-                <option key={u.id} value={u.id}>{u.username}</option>
+                <option key={u.id} value={u.id}>{getUserDisplayName(u)}</option>
               ))}
             </select>
             <button
@@ -473,13 +497,37 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
             )}
           </>
         )}
-        {user?.role !== 'admin' && (
-          <button
-            onClick={handleRequestTask}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-          >
-            Request Assignment
-          </button>
+        {user?.role !== 'admin' && user && (
+          <>
+            {/* Only show Request Assignment button if user is not assigned, not creator, and not already a requester */}
+            {!task.assignee || getUserId(task.assignee) !== getUserId(user) ? (
+              task.creator && getUserId(task.creator) !== getUserId(user) ? (
+                task.requesters.some(requester => {
+                  const requesterId = typeof requester === 'string' ? requester : getUserId(requester as User);
+                  return requesterId === getUserId(user);
+                }) ? (
+                  <div className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded border border-yellow-300">
+                    You have already requested this task
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleRequestTask}
+                    className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                  >
+                    Request Assignment
+                  </button>
+                )
+              ) : (
+                <div className="px-4 py-2 bg-gray-100 text-gray-600 rounded border border-gray-300">
+                  You cannot request your own task
+                </div>
+              )
+            ) : (
+              <div className="px-4 py-2 bg-blue-100 text-blue-800 rounded border border-blue-300">
+                You are already assigned to this task
+              </div>
+            )}
+          </>
         )}
         {task.requesters.length > 0 && (
           <div className="space-y-2">
