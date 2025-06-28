@@ -60,18 +60,6 @@ export class TasksController {
     return this.tasksService.createTaskRequest(createTaskDto, req.user.id);
   }
 
-  @Post(':id/approve')
-  @Roles(UserRole.ADMIN)
-  approveTaskRequest(@Param('id') taskId: string, @Req() req: RequestWithUser) {
-    return this.tasksService.handleTaskRequest(taskId, true, req.user.id);
-  }
-
-  @Post(':id/reject')
-  @Roles(UserRole.ADMIN)
-  rejectTaskRequest(@Param('id') taskId: string, @Req() req: RequestWithUser) {
-    return this.tasksService.handleTaskRequest(taskId, false, req.user.id);
-  }
-
   @Get()
   getAll(@Query() query: any) {
     return this.tasksService.getAllTasks(query);
@@ -423,15 +411,46 @@ export class TasksController {
     return this.tasksService.getUpcomingDeadlineTasks();
   }
 
-  @Post('check-overdue')
-  @Roles(UserRole.ADMIN)
-  checkOverdueTasks() {
-    return this.tasksService.checkOverdueTasks();
-  }
-
   @Post('check-deadlines')
   @Roles(UserRole.ADMIN)
   checkUpcomingDeadlines() {
     return this.tasksService.checkUpcomingDeadlines();
+  }
+
+  @Post(':id/assign')
+  @Roles(UserRole.ADMIN)
+  assignTask(
+    @Param('id') taskId: string,
+    @Body('assigneeId') assigneeId: string,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.tasksService.assignTask(taskId, assigneeId, req.user.id);
+  }
+
+  @Post(':id/status')
+  updateTaskStatus(
+    @Param('id') taskId: string,
+    @Body('status') status: TaskStatus,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.tasksService.updateTaskStatus(taskId, status, req.user.id);
+  }
+
+  @Get(':id/debug')
+  async debugTask(@Param('id') taskId: string, @Req() req: RequestWithUser) {
+    const task = await this.tasksService.getTaskById(taskId);
+    return {
+      taskId: task._id.toString(),
+      title: task.title,
+      status: task.status,
+      assignee: task.assignee ? task.assignee.toString() : null,
+      creator: task.creator.toString(),
+      requesters: task.requesters.map((r) => r.toString()),
+      requestersCount: task.requesters.length,
+      currentUser: req.user.id,
+      isCreator: task.creator.toString() === req.user.id,
+      isAssignee: task.assignee ? task.assignee.toString() === req.user.id : false,
+      isRequester: task.requesters.some((r) => r.toString() === req.user.id),
+    };
   }
 }
