@@ -21,3 +21,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Postman
+*.postman_collection.json
+*.postman_environment.json
+*.postman_globals.json
+postman/
+Postman/ 

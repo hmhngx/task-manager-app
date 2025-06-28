@@ -30,4 +30,23 @@ yarn-error.log*
 
 # Logs
 logs
-*.log 
+*.log
+
+# Postman
+*.postman_collection.json
+*.postman_environment.json
+*.postman_globals.json
+postman/
+Postman/
+
+# Test files and scripts
+test-*.js
+test-*.ts
+test-*.mjs
+*test*.js
+*test*.ts
+*test*.mjs
+test-notifications.js
+test-assignment-notifications.js
+test-pending-approval.js
+Notification_Tests.postman_collection.json 
