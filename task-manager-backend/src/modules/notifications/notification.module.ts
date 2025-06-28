@@ -6,12 +6,12 @@ import { PushSubscription, PushSubscriptionSchema } from './schemas/push-subscri
 import { Task, TaskSchema } from '../tasks/schemas/task.schema';
 import { NotificationService } from './services/notification.service';
 import { PushService } from './services/push.service';
-import { NotificationGateway } from './notification.gateway';
 import { NotificationCronService } from './services/notification-cron.service';
 import { NotificationController } from './notification.controller';
 import { UsersModule } from '../users/users.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { AuthModule } from '../auth/auth.module';
+import { WebSocketModule } from '../websocket/websocket.module';
 
 @Module({
   imports: [
@@ -24,9 +24,10 @@ import { AuthModule } from '../auth/auth.module';
     forwardRef(() => UsersModule),
     forwardRef(() => TasksModule),
     forwardRef(() => AuthModule),
+    forwardRef(() => WebSocketModule),
   ],
   controllers: [NotificationController],
-  providers: [NotificationService, PushService, NotificationGateway, NotificationCronService],
-  exports: [NotificationService, PushService, NotificationGateway],
+  providers: [NotificationService, PushService, NotificationCronService],
+  exports: [NotificationService, PushService],
 })
 export class NotificationModule {}

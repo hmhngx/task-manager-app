@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Notification, NotificationDocument } from '../schemas/notification.schema';
 import { NotificationPayload } from '../../../shared/interfaces/notification.interface';
 import { PushService } from './push.service';
+import { NotificationGateway } from '../../websocket/gateways/notification.gateway';
 
 @Injectable()
 export class NotificationService {
@@ -13,6 +14,8 @@ export class NotificationService {
     @InjectModel(Notification.name)
     private notificationModel: Model<NotificationDocument>,
     private pushService: PushService,
+    @Inject(forwardRef(() => NotificationGateway))
+    private notificationGateway: NotificationGateway,
   ) {}
 
   async createAndSendNotification(
@@ -20,39 +23,54 @@ export class NotificationService {
     payload: Omit<NotificationPayload, 'id' | 'read'>,
     sendPush = true,
   ): Promise<NotificationDocument> {
+    this.logger.log(`Creating notification for user ${userId}: ${payload.title}`);
+
+    // Extract taskId from data if present
+    const taskId = payload.data?.taskId as string | undefined;
+    
     const notification = new this.notificationModel({
       ...payload,
       userId: new Types.ObjectId(userId),
+      taskId: taskId ? new Types.ObjectId(taskId) : undefined,
       read: false,
     });
     await notification.save();
 
+    this.logger.log(`Notification saved to database with ID: ${(notification._id as Types.ObjectId).toString()}`);
+
     // Create notification payload for WebSocket
     const notificationPayload: NotificationPayload = {
       ...payload,
-      id: notification._id.toString(),
+      id: (notification._id as Types.ObjectId).toString(),
       read: false,
       userId: userId,
-      timestamp: (notification as any).createdAt,
+      taskId: taskId,
+      timestamp: payload.timestamp || new Date(),
     };
+
+    this.logger.log(`Prepared WebSocket payload: ${JSON.stringify(notificationPayload)}`);
 
     // Send via Push
     if (sendPush) {
-      await this.pushService.sendNotificationToUser(userId, notificationPayload);
+      try {
+        await this.pushService.sendNotificationToUser(userId, notificationPayload);
+        this.logger.log(`Push notification sent to user ${userId}`);
+      } catch (error) {
+        this.logger.error(`Failed to send push notification to user ${userId}:`, error);
+      }
     }
 
-    this.logger.log(`Notification sent to user ${userId}: ${payload.title}`);
+    // Send WebSocket notification
+    try {
+      this.notificationGateway.sendNotificationToUser(userId, notificationPayload);
+      this.logger.log(`WebSocket notification sent to user ${userId}`);
+    } catch (error) {
+      this.logger.error(`Failed to send WebSocket notification to user ${userId}:`, error);
+    }
+
+    this.logger.log(`Notification process completed for user ${userId}: ${payload.title}`);
 
     return notification;
-  }
-
-  // Method to be called by NotificationGateway to send WebSocket notifications
-  async sendWebSocketNotification(
-    userId: string,
-    notification: NotificationPayload,
-  ): Promise<void> {
-    // This method will be called by the gateway
-    this.logger.log(`WebSocket notification prepared for user ${userId}: ${notification.title}`);
   }
 
   async markAsRead(userId: string, notificationId: string): Promise<void> {

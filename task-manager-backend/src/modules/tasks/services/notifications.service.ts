@@ -9,6 +9,7 @@ import {
   NotificationPriority,
 } from '../../../shared/interfaces/notification.interface';
 import * as nodemailer from 'nodemailer';
+import { NotificationGateway } from '../../websocket/gateways/notification.gateway';
 
 interface PopulatedUser {
   _id: Types.ObjectId;
@@ -25,6 +26,8 @@ export class NotificationsService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @Inject(forwardRef(() => NotificationService))
     private notificationService: NotificationService,
+    @Inject(forwardRef(() => NotificationGateway))
+    private notificationGateway: NotificationGateway,
   ) {
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -68,15 +71,18 @@ export class NotificationsService {
     // Send email notification
     await this.sendEmail(task.assignee.email, subject, html);
 
-    // Create in-app notification
-    await this.notificationService.createAndSendNotification(task.assignee._id.toString(), {
-      title: 'Task Assigned',
-      message: `You have been assigned to task: ${task.title}`,
-      type: NotificationType.TASK_ASSIGNED,
-      priority: this.mapPriorityToNotificationPriority(task.priority),
-      data: { taskId: task._id.toString() },
-      timestamp: new Date(),
-    });
+    // Create in-app notification (this automatically sends WebSocket notification)
+    await this.notificationService.createAndSendNotification(
+      task.assignee._id.toString(),
+      {
+        title: 'Task Assigned',
+        message: `You have been assigned to task: ${task.title}`,
+        type: NotificationType.TASK_ASSIGNED,
+        priority: this.mapPriorityToNotificationPriority(task.priority),
+        data: { taskId: task._id.toString() },
+        timestamp: new Date(),
+      },
+    );
   }
 
   async notifyTaskStatusChanged(taskId: string) {
@@ -265,13 +271,19 @@ export class NotificationsService {
       await this.sendEmail(admin.email, subject, html);
 
       // Create in-app notification for admin
-      await this.notificationService.createAndSendNotification(admin._id.toString(), {
+      const notification = await this.notificationService.createAndSendNotification(admin._id.toString(), {
         title: 'New Task Request',
-        message: `New task request: "${task.title}" from ${task.creator?.username}`,
+        message: `"${task.creator?.username}" has requested for "${task.title}" task`,
         type: NotificationType.TASK_REQUEST,
         priority: this.mapPriorityToNotificationPriority(task.priority),
         data: { taskId: task._id.toString() },
         timestamp: new Date(),
+      });
+      // Send WebSocket notification
+      this.notificationGateway.sendNotificationToUser(admin._id.toString(), {
+        ...notification.toObject(),
+        id: notification._id.toString(),
+        read: false,
       });
     }
   }
@@ -302,13 +314,19 @@ export class NotificationsService {
     await this.sendEmail(requester.email, subject, html);
 
     // Create in-app notification
-    await this.notificationService.createAndSendNotification(requester._id.toString(), {
+    const notification = await this.notificationService.createAndSendNotification(requester._id.toString(), {
       title: `Task Request ${approved ? 'Approved' : 'Rejected'}`,
       message: `Your task request "${task.title}" was ${approved ? 'approved' : 'rejected'}`,
       type: NotificationType.TASK_REQUEST_RESPONSE,
       priority: this.mapPriorityToNotificationPriority(task.priority),
-      data: { taskId: task._id.toString() },
+      data: { taskId: String(task._id) },
       timestamp: new Date(),
+    });
+    // Send WebSocket notification
+    this.notificationGateway.sendNotificationToUser(requester._id.toString(), {
+      ...notification.toObject(),
+      id: String(notification._id),
+      read: false,
     });
   }
 

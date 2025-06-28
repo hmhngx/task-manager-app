@@ -3,19 +3,28 @@ import {
   Get,
   Put,
   Param,
-  UseGuards,
-  Request,
   Query,
-  Logger,
+  UseGuards,
+  Req,
+  Post,
+  Body,
+  HttpException,
+  HttpStatus,
   InternalServerErrorException,
   Delete,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { NotificationService } from './services/notification.service';
-import { NotificationPayload } from '../../shared/interfaces/notification.interface';
+import {
+  NotificationPayload,
+  NotificationType,
+  NotificationPriority,
+} from '../../shared/interfaces/notification.interface';
 import { UserRole } from '../users/user.schema';
 import { NotificationDocument } from './schemas/notification.schema';
+import { Request } from 'express';
 
 // Define proper interfaces for type safety
 interface AuthenticatedUser {
@@ -26,6 +35,14 @@ interface AuthenticatedUser {
 
 interface AuthenticatedRequest {
   user: AuthenticatedUser;
+}
+
+interface RequestWithUser extends Request {
+  user: {
+    id: string;
+    username: string;
+    role: string;
+  };
 }
 
 @ApiTags('notifications')
@@ -41,7 +58,7 @@ export class NotificationController {
   @ApiOperation({ summary: 'Get user notifications' })
   @ApiResponse({ status: 200, description: 'Notifications retrieved successfully' })
   async getUserNotifications(
-    @Request() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest,
     @Query('limit') limit?: number,
   ): Promise<{ notifications: NotificationPayload[] }> {
     try {
@@ -88,7 +105,7 @@ export class NotificationController {
   @ApiOperation({ summary: 'Mark notification as read' })
   @ApiResponse({ status: 200, description: 'Notification marked as read' })
   async markAsRead(
-    @Request() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest,
     @Param('id') notificationId: string,
   ): Promise<{ success: boolean }> {
     try {
@@ -113,7 +130,7 @@ export class NotificationController {
   @Put('read-all')
   @ApiOperation({ summary: 'Mark all notifications as read' })
   @ApiResponse({ status: 200, description: 'All notifications marked as read' })
-  async markAllAsRead(@Request() req: AuthenticatedRequest): Promise<{ success: boolean }> {
+  async markAllAsRead(@Req() req: AuthenticatedRequest): Promise<{ success: boolean }> {
     try {
       const userId = req.user.id;
       if (!userId) {
@@ -136,7 +153,7 @@ export class NotificationController {
   @Get('unread-count')
   @ApiOperation({ summary: 'Get unread notification count' })
   @ApiResponse({ status: 200, description: 'Unread count retrieved successfully' })
-  async getUnreadCount(@Request() req: AuthenticatedRequest): Promise<{ count: number }> {
+  async getUnreadCount(@Req() req: AuthenticatedRequest): Promise<{ count: number }> {
     try {
       const userId = req.user.id;
       if (!userId) {
@@ -160,7 +177,7 @@ export class NotificationController {
   @ApiOperation({ summary: 'Clear a specific notification' })
   @ApiResponse({ status: 200, description: 'Notification cleared successfully' })
   async clearNotification(
-    @Request() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest,
     @Param('id') notificationId: string,
   ): Promise<{ success: boolean }> {
     try {
@@ -185,7 +202,7 @@ export class NotificationController {
   @Delete()
   @ApiOperation({ summary: 'Clear all notifications' })
   @ApiResponse({ status: 200, description: 'All notifications cleared successfully' })
-  async clearAllNotifications(@Request() req: AuthenticatedRequest): Promise<{ success: boolean }> {
+  async clearAllNotifications(@Req() req: AuthenticatedRequest): Promise<{ success: boolean }> {
     try {
       const userId = req.user.id;
       if (!userId) {
@@ -209,7 +226,7 @@ export class NotificationController {
   @ApiOperation({ summary: 'Clear read notifications' })
   @ApiResponse({ status: 200, description: 'Read notifications cleared successfully' })
   async clearReadNotifications(
-    @Request() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest,
   ): Promise<{ success: boolean }> {
     try {
       const userId = req.user.id;
@@ -226,6 +243,38 @@ export class NotificationController {
       );
       throw new InternalServerErrorException(
         `Failed to clear read notifications: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  @Post('test')
+  @ApiOperation({ summary: 'Test notification (for debugging)' })
+  @ApiResponse({ status: 200, description: 'Test notification sent' })
+  async testNotification(@Req() req: AuthenticatedRequest): Promise<{ success: boolean }> {
+    try {
+      const userId = req.user.id;
+      if (!userId) {
+        throw new InternalServerErrorException('User ID not found in user object');
+      }
+
+      // Create a test notification
+      await this.notificationService.createAndSendNotification(userId, {
+        title: 'Test Notification',
+        message: 'This is a test notification to verify the system is working',
+        type: NotificationType.TASK_ASSIGNED,
+        priority: NotificationPriority.MEDIUM,
+        data: { taskId: 'test-task-id' },
+        timestamp: new Date(),
+      });
+
+      return { success: true };
+    } catch (error) {
+      this.logger.error(
+        `Error in testNotification: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : '',
+      );
+      throw new InternalServerErrorException(
+        `Failed to send test notification: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }
