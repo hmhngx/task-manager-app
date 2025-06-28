@@ -20,6 +20,18 @@ export interface NotificationData {
   priority?: 'low' | 'medium' | 'high' | 'urgent';
 }
 
+export interface TaskData {
+  _id: string;
+  title: string;
+  description?: string;
+  deadline?: Date;
+  status?: string;
+  priority?: string;
+  assignee?: string;
+  creator?: string;
+  [key: string]: any; // Allow additional properties
+}
+
 @Injectable()
 export class WebSocketService {
   private server: Server;
@@ -112,7 +124,7 @@ export class WebSocketService {
   /**
    * Send deadline reminder to specific users
    */
-  sendDeadlineReminder(userIds: string[], taskData: any) {
+  sendDeadlineReminder(userIds: string[], taskData: TaskData) {
     const notification: NotificationData = {
       id: `deadline-${taskData._id}-${Date.now()}`,
       type: 'deadline_reminder',
@@ -130,7 +142,7 @@ export class WebSocketService {
   /**
    * Send overdue notification to specific users
    */
-  sendOverdueNotification(userIds: string[], taskData: any) {
+  sendOverdueNotification(userIds: string[], taskData: TaskData) {
     const notification: NotificationData = {
       id: `overdue-${taskData._id}-${Date.now()}`,
       type: 'overdue_task',
@@ -148,7 +160,7 @@ export class WebSocketService {
   /**
    * Send task request notification to admins
    */
-  sendTaskRequestNotification(taskData: any, requesterId: string) {
+  sendTaskRequestNotification(taskData: TaskData, requesterId: string) {
     const notification: NotificationData = {
       id: `request-${taskData._id}-${Date.now()}`,
       type: 'task_request',
@@ -168,7 +180,7 @@ export class WebSocketService {
    */
   sendTaskRequestResponseNotification(
     requesterId: string,
-    taskData: any,
+    taskData: TaskData,
     approved: boolean,
     adminId: string,
   ) {
@@ -190,7 +202,7 @@ export class WebSocketService {
    * Send participant change notification
    */
   sendParticipantChangeNotification(
-    taskData: any,
+    taskData: TaskData,
     action: 'added' | 'removed',
     participantId: string,
     adminId: string,

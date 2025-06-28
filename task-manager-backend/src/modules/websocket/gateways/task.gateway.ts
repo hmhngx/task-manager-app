@@ -203,6 +203,42 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
+   * Handle task assignment removal event
+   */
+  handleTaskAssignmentRemoved(task: TaskData, removedAssigneeId: string, removerId: string) {
+    // Broadcast to task room
+    this.webSocketService.broadcastToRoom(`task:${task._id}`, 'task:assignment_removed', {
+      task,
+      removedAssignee: removedAssigneeId,
+      remover: removerId,
+      timestamp: new Date(),
+    });
+
+    // Send notification to the removed assignee
+    const notification: NotificationData = {
+      id: `assignment-removed-${task._id}-${Date.now()}`,
+      type: 'task_assignment_removed',
+      title: 'Task Assignment Removed',
+      message: `You have been removed from task: "${task.title}"`,
+      data: { task, remover: removerId },
+      timestamp: new Date(),
+      read: false,
+      priority: 'medium',
+    };
+
+    this.webSocketService.sendNotification(removedAssigneeId, notification);
+
+    // Broadcast to admin room
+    this.webSocketService.broadcastToAdmins('admin:task_activity', {
+      type: 'task_assignment_removed',
+      task,
+      removedAssignee: removedAssigneeId,
+      remover: removerId,
+      timestamp: new Date(),
+    });
+  }
+
+  /**
    * Handle task status change event
    */
   handleTaskStatusChanged(task: TaskData, oldStatus: string, newStatus: string, updaterId: string) {

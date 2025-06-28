@@ -4,6 +4,13 @@ import { WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { UsersService } from '../../users/users.service';
 
+interface JwtPayload {
+  sub: string;
+  username: string;
+  iat: number;
+  exp: number;
+}
+
 @Injectable()
 export class WebSocketAuthGuard implements CanActivate {
   constructor(
@@ -20,7 +27,7 @@ export class WebSocketAuthGuard implements CanActivate {
         throw new WsException('Unauthorized access');
       }
 
-      const payload = await this.jwtService.verifyAsync(token);
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token);
       const user = await this.usersService.findById(payload.sub);
 
       if (!user) {
@@ -28,11 +35,10 @@ export class WebSocketAuthGuard implements CanActivate {
       }
 
       // Attach user to socket for later use
-      (client as any).data = {
+      (client as Socket & { data: { user: any } }).data = {
         user: {
           _id: user._id.toString(),
           username: user.username,
-          email: user.email,
           role: user.role,
         },
       };
@@ -44,7 +50,8 @@ export class WebSocketAuthGuard implements CanActivate {
 
   private extractTokenFromHeader(client: Socket): string | undefined {
     const auth =
-      (client.handshake.auth as any).token || (client.handshake.headers as any).authorization;
+      (client.handshake.auth as { token?: string })?.token ||
+      (client.handshake.headers as { authorization?: string })?.authorization;
     if (!auth) return undefined;
 
     const [type, token] = auth.split(' ');
