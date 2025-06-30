@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Task, User } from '../types/Task';
 import { getUserId, getUserDisplayName } from '../types/user';
 import { useAuth } from '../contexts/AuthContext';
-import taskService from '../services/taskService';
+import taskService, { canRequestTask, getTaskRequestRestrictionMessage } from '../services/taskService';
 import TaskForm from './TaskForm';
 import Button from './ui/Button';
 import dayjs from 'dayjs';
@@ -502,7 +502,12 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
             {/* Only show Request Assignment button if user is not assigned, not creator, and not already a requester */}
             {!task.assignee || getUserId(task.assignee) !== getUserId(user) ? (
               task.creator && getUserId(task.creator) !== getUserId(user) ? (
-                task.requesters.some(requester => {
+                // Check if task can be requested
+                !canRequestTask(task) ? (
+                  <div className="px-4 py-2 bg-gray-100 text-gray-600 rounded border border-gray-300">
+                    {getTaskRequestRestrictionMessage(task)}
+                  </div>
+                ) : task.requesters.some(requester => {
                   const requesterId = typeof requester === 'string' ? requester : getUserId(requester as User);
                   return requesterId === getUserId(user);
                 }) ? (

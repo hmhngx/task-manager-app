@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useWebSocket } from '../contexts/WebSocketContext';
+import { useNotification } from '../contexts/NotificationContext';
 
 export interface Notification {
   id: string;
@@ -17,17 +17,17 @@ interface UseNotificationSocketOptions {
 }
 
 export const useNotificationSocket = (options: UseNotificationSocketOptions = {}) => {
-  const { notificationSocket, subscribeToNotifications } = useWebSocket();
+  const { socket, subscribeToNotifications } = useNotification();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const { onNotification } = options;
 
   useEffect(() => {
-    if (notificationSocket) {
+    if (socket) {
       subscribeToNotifications();
     }
-  }, [notificationSocket, subscribeToNotifications]);
+  }, [socket, subscribeToNotifications]);
 
   const handleNewNotification = useCallback((notification: Notification) => {
     console.log('New notification received:', notification);
@@ -39,14 +39,14 @@ export const useNotificationSocket = (options: UseNotificationSocketOptions = {}
   }, [onNotification]);
 
   useEffect(() => {
-    if (!notificationSocket) return;
+    if (!socket) return;
 
-    notificationSocket.on('notification:new', handleNewNotification);
+    socket.on('notification', handleNewNotification);
 
     return () => {
-      notificationSocket.off('notification:new', handleNewNotification);
+      socket.off('notification', handleNewNotification);
     };
-  }, [notificationSocket, handleNewNotification]);
+  }, [socket, handleNewNotification]);
 
   const markAsRead = (notificationId: string) => {
     setNotifications(prev =>
@@ -78,6 +78,6 @@ export const useNotificationSocket = (options: UseNotificationSocketOptions = {}
     markAsRead,
     markAllAsRead,
     clearNotifications,
-    isConnected: !!notificationSocket?.connected,
+    isConnected: !!socket?.connected,
   };
 }; 
