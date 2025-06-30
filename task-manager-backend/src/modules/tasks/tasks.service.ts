@@ -312,6 +312,23 @@ export class TasksService {
 
       // If status is being updated, validate the transition
       if (updateTaskDto.status && updateTaskDto.status !== task.status) {
+        // Prevent setting status to pending_approval for done/late tasks
+        if (updateTaskDto.status === TaskStatus.PENDING_APPROVAL) {
+          if (task.status === TaskStatus.DONE || task.status === TaskStatus.LATE) {
+            throw new BadRequestException(
+              `Cannot set status to 'pending_approval' for a task that is ${task.status}. Only tasks in 'todo' or 'in_progress' status can be set to pending approval.`,
+            );
+          }
+        }
+
+        // Prevent changing status of done/late tasks to pending_approval
+        if ((task.status === TaskStatus.DONE || task.status === TaskStatus.LATE) && 
+            updateTaskDto.status === TaskStatus.PENDING_APPROVAL) {
+          throw new BadRequestException(
+            `Cannot change status of a ${task.status} task to pending_approval.`,
+          );
+        }
+
         // Defensive: Only validate if workflowId is present and valid
         let workflowId: string | undefined;
         const workflowObj = task.workflow as { _id?: string } | string | undefined;
@@ -892,16 +909,35 @@ export class TasksService {
 
   // Example for status change:
   async updateTaskStatus(taskId: string, newStatus: TaskStatus, updaterId: string) {
-    const task = await this.taskModel.findByIdAndUpdate(
+    const task = await this.taskModel.findById(taskId);
+    if (!task) throw new NotFoundException('Task not found');
+
+    // Validate status transition
+    if (newStatus === TaskStatus.PENDING_APPROVAL) {
+      if (task.status === TaskStatus.DONE || task.status === TaskStatus.LATE) {
+        throw new BadRequestException(
+          `Cannot set status to 'pending_approval' for a task that is ${task.status}. Only tasks in 'todo' or 'in_progress' status can be set to pending approval.`,
+        );
+      }
+    }
+
+    // Prevent changing status of done/late tasks to pending_approval
+    if ((task.status === TaskStatus.DONE || task.status === TaskStatus.LATE) && 
+        newStatus === TaskStatus.PENDING_APPROVAL) {
+      throw new BadRequestException(
+        `Cannot change status of a ${task.status} task to pending_approval.`,
+      );
+    }
+
+    const updatedTask = await this.taskModel.findByIdAndUpdate(
       taskId,
       { status: newStatus },
       { new: true },
     );
-    if (!task) throw new NotFoundException('Task not found');
 
     // Send email and in-app notification using NotificationsService
     await this.notificationsService.notifyTaskStatusChanged(taskId);
 
-    return task;
+    return updatedTask;
   }
 }

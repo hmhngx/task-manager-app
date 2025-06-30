@@ -270,20 +270,14 @@ export class NotificationsService {
     for (const admin of adminUsers) {
       await this.sendEmail(admin.email, subject, html);
 
-      // Create in-app notification for admin
-      const notification = await this.notificationService.createAndSendNotification(admin._id.toString(), {
+      // Create in-app notification for admin (this automatically sends WebSocket notification)
+      await this.notificationService.createAndSendNotification(admin._id.toString(), {
         title: 'New Task Request',
         message: `"${task.creator?.username}" has requested for "${task.title}" task`,
         type: NotificationType.TASK_REQUEST,
         priority: this.mapPriorityToNotificationPriority(task.priority),
         data: { taskId: task._id.toString() },
         timestamp: new Date(),
-      });
-      // Send WebSocket notification
-      this.notificationGateway.sendNotificationToUser(admin._id.toString(), {
-        ...notification.toObject(),
-        id: notification._id.toString(),
-        read: false,
       });
     }
   }
@@ -313,20 +307,14 @@ export class NotificationsService {
     // Send email notification
     await this.sendEmail(requester.email, subject, html);
 
-    // Create in-app notification
-    const notification = await this.notificationService.createAndSendNotification(requester._id.toString(), {
+    // Create in-app notification (this automatically sends WebSocket notification)
+    await this.notificationService.createAndSendNotification(requester._id.toString(), {
       title: `Task Request ${approved ? 'Approved' : 'Rejected'}`,
       message: `Your task request "${task.title}" was ${approved ? 'approved' : 'rejected'}`,
       type: NotificationType.TASK_REQUEST_RESPONSE,
       priority: this.mapPriorityToNotificationPriority(task.priority),
       data: { taskId: String(task._id) },
       timestamp: new Date(),
-    });
-    // Send WebSocket notification
-    this.notificationGateway.sendNotificationToUser(requester._id.toString(), {
-      ...notification.toObject(),
-      id: String(notification._id),
-      read: false,
     });
   }
 

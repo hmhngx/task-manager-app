@@ -1,10 +1,20 @@
-import { Injectable, NotFoundException, BadRequestException, Logger, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Workflow, WorkflowDocument, WorkflowTransition } from '../schemas/workflow.schema';
-import { Task, TaskDocument } from '../schemas/task.schema';
+import { Task, TaskDocument, TaskStatus } from '../schemas/task.schema';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { NotificationType, NotificationPriority } from '../../../shared/interfaces/notification.interface';
+import {
+  NotificationType,
+  NotificationPriority,
+} from '../../../shared/interfaces/notification.interface';
 import { TaskGateway } from '../../websocket/gateways/task.gateway';
 import { TaskData } from '../../../shared/interfaces/websocket.interface';
 import { UsersService } from '../../users/users.service';
@@ -143,10 +153,22 @@ export class WorkflowsService {
     }
 
     this.logger.log(`📋 Task title: ${task.title}`);
-    this.logger.log(`👤 Current requesters: ${task.requesters.map((r) => r.toString()).join(', ')}`);
+    this.logger.log(
+      `👤 Current requesters: ${task.requesters.map((r) => r.toString()).join(', ')}`,
+    );
     this.logger.log(`📊 Current status: ${task.status}`);
-    this.logger.log(`👤 Current assignee: ${task.assignee ? task.assignee.toString() : 'Unassigned'}`);
+    this.logger.log(
+      `👤 Current assignee: ${task.assignee ? task.assignee.toString() : 'Unassigned'}`,
+    );
     this.logger.log(`👤 Task creator: ${task.creator.toString()}`);
+
+    // Check if task is in a state that allows requests
+    if (task.status === TaskStatus.DONE || task.status === TaskStatus.LATE) {
+      this.logger.warn(`⚠️ Task ${taskId} is in ${task.status} status and cannot be requested`);
+      throw new BadRequestException(
+        `Cannot request a task that is ${task.status}. Only tasks in 'todo' or 'in_progress' status can be requested.`,
+      );
+    }
 
     if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
       this.logger.error(`❌ Invalid user ID format: ${userId}`);
@@ -184,8 +206,8 @@ export class WorkflowsService {
       $push: { requesters: userIdObj },
     };
     
-    if (task.status === 'todo') {
-      updateData.status = 'pending_approval';
+    if (task.status === TaskStatus.TODO) {
+      updateData.status = TaskStatus.PENDING_APPROVAL;
       this.logger.log(`✅ Task status updated to pending_approval`);
     } else {
       this.logger.log(`✅ Task status preserved as ${task.status}`);
