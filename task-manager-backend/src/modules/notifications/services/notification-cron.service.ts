@@ -45,6 +45,20 @@ export class NotificationCronService {
         ].filter(Boolean);
 
         for (const userId of participantIds) {
+          // Check if notification was already sent recently (within last hour)
+          const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+          const existingNotification = await this.notificationService['notificationModel'].findOne({
+            userId: userId,
+            type: NotificationType.TASK_OVERDUE,
+            taskId: task._id,
+            createdAt: { $gte: oneHourAgo },
+          });
+
+          if (existingNotification) {
+            this.logger.log(`Overdue notification already sent recently for user ${userId} and task ${task._id}. Skipping.`);
+            continue;
+          }
+
           await this.notificationService.createAndSendNotification(userId, {
             title: 'Task Overdue',
             message: `Task "${task.title}" is overdue! Please take immediate action.`,
@@ -88,6 +102,20 @@ export class NotificationCronService {
         ].filter(Boolean);
 
         for (const userId of participantIds) {
+          // Check if notification was already sent recently (within last 6 hours)
+          const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+          const existingNotification = await this.notificationService['notificationModel'].findOne({
+            userId: userId,
+            type: NotificationType.DEADLINE_APPROACHING,
+            taskId: task._id,
+            createdAt: { $gte: sixHoursAgo },
+          });
+
+          if (existingNotification) {
+            this.logger.log(`Deadline approaching notification already sent recently for user ${userId} and task ${task._id}. Skipping.`);
+            continue;
+          }
+
           await this.notificationService.createAndSendNotification(userId, {
             title: 'Deadline Approaching',
             message: `Task "${task.title}" deadline is approaching!`,

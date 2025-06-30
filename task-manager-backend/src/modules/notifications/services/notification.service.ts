@@ -28,6 +28,20 @@ export class NotificationService {
     // Extract taskId from data if present
     const taskId = payload.data?.taskId as string | undefined;
     
+    // Check for recent duplicate notifications (within last 5 minutes)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const existingNotification = await this.notificationModel.findOne({
+      userId: new Types.ObjectId(userId),
+      type: payload.type,
+      taskId: taskId ? new Types.ObjectId(taskId) : undefined,
+      createdAt: { $gte: fiveMinutesAgo },
+    });
+
+    if (existingNotification) {
+      this.logger.log(`Duplicate notification found for user ${userId}, type ${payload.type}, task ${taskId}. Skipping creation.`);
+      return existingNotification;
+    }
+    
     const notification = new this.notificationModel({
       ...payload,
       userId: new Types.ObjectId(userId),
