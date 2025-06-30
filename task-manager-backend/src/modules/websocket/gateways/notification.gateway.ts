@@ -93,14 +93,9 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
       return;
     }
     
+    // Only emit to the room - this will automatically send to all user's connected sockets
     this.server.to(`user:${userId}`).emit('notification', notification);
     this.logger.log(`Notification emitted to room user:${userId}`);
-    
-    // Also emit directly to each socket for debugging
-    userSocketList.forEach((socket, index) => {
-      this.logger.log(`Emitting notification to socket ${index} for user ${userId}`);
-      socket.emit('notification', notification);
-    });
   }
 
   sendNotificationToUsers(userIds: string[], notification: NotificationPayload): void {

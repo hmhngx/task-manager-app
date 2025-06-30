@@ -8,7 +8,7 @@ import {
 import { UseGuards, Inject, forwardRef } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { WebSocketAuthGuard } from '../guards/websocket-auth.guard';
-import { WebSocketService, NotificationData } from '../services/websocket.service';
+import { WebSocketService } from '../services/websocket.service';
 import { TasksService } from '../../tasks/tasks.service';
 import { CommentsService } from '../../tasks/services/comments.service';
 import { NotificationsService } from '../../tasks/services/notifications.service';
@@ -178,20 +178,6 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
       timestamp: new Date(),
     });
 
-    // Send notification to assignee
-    const notification: NotificationData = {
-      id: `assignment-${task._id}-${Date.now()}`,
-      type: 'task_assigned',
-      title: 'Task Assigned',
-      message: `You have been assigned to task: "${task.title}"`,
-      data: { task, assigner: assignerId },
-      timestamp: new Date(),
-      read: false,
-      priority: 'medium',
-    };
-
-    this.webSocketService.sendNotification(assigneeId, notification);
-
     // Broadcast to admin room
     this.webSocketService.broadcastToAdmins('admin:task_activity', {
       type: 'task_assigned',
@@ -213,20 +199,6 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
       remover: removerId,
       timestamp: new Date(),
     });
-
-    // Send notification to the removed assignee
-    const notification: NotificationData = {
-      id: `assignment-removed-${task._id}-${Date.now()}`,
-      type: 'task_assignment_removed',
-      title: 'Task Assignment Removed',
-      message: `You have been removed from task: "${task.title}"`,
-      data: { task, remover: removerId },
-      timestamp: new Date(),
-      read: false,
-      priority: 'medium',
-    };
-
-    this.webSocketService.sendNotification(removedAssigneeId, notification);
 
     // Broadcast to admin room
     this.webSocketService.broadcastToAdmins('admin:task_activity', {
@@ -251,54 +223,6 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
       timestamp: new Date(),
     });
 
-    // Send notifications to relevant users
-    if (task.assignee && task.assignee !== updaterId) {
-      const notification: NotificationData = {
-        id: `status-${task._id}-${Date.now()}`,
-        type: 'task_status_changed',
-        title: 'Task Status Updated',
-        message: `Task "${task.title}" status changed from ${oldStatus} to ${newStatus}`,
-        data: { task, oldStatus, newStatus, updater: updaterId },
-        timestamp: new Date(),
-        read: false,
-        priority: 'medium',
-      };
-      this.webSocketService.sendNotification(task.assignee, notification);
-    }
-
-    // Notify creator if different from updater
-    if (task.creator !== updaterId) {
-      const notification: NotificationData = {
-        id: `status-creator-${task._id}-${Date.now()}`,
-        type: 'task_status_changed',
-        title: 'Task Status Updated',
-        message: `Task "${task.title}" status changed from ${oldStatus} to ${newStatus}`,
-        data: { task, oldStatus, newStatus, updater: updaterId },
-        timestamp: new Date(),
-        read: false,
-        priority: 'medium',
-      };
-      this.webSocketService.sendNotification(task.creator, notification);
-    }
-
-    // Notify watchers
-    if (task.watchers && task.watchers.length > 0) {
-      const watcherIds = task.watchers.filter((watcherId: string) => watcherId !== updaterId);
-      watcherIds.forEach((watcherId: string) => {
-        const notification: NotificationData = {
-          id: `status-watcher-${task._id}-${watcherId}-${Date.now()}`,
-          type: 'task_status_changed',
-          title: 'Task Status Updated',
-          message: `Task "${task.title}" status changed from ${oldStatus} to ${newStatus}`,
-          data: { task, oldStatus, newStatus, updater: updaterId },
-          timestamp: new Date(),
-          read: false,
-          priority: 'low',
-        };
-        this.webSocketService.sendNotification(watcherId, notification);
-      });
-    }
-
     // Broadcast to admin room
     this.webSocketService.broadcastToAdmins('admin:task_activity', {
       type: 'task_status_changed',
@@ -322,9 +246,6 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
       timestamp: new Date(),
     });
 
-    // Send notifications to task participants
-    this.sendCommentNotifications(comment, taskId, authorId);
-
     // Broadcast to admin room
     this.webSocketService.broadcastToAdmins('admin:task_activity', {
       type: 'comment_added',
@@ -345,23 +266,6 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
       editor: editorId,
       timestamp: new Date(),
     });
-
-    // Send notifications to mentioned users
-    if (comment.mentions && comment.mentions.length > 0) {
-      comment.mentions.forEach((mentionId: string) => {
-        const notification: NotificationData = {
-          id: `mention-${comment._id}-${mentionId}-${Date.now()}`,
-          type: 'comment_edited',
-          title: 'You were mentioned in a comment',
-          message: `You were mentioned in a comment on task "${taskId}"`,
-          data: { comment, taskId, editor: editorId },
-          timestamp: new Date(),
-          read: false,
-          priority: 'medium',
-        };
-        this.webSocketService.sendNotification(mentionId, notification);
-      });
-    }
 
     // Broadcast to admin room
     this.webSocketService.broadcastToAdmins('admin:task_activity', {
@@ -422,19 +326,6 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
     approved: boolean,
     adminId: string,
   ) {
-    // Send notification to requester
-    const notification: NotificationData = {
-      id: `request-response-${task._id}-${Date.now()}`,
-      type: 'task_request_response',
-      title: approved ? 'Task Request Approved' : 'Task Request Rejected',
-      message: `Your request for task "${task.title}" was ${approved ? 'approved' : 'rejected'}`,
-      data: { task, approved, admin: adminId },
-      timestamp: new Date(),
-      read: false,
-      priority: 'medium',
-    };
-    this.webSocketService.sendNotification(requesterId, notification);
-
     // Broadcast to admin room
     this.webSocketService.broadcastToAdmins('admin:task_activity', {
       type: 'task_request_response',
@@ -455,19 +346,6 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
     participantId: string,
     adminId: string,
   ) {
-    // Send notification to participant
-    const notification: NotificationData = {
-      id: `participant-${action}-${task._id}-${participantId}-${Date.now()}`,
-      type: action === 'added' ? 'participant_added' : 'participant_removed',
-      title: action === 'added' ? 'Added to Task' : 'Removed from Task',
-      message: `You were ${action} from task "${task.title}"`,
-      data: { task, action, admin: adminId },
-      timestamp: new Date(),
-      read: false,
-      priority: 'medium',
-    };
-    this.webSocketService.sendNotification(participantId, notification);
-
     // Broadcast to admin room
     this.webSocketService.broadcastToAdmins('admin:task_activity', {
       type: `participant_${action}`,
@@ -482,35 +360,6 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Handle deadline change event
    */
   handleDeadlineChange(task: TaskData, updaterId: string) {
-    // Send notifications to assignee and creator
-    if (task.assignee && task.assignee !== updaterId) {
-      const notification: NotificationData = {
-        id: `deadline-${task._id}-${task.assignee}-${Date.now()}`,
-        type: 'deadline_changed',
-        title: 'Task Deadline Updated',
-        message: `Deadline for task "${task.title}" has been updated`,
-        data: { task, updater: updaterId },
-        timestamp: new Date(),
-        read: false,
-        priority: 'medium',
-      };
-      this.webSocketService.sendNotification(task.assignee, notification);
-    }
-
-    if (task.creator !== updaterId) {
-      const notification: NotificationData = {
-        id: `deadline-creator-${task._id}-${Date.now()}`,
-        type: 'deadline_changed',
-        title: 'Task Deadline Updated',
-        message: `Deadline for task "${task.title}" has been updated`,
-        data: { task, updater: updaterId },
-        timestamp: new Date(),
-        read: false,
-        priority: 'medium',
-      };
-      this.webSocketService.sendNotification(task.creator, notification);
-    }
-
     // Broadcast to admin room
     this.webSocketService.broadcastToAdmins('admin:task_activity', {
       type: 'deadline_changed',
@@ -524,35 +373,6 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Handle overdue task event
    */
   handleOverdueTask(task: TaskData) {
-    // Send notifications to assignee and creator
-    if (task.assignee) {
-      const notification: NotificationData = {
-        id: `overdue-${task._id}-${task.assignee}-${Date.now()}`,
-        type: 'task_overdue',
-        title: 'Task Overdue',
-        message: `Task "${task.title}" is overdue`,
-        data: { task },
-        timestamp: new Date(),
-        read: false,
-        priority: 'high',
-      };
-      this.webSocketService.sendNotification(task.assignee, notification);
-    }
-
-    if (task.creator) {
-      const notification: NotificationData = {
-        id: `overdue-creator-${task._id}-${Date.now()}`,
-        type: 'task_overdue',
-        title: 'Task Overdue',
-        message: `Task "${task.title}" is overdue`,
-        data: { task },
-        timestamp: new Date(),
-        read: false,
-        priority: 'high',
-      };
-      this.webSocketService.sendNotification(task.creator, notification);
-    }
-
     // Broadcast to admin room
     this.webSocketService.broadcastToAdmins('admin:task_activity', {
       type: 'task_overdue',
@@ -565,62 +385,11 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Handle deadline reminder event
    */
   handleDeadlineReminder(task: TaskData) {
-    // Send notifications to assignee and creator
-    if (task.assignee) {
-      const notification: NotificationData = {
-        id: `reminder-${task._id}-${task.assignee}-${Date.now()}`,
-        type: 'deadline_approaching',
-        title: 'Deadline Approaching',
-        message: `Task "${task.title}" deadline is approaching`,
-        data: { task },
-        timestamp: new Date(),
-        read: false,
-        priority: 'medium',
-      };
-      this.webSocketService.sendNotification(task.assignee, notification);
-    }
-
-    if (task.creator) {
-      const notification: NotificationData = {
-        id: `reminder-creator-${task._id}-${Date.now()}`,
-        type: 'deadline_approaching',
-        title: 'Deadline Approaching',
-        message: `Task "${task.title}" deadline is approaching`,
-        data: { task },
-        timestamp: new Date(),
-        read: false,
-        priority: 'medium',
-      };
-      this.webSocketService.sendNotification(task.creator, notification);
-    }
-
     // Broadcast to admin room
     this.webSocketService.broadcastToAdmins('admin:task_activity', {
       type: 'deadline_approaching',
       task,
       timestamp: new Date(),
     });
-  }
-
-  /**
-   * Helper method to send comment notifications
-   */
-  private sendCommentNotifications(comment: CommentData, taskId: string, authorId: string) {
-    // Send notifications to mentioned users
-    if (comment.mentions && comment.mentions.length > 0) {
-      comment.mentions.forEach((mentionId: string) => {
-        const notification: NotificationData = {
-          id: `mention-${comment._id}-${mentionId}-${Date.now()}`,
-          type: 'comment_added',
-          title: 'You were mentioned in a comment',
-          message: `You were mentioned in a comment on task "${taskId}"`,
-          data: { comment, taskId, author: authorId },
-          timestamp: new Date(),
-          read: false,
-          priority: 'medium',
-        };
-        this.webSocketService.sendNotification(mentionId, notification);
-      });
-    }
   }
 }
