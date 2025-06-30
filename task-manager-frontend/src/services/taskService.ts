@@ -455,6 +455,30 @@ export const downloadAttachment = async (attachmentId: string): Promise<{ blob: 
   return { blob, filename, mimeType };
 };
 
+/**
+ * Check if a task can be requested based on its status
+ * @param task - The task to check
+ * @returns true if the task can be requested, false otherwise
+ */
+export const canRequestTask = (task: Task): boolean => {
+  return task.status !== 'done' && task.status !== 'late';
+};
+
+/**
+ * Get a user-friendly message explaining why a task cannot be requested
+ * @param task - The task to check
+ * @returns A message explaining why the task cannot be requested, or null if it can be requested
+ */
+export const getTaskRequestRestrictionMessage = (task: Task): string | null => {
+  if (task.status === 'done') {
+    return 'Cannot request a task that is done. Only tasks in "todo" or "in_progress" status can be requested.';
+  }
+  if (task.status === 'late') {
+    return 'Cannot request a task that is late. Only tasks in "todo" or "in_progress" status can be requested.';
+  }
+  return null;
+};
+
 const taskService = {
   getTasks,
   createTask,
@@ -486,6 +510,8 @@ const taskService = {
   getTaskStats,
   getAvailableUsers,
   downloadAttachment,
+  canRequestTask,
+  getTaskRequestRestrictionMessage,
 };
 
 export default taskService;
