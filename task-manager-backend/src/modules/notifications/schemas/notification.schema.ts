@@ -51,3 +51,11 @@ NotificationSchema.index({ userId: 1, createdAt: -1 });
 NotificationSchema.index({ taskId: 1 });
 NotificationSchema.index({ type: 1 });
 NotificationSchema.index({ sent: 1, createdAt: 1 }); // For unsent notifications
+
+// Compound index to help prevent duplicates (userId + type + taskId + recent timestamp)
+NotificationSchema.index({ 
+  userId: 1, 
+  type: 1, 
+  taskId: 1, 
+  createdAt: -1 
+});
