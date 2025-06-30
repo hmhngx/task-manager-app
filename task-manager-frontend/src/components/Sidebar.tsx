@@ -97,7 +97,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-4 border-b border-gray-100`}>
           {!isCollapsed && (
             <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              TaskManager
+              TaskFlow
             </h1>
           )}
         </div>

@@ -108,7 +108,7 @@ export default function Navbar() {
                     />
                   </svg>
                 </div>
-                <span>TaskManager</span>
+                <span>TaskFlow</span>
               </Link>
 
               {/* Mobile menu button */}
