@@ -37,8 +37,8 @@ export class CommentsService {
       attachments: comment.attachments?.map((id) => id.toString()) || [],
       isEdited: comment.isEdited || false,
       editedAt: comment.editedAt,
-      createdAt: (comment as any).createdAt,
-      updatedAt: (comment as any).updatedAt,
+      createdAt: (comment as any).createdAt as Date,
+      updatedAt: (comment as any).updatedAt as Date,
     };
   }
 
@@ -158,7 +158,7 @@ export class CommentsService {
     console.log(`[CommentsService] Attempting to delete comment:`, {
       commentId,
       userId,
-      userRole
+      userRole,
     });
 
     const comment = await this.commentModel.findById(commentId);
@@ -172,7 +172,7 @@ export class CommentsService {
       userId,
       userRole,
       isAuthor: comment.author.toString() === userId,
-      isAdmin: userRole === 'admin'
+      isAdmin: userRole === 'admin',
     });
 
     // Allow deletion if user is the author OR if user is admin
@@ -185,6 +185,16 @@ export class CommentsService {
 
     console.log(`[CommentsService] Authorization successful, proceeding with deletion`);
 
+    // Get task details for notifications
+    const task = await this.taskModel.findById(comment.task);
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    // Store comment author ID before deletion
+    const commentAuthorId = comment.author.toString();
+    const isAdminDeletion = userRole === 'admin' && commentAuthorId !== userId;
+
     await this.taskModel.findByIdAndUpdate(comment.task, {
       $pull: { comments: commentId },
     });
@@ -193,6 +203,98 @@ export class CommentsService {
 
     // Emit WebSocket event for comment deletion
     this.taskGateway.handleCommentDeleted(commentId, comment.task.toString(), userId);
+
+    // Notify comment author if their comment was deleted by admin
+    if (isAdminDeletion) {
+      console.log(
+        `[CommentsService] Notifying comment author about admin deletion: ${commentAuthorId}`,
+      );
+
+      try {
+        await this.notificationService.createAndSendNotification(commentAuthorId, {
+          title: 'Comment Deleted by Admin',
+          message: `Your comment on task "${task.title}" was deleted by an administrator`,
+          type: NotificationType.COMMENT_DELETED,
+          priority: NotificationPriority.MEDIUM,
+          data: {
+            taskId: task._id.toString(),
+            commentId: commentId,
+            deletedBy: userId,
+            reason: 'admin_deletion',
+          },
+          timestamp: new Date(),
+        });
+
+        // Send WebSocket notification
+        this.notificationGateway.sendNotificationToUser(commentAuthorId, {
+          id: commentId,
+          title: 'Comment Deleted by Admin',
+          message: `Your comment on task "${task.title}" was deleted by an administrator`,
+          type: NotificationType.COMMENT_DELETED,
+          priority: NotificationPriority.MEDIUM,
+          data: { 
+            taskId: task._id.toString(), 
+            commentId: commentId,
+            deletedBy: userId,
+            reason: 'admin_deletion'
+          },
+          read: false,
+          timestamp: new Date(),
+        });
+
+        console.log(`[CommentsService] Successfully notified comment author about deletion`);
+      } catch (error) {
+        console.error(`[CommentsService] Failed to notify comment author about deletion:`, error);
+      }
+    }
+
+    // Notify task participants about the comment deletion (excluding the deleter)
+    const participantIds = [
+      task.assignee?.toString(),
+      task.creator?.toString(),
+      ...(task.watchers || []).map((w) => w.toString()),
+    ].filter(Boolean);
+
+    for (const participantId of participantIds) {
+      if (participantId !== userId && participantId !== commentAuthorId) {
+        console.log(`[CommentsService] Notifying task participant about comment deletion: ${participantId}`);
+        
+        try {
+          await this.notificationService.createAndSendNotification(participantId, {
+            title: 'Comment Deleted',
+            message: `A comment was deleted from task "${task.title}"`,
+            type: NotificationType.COMMENT_DELETED,
+            priority: NotificationPriority.LOW,
+            data: { 
+              taskId: task._id.toString(), 
+              commentId: commentId,
+              deletedBy: userId
+            },
+            timestamp: new Date(),
+          });
+
+          // Send WebSocket notification
+          this.notificationGateway.sendNotificationToUser(participantId, {
+            id: commentId,
+            title: 'Comment Deleted',
+            message: `A comment was deleted from task "${task.title}"`,
+            type: NotificationType.COMMENT_DELETED,
+            priority: NotificationPriority.LOW,
+            data: { 
+              taskId: task._id.toString(), 
+              commentId: commentId,
+              deletedBy: userId
+            },
+            read: false,
+            timestamp: new Date(),
+          });
+
+          console.log(`[CommentsService] Successfully notified participant about comment deletion: ${participantId}`);
+        } catch (error) {
+          console.error(`[CommentsService] Failed to notify participant about comment deletion ${participantId}:`, error);
+        }
+      }
+    }
 
     return { message: 'Comment deleted successfully' };
   }
