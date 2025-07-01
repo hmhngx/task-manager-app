@@ -24,10 +24,11 @@ export class NotificationService {
     sendPush = true,
   ): Promise<NotificationDocument> {
     this.logger.log(`Creating notification for user ${userId}: ${payload.title}`);
+    this.logger.log(`Notification payload: ${JSON.stringify(payload)}`);
 
     // Extract taskId from data if present
     const taskId = payload.data?.taskId as string | undefined;
-    
+
     // Check for recent duplicate notifications (within last 5 minutes)
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     const existingNotification = await this.notificationModel.findOne({
@@ -38,19 +39,25 @@ export class NotificationService {
     });
 
     if (existingNotification) {
-      this.logger.log(`Duplicate notification found for user ${userId}, type ${payload.type}, task ${taskId}. Skipping creation.`);
+      this.logger.log(
+        `Duplicate notification found for user ${userId}, type ${payload.type}, task ${taskId}. Skipping creation.`,
+      );
       return existingNotification;
     }
-    
+
     const notification = new this.notificationModel({
       ...payload,
       userId: new Types.ObjectId(userId),
       taskId: taskId ? new Types.ObjectId(taskId) : undefined,
+      commentId: payload.data?.commentId as string | undefined,
+      attachmentId: payload.data?.attachmentId as string | undefined,
       read: false,
     });
     await notification.save();
 
-    this.logger.log(`Notification saved to database with ID: ${(notification._id as Types.ObjectId).toString()}`);
+    this.logger.log(
+      `Notification saved to database with ID: ${(notification._id as Types.ObjectId).toString()}`,
+    );
 
     // Create notification payload for WebSocket
     const notificationPayload: NotificationPayload = {
@@ -76,6 +83,7 @@ export class NotificationService {
 
     // Send WebSocket notification
     try {
+      this.logger.log(`Attempting to send WebSocket notification to user ${userId}`);
       this.notificationGateway.sendNotificationToUser(userId, notificationPayload);
       this.logger.log(`WebSocket notification sent to user ${userId}`);
     } catch (error) {

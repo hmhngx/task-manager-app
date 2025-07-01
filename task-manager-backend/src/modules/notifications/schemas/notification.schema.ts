@@ -27,6 +27,12 @@ export class Notification {
   @Prop({ type: Types.ObjectId, ref: 'Task' })
   taskId?: Types.ObjectId;
 
+  @Prop({ type: Types.ObjectId, ref: 'Comment' })
+  commentId?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Attachment' })
+  attachmentId?: Types.ObjectId;
+
   @Prop({ required: true, enum: NotificationPriority, default: NotificationPriority.MEDIUM })
   priority: NotificationPriority;
 
@@ -53,9 +59,9 @@ NotificationSchema.index({ type: 1 });
 NotificationSchema.index({ sent: 1, createdAt: 1 }); // For unsent notifications
 
 // Compound index to help prevent duplicates (userId + type + taskId + recent timestamp)
-NotificationSchema.index({ 
-  userId: 1, 
-  type: 1, 
-  taskId: 1, 
-  createdAt: -1 
+NotificationSchema.index({
+  userId: 1,
+  type: 1,
+  taskId: 1,
+  createdAt: -1,
 });

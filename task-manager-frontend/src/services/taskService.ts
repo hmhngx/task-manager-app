@@ -139,7 +139,10 @@ export const getAllTasks = async (): Promise<Task[]> => {
 
 export const getAllTasksWithFilters = async (filters: any = {}): Promise<Task[]> => {
   try {
-    const response = await axios.get(`${API_URL}/tasks`, { params: filters });
+    const response = await axios.get(`${API_URL}/tasks`, { 
+      params: filters,
+      headers: getAuthHeader(),
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -152,7 +155,9 @@ export const getAllTasksWithFilters = async (filters: any = {}): Promise<Task[]>
 
 export const getMyTasks = async (): Promise<Task[]> => {
   try {
-    const response = await axios.get(`${API_URL}/tasks/my-tasks`);
+    const response = await axios.get(`${API_URL}/tasks/my-tasks`, {
+      headers: getAuthHeader(),
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -165,7 +170,9 @@ export const getMyTasks = async (): Promise<Task[]> => {
 
 export const getCreatedByMe = async (): Promise<Task[]> => {
   try {
-    const response = await axios.get(`${API_URL}/tasks/created-by-me`);
+    const response = await axios.get(`${API_URL}/tasks/created-by-me`, {
+      headers: getAuthHeader(),
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -178,7 +185,9 @@ export const getCreatedByMe = async (): Promise<Task[]> => {
 
 export const getTasksByStatus = async (status: string): Promise<Task[]> => {
   try {
-    const response = await axios.get(`${API_URL}/tasks/status/${status}`);
+    const response = await axios.get(`${API_URL}/tasks/status/${status}`, {
+      headers: getAuthHeader(),
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -191,7 +200,9 @@ export const getTasksByStatus = async (status: string): Promise<Task[]> => {
 
 export const getTasksByPriority = async (priority: string): Promise<Task[]> => {
   try {
-    const response = await axios.get(`${API_URL}/tasks/priority/${priority}`);
+    const response = await axios.get(`${API_URL}/tasks/priority/${priority}`, {
+      headers: getAuthHeader(),
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -204,7 +215,9 @@ export const getTasksByPriority = async (priority: string): Promise<Task[]> => {
 
 export const getTasksByType = async (type: string): Promise<Task[]> => {
   try {
-    const response = await axios.get(`${API_URL}/tasks/type/${type}`);
+    const response = await axios.get(`${API_URL}/tasks/type/${type}`, {
+      headers: getAuthHeader(),
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -232,7 +245,9 @@ export const getTaskById = async (id: string): Promise<Task> => {
 
 export const getTaskComments = async (taskId: string): Promise<Comment[]> => {
   try {
-    const response = await axios.get(`${API_URL}/tasks/${taskId}/comments`);
+    const response = await axios.get(`${API_URL}/tasks/${taskId}/comments`, {
+      headers: getAuthHeader(),
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -276,7 +291,9 @@ export const updateComment = async (commentId: string, content: string): Promise
 
 export const deleteComment = async (commentId: string): Promise<void> => {
   try {
-    await axios.delete(`${API_URL}/tasks/comments/${commentId}`);
+    await axios.delete(`${API_URL}/tasks/comments/${commentId}`, {
+      headers: getAuthHeader(),
+    });
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
@@ -288,7 +305,9 @@ export const deleteComment = async (commentId: string): Promise<void> => {
 
 export const getTaskAttachments = async (taskId: string): Promise<Attachment[]> => {
   try {
-    const response = await axios.get(`${API_URL}/tasks/${taskId}/attachments`);
+    const response = await axios.get(`${API_URL}/tasks/${taskId}/attachments`, {
+      headers: getAuthHeader(),
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -381,7 +400,9 @@ export const rejectRequest = async (taskId: string, requesterId: string): Promis
 
 export const addWatcher = async (taskId: string): Promise<Task> => {
   try {
-    const response = await axios.post(`${API_URL}/tasks/${taskId}/watchers`);
+    const response = await axios.post(`${API_URL}/tasks/${taskId}/watchers`, {}, {
+      headers: getAuthHeader(),
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -394,7 +415,9 @@ export const addWatcher = async (taskId: string): Promise<Task> => {
 
 export const removeWatcher = async (taskId: string): Promise<Task> => {
   try {
-    const response = await axios.delete(`${API_URL}/tasks/${taskId}/watchers`);
+    const response = await axios.delete(`${API_URL}/tasks/${taskId}/watchers`, {
+      headers: getAuthHeader(),
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {

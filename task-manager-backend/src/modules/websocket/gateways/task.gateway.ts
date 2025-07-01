@@ -298,6 +298,49 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
+   * Handle attachment upload event
+   */
+  handleAttachmentUploaded(attachment: any, taskId: string, uploaderId: string) {
+    // Broadcast to task room
+    this.webSocketService.broadcastToRoom(`task:${taskId}`, 'attachment:uploaded', {
+      attachment,
+      taskId,
+      uploader: uploaderId,
+      timestamp: new Date(),
+    });
+
+    // Broadcast to admin room
+    this.webSocketService.broadcastToAdmins('admin:task_activity', {
+      type: 'attachment_uploaded',
+      task: { _id: taskId },
+      user: uploaderId,
+      timestamp: new Date(),
+    });
+  }
+
+  /**
+   * Handle attachment deletion event
+   */
+  handleAttachmentDeleted(attachmentId: string, taskId: string, deleterId: string, fileName: string) {
+    // Broadcast to task room
+    this.webSocketService.broadcastToRoom(`task:${taskId}`, 'attachment:deleted', {
+      attachmentId,
+      taskId,
+      deleter: deleterId,
+      fileName,
+      timestamp: new Date(),
+    });
+
+    // Broadcast to admin room
+    this.webSocketService.broadcastToAdmins('admin:task_activity', {
+      type: 'attachment_deleted',
+      task: { _id: taskId },
+      user: deleterId,
+      timestamp: new Date(),
+    });
+  }
+
+  /**
    * Handle task deletion event
    */
   handleTaskDeleted(taskId: string, deleterId: string) {

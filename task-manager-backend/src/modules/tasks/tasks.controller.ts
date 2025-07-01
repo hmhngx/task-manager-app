@@ -220,7 +220,7 @@ export class TasksController {
 
   @Delete('comments/:commentId')
   deleteComment(@Param('commentId') commentId: string, @Req() req: RequestWithUser) {
-    return this.commentsService.deleteComment(commentId, req.user.id);
+    return this.commentsService.deleteComment(commentId, req.user.id, req.user.role);
   }
 
   // Attachments endpoints
@@ -277,9 +277,9 @@ export class TasksController {
     }
   }
 
-  @Get('attachments/:id')
+  @Get('attachments/:attachmentId')
   async getAttachment(
-    @Param('id') attachmentId: string,
+    @Param('attachmentId') attachmentId: string,
     @Res({ passthrough: true }) res: Response,
     @Req() req: RequestWithUser,
   ) {
@@ -311,7 +311,11 @@ export class TasksController {
   async deleteAttachment(@Param('attachmentId') attachmentId: string, @Req() req: RequestWithUser) {
     try {
       console.log(`[TasksController] Deleting attachment`, { attachmentId, user: req.user });
-      return await this.attachmentsService.deleteAttachment(attachmentId, req.user.id);
+      return await this.attachmentsService.deleteAttachment(
+        attachmentId,
+        req.user.id,
+        req.user.role,
+      );
     } catch (error) {
       if (error instanceof Error) {
         console.error('[deleteAttachment] Error deleting attachment:', error.message, error.stack);
@@ -322,8 +326,8 @@ export class TasksController {
     }
   }
 
-  @Get('attachments/:id/download')
-  async downloadAttachment(@Param('id') attachmentId: string, @Res() res: Response) {
+  @Get('attachments/:attachmentId/download')
+  async downloadAttachment(@Param('attachmentId') attachmentId: string, @Res() res: Response) {
     try {
       const attachment: { data: Buffer; mimeType: string; originalName: string } =
         await this.attachmentsService.getAttachmentForDownload(attachmentId);
@@ -440,7 +444,7 @@ export class TasksController {
   async debugTask(@Param('id') taskId: string, @Req() req: RequestWithUser) {
     const task = await this.tasksService.getTaskById(taskId);
     return {
-      taskId: task._id.toString(),
+      taskId: (task._id as any).toString(),
       title: task.title,
       status: task.status,
       assignee: task.assignee ? task.assignee.toString() : null,

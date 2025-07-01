@@ -30,7 +30,8 @@ export interface User {
 }
 
 export interface Comment {
-  id: string;
+  id?: string;
+  _id?: string;
   content: string;
   author: User;
   createdAt: Date;
@@ -38,7 +39,7 @@ export interface Comment {
 }
 
 export interface Attachment {
-  id: string;
+  _id: string;
   filename: string;
   originalName: string;
   mimeType: string;

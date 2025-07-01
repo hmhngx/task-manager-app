@@ -62,7 +62,7 @@ export class CommentsService {
     // Populate comment with author info for WebSocket event
     const populatedComment = await this.commentModel
       .findById(comment._id)
-      .populate('author', 'username')
+      .populate('author', 'username _id')
       .populate('mentions', 'username');
 
     // Emit WebSocket event for comment creation
@@ -115,7 +115,7 @@ export class CommentsService {
 
     return this.commentModel
       .find({ task: taskId })
-      .populate('author', 'username')
+      .populate('author', 'username _id')
       .populate('mentions', 'username')
       .sort({ createdAt: -1 })
       .exec();
@@ -141,7 +141,7 @@ export class CommentsService {
         },
         { new: true },
       )
-      .populate('author', 'username')
+      .populate('author', 'username _id')
       .populate('mentions', 'username');
 
     // Emit WebSocket event for comment edit
@@ -154,15 +154,36 @@ export class CommentsService {
     return updatedComment;
   }
 
-  async deleteComment(commentId: string, userId: string) {
+  async deleteComment(commentId: string, userId: string, userRole?: string) {
+    console.log(`[CommentsService] Attempting to delete comment:`, {
+      commentId,
+      userId,
+      userRole
+    });
+
     const comment = await this.commentModel.findById(commentId);
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }
 
-    if (comment.author.toString() !== userId) {
+    console.log(`[CommentsService] Comment found:`, {
+      commentId: comment._id,
+      authorId: comment.author.toString(),
+      userId,
+      userRole,
+      isAuthor: comment.author.toString() === userId,
+      isAdmin: userRole === 'admin'
+    });
+
+    // Allow deletion if user is the author OR if user is admin
+    if (comment.author.toString() !== userId && userRole !== 'admin') {
+      console.log(
+        `[CommentsService] Authorization failed: User ${userId} cannot delete comment by ${comment.author.toString()}`,
+      );
       throw new Error('Not authorized to delete this comment');
     }
+
+    console.log(`[CommentsService] Authorization successful, proceeding with deletion`);
 
     await this.taskModel.findByIdAndUpdate(comment.task, {
       $pull: { comments: commentId },

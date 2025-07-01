@@ -71,15 +71,36 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
     }
   };
 
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      console.log('Attempting to delete comment:', commentId);
+      console.log('Current user:', user);
+      await taskService.deleteComment(commentId);
+      console.log('Comment deleted successfully');
+      fetchTaskDetails();
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+    }
+  };
+
   const handleFileUpload = async () => {
     if (!selectedFile) return;
 
+    console.log('📤 Starting file upload...');
+    console.log('📋 Task ID:', taskId);
+    console.log('📁 File name:', selectedFile.name);
+    console.log('📏 File size:', selectedFile.size);
+    console.log('👤 Current user:', user);
+
     try {
+      console.log('📡 Sending upload request to backend...');
       await taskService.uploadAttachment(taskId, selectedFile);
+      console.log('✅ File uploaded successfully');
       setSelectedFile(null);
+      console.log('🔄 Refreshing task details...');
       fetchTaskDetails();
     } catch (error) {   
-      console.error('Error uploading file:', error);
+      console.error('❌ Error uploading file:', error);
     }
   };
 
@@ -145,11 +166,19 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   };
 
   const handleDeleteAttachment = async (attachmentId: string) => {
+    console.log('🗑️ Starting attachment deletion...');
+    console.log('🆔 Attachment ID:', attachmentId);
+    console.log('📋 Task ID:', taskId);
+    console.log('👤 Current user:', user);
+
     try {
+      console.log('📡 Sending deletion request to backend...');
       await taskService.deleteAttachment(attachmentId);
+      console.log('✅ Attachment deleted successfully');
+      console.log('🔄 Refreshing task details...');
       fetchTaskDetails();
     } catch (error) {
-      console.error('Error deleting attachment:', error);
+      console.error('❌ Error deleting attachment:', error);
     }
   };
 
@@ -329,8 +358,9 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
       <div className="mt-6">
         <h3 className="font-semibold">Comments</h3>
         <div className="mt-2 space-y-4">
-          {task.comments.map((comment, idx) => (
-            <div key={comment.id ?? idx} className="bg-gray-50 p-3 rounded">
+          {task.comments.map((comment, idx) => {
+            return (
+            <div key={comment.id || comment._id || idx} className="bg-gray-50 p-3 rounded">
               <div className="flex justify-between items-start">
                 <div>
                   <span className="font-medium">{getUserDisplayName(comment.author)}</span>
@@ -341,10 +371,60 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
                     <span className="text-sm text-gray-500 ml-2">(edited)</span>
                   )}
                 </div>
+                <div className="flex items-center space-x-2">
+                  {/* Show delete button if user is the author OR if user is admin */}
+                  {(() => {
+                    // Simplified author check - handle both populated and unpopulated author data
+                    let isAuthor = false;
+                    
+                    if (user && comment.author) {
+                      const currentUserId = getUserId(user);
+                      
+                      // Handle populated author object
+                      if (typeof comment.author === 'object' && comment.author !== null) {
+                        const authorId = (comment.author as any)._id || (comment.author as any).id;
+                        isAuthor = currentUserId === authorId;
+                      }
+                      // Handle author as string ID
+                      else if (typeof comment.author === 'string') {
+                        isAuthor = currentUserId === comment.author;
+                      }
+                    }
+                    
+                    const canDelete = isAuthor || user?.role === 'admin';
+                    
+                    console.log('Comment deletion check:', {
+                      commentId: comment.id || comment._id,
+                      commentAuthor: comment.author,
+                      commentAuthorType: typeof comment.author,
+                      currentUser: user,
+                      currentUserId: user ? getUserId(user) : null,
+                      isAuthor,
+                      canDelete,
+                      userRole: user?.role
+                    });
+                    
+                    return canDelete ? (
+                      <button
+                        onClick={() => {
+                          const commentId = comment.id || comment._id;
+                          if (commentId) {
+                            console.log('Deleting comment:', commentId);
+                            handleDeleteComment(commentId);
+                          }
+                        }}
+                        className="text-red-500 hover:text-red-600 px-2 py-1 rounded-md hover:bg-red-50 transition-colors text-sm"
+                      >
+                        Delete
+                      </button>
+                    ) : null;
+                  })()}
+                </div>
               </div>
               <p className="mt-1">{comment.content}</p>
             </div>
-          ))}
+          );
+          })}
         </div>
         <div className="mt-4">
           <label htmlFor="newComment" className="block text-sm font-medium text-gray-700">
@@ -370,7 +450,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
         <h3 className="font-semibold">Attachments</h3>
         <div className="mt-2 space-y-4">
           {Array.isArray(task.attachments) && task.attachments.map((attachment, idx) => {
-            const key = (attachment && typeof attachment === 'object' && ('id' in attachment ? attachment.id : (attachment as any)._id)) || attachment || idx;
+            const key = (attachment && typeof attachment === 'object' && attachment._id) || idx;
             if (attachment && typeof attachment === 'object' && (attachment.originalName || attachment.url)) {
               return (
                 <div key={key} className="flex items-start justify-between bg-gray-50 p-4 rounded-lg">
@@ -397,24 +477,22 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
                     )}
                   </div>
                   <div className="flex items-center space-x-2">
+                    {/* All users can download attachments */}
+                    <button
+                      onClick={() => handleDownloadAttachment(attachment._id)}
+                      className="text-blue-500 hover:text-blue-600 px-3 py-1 rounded-md hover:bg-blue-50 transition-colors"
+                      disabled={downloadingId === attachment._id}
+                    >
+                      {downloadingId === attachment._id ? 'Downloading...' : 'Download'}
+                    </button>
+                    {/* Only admins can delete attachments */}
                     {user?.role === 'admin' && (
-                      <>
-                        <button
-                          onClick={() => handleDownloadAttachment(attachment.id || (attachment as any)._id)}
-                          className="text-blue-500 hover:text-blue-600 px-3 py-1 rounded-md hover:bg-blue-50 transition-colors"
-                          disabled={downloadingId === (attachment.id || (attachment as any)._id)}
-                        >
-                          {downloadingId === (attachment.id || (attachment as any)._id) ? 'Downloading...' : 'Download'}
-                        </button>
-                        {user && getUserId(user) === (attachment.uploadedBy?.id || attachment.uploadedBy) && (
-                          <button
-                            onClick={() => handleDeleteAttachment(attachment.id || (attachment as any)._id)}
-                            className="text-red-500 hover:text-red-600 px-3 py-1 rounded-md hover:bg-red-50 transition-colors"
-                          >
-                            Delete
-                          </button>
-                        )}
-                      </>
+                      <button
+                        onClick={() => handleDeleteAttachment(attachment._id)}
+                        className="text-red-500 hover:text-red-600 px-3 py-1 rounded-md hover:bg-red-50 transition-colors"
+                      >
+                        Delete
+                      </button>
                     )}
                   </div>
                 </div>

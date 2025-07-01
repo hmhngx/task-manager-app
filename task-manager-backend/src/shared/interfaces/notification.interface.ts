@@ -9,6 +9,8 @@ export interface NotificationPayload {
   priority: NotificationPriority;
   userId?: string;
   taskId?: string;
+  commentId?: string;
+  attachmentId?: string;
 }
 
 export enum NotificationType {
@@ -29,6 +31,8 @@ export enum NotificationType {
   DEADLINE_APPROACHING = 'deadline_approaching',
   TASK_OVERDUE = 'task_overdue',
   DEADLINE_CHANGED = 'deadline_changed',
+  ATTACHMENT_UPLOADED = 'attachment_uploaded',
+  ATTACHMENT_DELETED = 'attachment_deleted',
 }
 
 export enum NotificationPriority {
@@ -88,6 +92,19 @@ export interface ServerToClientEvents {
     deleter: string;
     timestamp: Date;
   }) => void;
+  'attachment:uploaded': (data: {
+    attachment: any;
+    taskId: string;
+    uploader: string;
+    timestamp: Date;
+  }) => void;
+  'attachment:deleted': (data: {
+    attachmentId: string;
+    taskId: string;
+    deleter: string;
+    fileName: string;
+    timestamp: Date;
+  }) => void;
   'admin:task_activity': (data: { type: string; task: any; user: string; timestamp: Date }) => void;
   'admin:task_request': (data: { task: any; requester: string; timestamp: Date }) => void;
   'deadline:reminder': (data: { task: any; timestamp: Date }) => void;
@@ -103,6 +120,8 @@ export interface ClientToServerEvents {
   'subscribe:dashboard': () => void;
   'subscribe:user-activity': () => void;
   'subscribe:stats': () => void;
+  'subscribe:comments': (taskId: string) => void;
+  'subscribe:attachments': (taskId: string) => void;
 }
 
 export interface InterServerEvents {

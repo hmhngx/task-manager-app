@@ -1,9 +1,21 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Attachment, AttachmentDocument } from '../schemas/attachment.schema';
 import { Task, TaskDocument } from '../schemas/task.schema';
 import { Comment, CommentDocument } from '../schemas/comment.schema';
+import { NotificationService } from '../../notifications/services/notification.service';
+import {
+  NotificationType,
+  NotificationPriority,
+} from '../../../shared/interfaces/notification.interface';
+import { TaskGateway } from '../../websocket/gateways/task.gateway';
 import * as sharp from 'sharp';
 
 @Injectable()
@@ -12,6 +24,10 @@ export class AttachmentsService {
     @InjectModel(Attachment.name) private attachmentModel: Model<AttachmentDocument>,
     @InjectModel(Task.name) private taskModel: Model<TaskDocument>,
     @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
+    @Inject(forwardRef(() => NotificationService))
+    private notificationService: NotificationService,
+    @Inject(forwardRef(() => TaskGateway))
+    private taskGateway: TaskGateway,
   ) {}
 
   async createAttachment(
@@ -20,6 +36,14 @@ export class AttachmentsService {
     taskId?: string,
     commentId?: string,
   ) {
+    console.log(`[AttachmentsService] Starting attachment creation`, {
+      fileName: file.originalname,
+      fileSize: file.size,
+      uploadedBy,
+      taskId,
+      commentId,
+    });
+
     if (!taskId && !commentId) {
       throw new BadRequestException('Either taskId or commentId must be provided');
     }
@@ -65,24 +89,58 @@ export class AttachmentsService {
         comment: commentId ? new Types.ObjectId(commentId) : undefined,
       });
 
+      console.log(`[AttachmentsService] Attachment created successfully`, {
+        attachmentId: attachment._id,
+        fileName: attachment.originalName,
+        taskId,
+        commentId,
+      });
+
       if (taskId) {
         await this.taskModel.findByIdAndUpdate(taskId, {
           $push: { attachments: attachment._id },
         });
+        console.log(`[AttachmentsService] Task updated with attachment reference`);
       }
 
       if (commentId) {
         await this.commentModel.findByIdAndUpdate(commentId, {
           $push: { attachments: attachment._id },
         });
+        console.log(`[AttachmentsService] Comment updated with attachment reference`);
       }
 
       // Return attachment without binary data
-      const { data, ...attachmentWithoutData } = attachment.toObject();
-      return {
+      const { data: _unused, ...attachmentWithoutData } = attachment.toObject();
+      const result = {
         ...attachmentWithoutData,
-        url: `/api/tasks/attachments/${attachment._id}`,
+        url: `/api/tasks/attachments/${attachment._id.toString()}`,
       };
+
+      // Notify all users about the attachment upload
+      if (taskId) {
+        console.log(`[AttachmentsService] Starting notification process for upload`, {
+          taskId,
+          fileName: attachment.originalName,
+          uploadedBy,
+        });
+        
+        await this.notifyAllUsersAboutAttachment(
+          taskId,
+          'uploaded',
+          attachment.originalName,
+          uploadedBy,
+        );
+        
+        console.log(`[AttachmentsService] Notification process completed for upload`);
+        
+        // Emit WebSocket event
+        console.log(`[AttachmentsService] Emitting WebSocket event for attachment upload`);
+        this.taskGateway.handleAttachmentUploaded(result, taskId, uploadedBy);
+        console.log(`[AttachmentsService] WebSocket event emitted successfully`);
+      }
+
+      return result;
     } catch (error) {
       if (error instanceof Error) {
         console.error('[AttachmentService] Error in createAttachment:', error.message, error.stack);
@@ -107,7 +165,7 @@ export class AttachmentsService {
 
     return attachments.map((attachment) => ({
       ...attachment.toObject(),
-      url: `/api/tasks/attachments/${attachment._id}`,
+      url: `/api/tasks/attachments/${attachment._id.toString()}`,
     }));
   }
 
@@ -125,7 +183,7 @@ export class AttachmentsService {
 
     return attachments.map((attachment) => ({
       ...attachment.toObject(),
-      url: `/api/tasks/attachments/${attachment._id}`,
+      url: `/api/tasks/attachments/${attachment._id.toString()}`,
     }));
   }
 
@@ -146,27 +204,74 @@ export class AttachmentsService {
     }
   }
 
-  async deleteAttachment(attachmentId: string, userId: string) {
+  async deleteAttachment(attachmentId: string, userId: string, userRole?: string) {
+    console.log(`[AttachmentsService] Starting attachment deletion`, {
+      attachmentId,
+      userId,
+      userRole,
+    });
+
     try {
       const attachment = await this.attachmentModel.findById(attachmentId);
       if (!attachment) {
         throw new NotFoundException('Attachment not found');
       }
-      if (attachment.uploadedBy.toString() !== userId) {
+      
+      console.log(`[AttachmentsService] Found attachment to delete`, {
+        attachmentId,
+        fileName: attachment.originalName,
+        taskId: attachment.task,
+        uploadedBy: attachment.uploadedBy,
+      });
+      
+      // Allow admins to delete any attachment, regular users can only delete their own
+      if (userRole !== 'admin' && attachment.uploadedBy.toString() !== userId) {
         throw new BadRequestException('Not authorized to delete this attachment');
       }
+      
       // Remove attachment references
       if (attachment.task) {
         await this.taskModel.findByIdAndUpdate(attachment.task, {
           $pull: { attachments: attachmentId },
         });
+        console.log(`[AttachmentsService] Removed attachment reference from task`);
       }
       if (attachment.comment) {
         await this.commentModel.findByIdAndUpdate(attachment.comment, {
           $pull: { attachments: attachmentId },
         });
+        console.log(`[AttachmentsService] Removed attachment reference from comment`);
       }
-      console.log(`[AttachmentsService] Attachment deleted`, { attachmentId, userId });
+      
+      // Notify all users about the attachment deletion
+      if (attachment.task) {
+        console.log(`[AttachmentsService] Starting notification process for deletion`, {
+          taskId: attachment.task.toString(),
+          fileName: attachment.originalName,
+          userId,
+        });
+        
+        await this.notifyAllUsersAboutAttachment(
+          attachment.task.toString(),
+          'deleted',
+          attachment.originalName,
+          userId,
+        );
+        
+        console.log(`[AttachmentsService] Notification process completed for deletion`);
+        
+        // Emit WebSocket event
+        console.log(`[AttachmentsService] Emitting WebSocket event for attachment deletion`);
+        this.taskGateway.handleAttachmentDeleted(
+          attachmentId,
+          attachment.task.toString(),
+          userId,
+          attachment.originalName,
+        );
+        console.log(`[AttachmentsService] WebSocket event emitted successfully for deletion`);
+      }
+
+      console.log(`[AttachmentsService] Attachment deleted`, { attachmentId, userId, userRole });
       return this.attachmentModel.findByIdAndDelete(attachmentId);
     } catch (error) {
       console.error('[AttachmentsService] Error in deleteAttachment:', error);
@@ -188,6 +293,112 @@ export class AttachmentsService {
     } catch (error) {
       console.error('[AttachmentsService] Error in getAttachmentForDownload:', error);
       throw error;
+    }
+  }
+
+  private async notifyAllUsersAboutAttachment(
+    taskId: string,
+    action: 'uploaded' | 'deleted',
+    fileName: string,
+    userId: string,
+  ) {
+    try {
+      console.log(`[AttachmentsService] Starting notification process for attachment ${action}`, {
+        taskId,
+        fileName,
+        userId,
+        action
+      });
+
+      // Get the task to include task title in notification
+      const task = await this.taskModel.findById(taskId).select('title');
+      if (!task) {
+        console.log(`[AttachmentsService] Task not found for ID: ${taskId}`);
+        return;
+      }
+
+      // Get task with all participants (creator, assignee, and watchers)
+      const taskWithParticipants = await this.taskModel.findById(taskId)
+        .populate('assignee', 'username _id')
+        .populate('creator', 'username _id')
+        .populate('watchers', 'username _id');
+
+      const participants = new Set<string>();
+      
+      // Add task creator
+      if (taskWithParticipants.creator) {
+        const creatorId = taskWithParticipants.creator._id.toString();
+        participants.add(creatorId);
+        console.log(`[AttachmentsService] Added creator to participants: ${creatorId}`);
+      }
+      
+      // Add assigned users
+      if (taskWithParticipants.assignee) {
+        if (Array.isArray(taskWithParticipants.assignee)) {
+          taskWithParticipants.assignee.forEach((user: any) => {
+            const assigneeId = user._id.toString();
+            participants.add(assigneeId);
+            console.log(`[AttachmentsService] Added assignee to participants: ${assigneeId}`);
+          });
+        } else {
+          const assigneeId = taskWithParticipants.assignee._id.toString();
+          participants.add(assigneeId);
+          console.log(`[AttachmentsService] Added assignee to participants: ${assigneeId}`);
+        }
+      }
+
+      // Add watchers
+      if (taskWithParticipants.watchers && Array.isArray(taskWithParticipants.watchers)) {
+        taskWithParticipants.watchers.forEach((watcher: any) => {
+          const watcherId = watcher._id.toString();
+          participants.add(watcherId);
+          console.log(`[AttachmentsService] Added watcher to participants: ${watcherId}`);
+        });
+      }
+
+      const actionText = action === 'uploaded' ? 'uploaded' : 'deleted';
+      const notificationType = action === 'uploaded' ? NotificationType.ATTACHMENT_UPLOADED : NotificationType.ATTACHMENT_DELETED;
+
+      console.log(`[AttachmentsService] Total participants found: ${participants.size}`, {
+        participants: Array.from(participants),
+        actionText,
+        notificationType
+      });
+
+      // Create notifications for all participants
+      for (const participantId of participants) {
+        if (participantId !== userId) { // Don't notify the user who performed the action
+          console.log(`[AttachmentsService] Creating notification for participant: ${participantId}`);
+          
+          try {
+            await this.notificationService.createAndSendNotification(
+              participantId,
+              {
+                type: notificationType,
+                title: `Attachment ${actionText}`,
+                message: `A file "${fileName}" was ${actionText} to task "${task.title}"`,
+                data: {
+                  taskId,
+                  fileName,
+                  action,
+                  userId,
+                },
+                timestamp: new Date(),
+                priority: NotificationPriority.MEDIUM,
+              },
+            );
+            console.log(`[AttachmentsService] Successfully created notification for participant: ${participantId}`);
+          } catch (error) {
+            console.error(`[AttachmentsService] Failed to create notification for participant ${participantId}:`, error);
+          }
+        } else {
+          console.log(`[AttachmentsService] Skipping notification for user who performed action: ${participantId}`);
+        }
+      }
+
+      console.log(`[AttachmentsService] Notification process completed for attachment ${action}`);
+    } catch (error) {
+      console.error('[AttachmentsService] Error notifying users about attachment:', error);
     }
   }
 }
