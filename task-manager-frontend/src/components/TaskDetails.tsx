@@ -2,9 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Task, User } from '../types/Task';
 import { getUserId, getUserDisplayName } from '../types/user';
 import { useAuth } from '../contexts/AuthContext';
+import { useWebSocket } from '../contexts/WebSocketContext';
+import { useCommentSocket } from '../hooks/useCommentSocket';
 import taskService, { canRequestTask, getTaskRequestRestrictionMessage } from '../services/taskService';
 import TaskForm from './TaskForm';
 import Button from './ui/Button';
+import UserAvatar from './UserAvatar';
 import dayjs from 'dayjs';
 
 interface TaskDetailsProps {
@@ -14,6 +17,7 @@ interface TaskDetailsProps {
 
 const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   const { user } = useAuth();
+  const { subscribeToTask, unsubscribeFromTask } = useWebSocket();
   const [task, setTask] = useState<Task | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [newComment, setNewComment] = useState('');
@@ -22,6 +26,26 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [selectedAssignee, setSelectedAssignee] = useState<string>('');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  // WebSocket subscription for real-time comment updates
+  const { isConnected: commentSocketConnected } = useCommentSocket({
+    taskId,
+    onCommentAdded: (comment) => {
+      console.log('New comment received via WebSocket:', comment);
+      // Refresh task details to get updated comment list
+      fetchTaskDetails();
+    },
+    onCommentEdited: (comment) => {
+      console.log('Comment edited via WebSocket:', comment);
+      // Refresh task details to get updated comment list
+      fetchTaskDetails();
+    },
+    onCommentDeleted: (commentId) => {
+      console.log('Comment deleted via WebSocket:', commentId);
+      // Refresh task details to get updated comment list
+      fetchTaskDetails();
+    },
+  });
 
   const fetchTaskDetails = useCallback(async () => {
     try {
@@ -46,6 +70,21 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
       });
     }
   }, [fetchTaskDetails, user]);
+
+  // Subscribe to task updates via WebSocket
+  useEffect(() => {
+    if (taskId) {
+      subscribeToTask(taskId);
+      console.log('Subscribed to task updates for task:', taskId);
+    }
+
+    return () => {
+      if (taskId) {
+        unsubscribeFromTask(taskId);
+        console.log('Unsubscribed from task updates for task:', taskId);
+      }
+    };
+  }, [taskId, subscribeToTask, unsubscribeFromTask]);
 
   const handleUpdateTask = async (updatedTask: any) => {
     try {
@@ -359,69 +398,90 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
         <h3 className="font-semibold">Comments</h3>
         <div className="mt-2 space-y-4">
           {task.comments.map((comment, idx) => {
+            // Handle both populated and unpopulated author data
+            const authorData = typeof comment.author === 'object' && comment.author !== null 
+              ? comment.author 
+              : { username: 'Unknown User', _id: comment.author };
+            
             return (
-            <div key={comment.id || comment._id || idx} className="bg-gray-50 p-3 rounded">
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="font-medium">{getUserDisplayName(comment.author)}</span>
-                  <span className="text-sm text-gray-500 ml-2">
-                    {new Date(comment.createdAt).toLocaleString()}
-                  </span>
-                  {comment.isEdited && (
-                    <span className="text-sm text-gray-500 ml-2">(edited)</span>
-                  )}
+            <div key={comment.id || comment._id || idx} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <div className="flex items-start space-x-3">
+                {/* User Avatar */}
+                <div className="flex-shrink-0">
+                  <UserAvatar user={authorData as User} className="h-8 w-8" />
                 </div>
-                <div className="flex items-center space-x-2">
-                  {/* Show delete button if user is the author OR if user is admin */}
-                  {(() => {
-                    // Simplified author check - handle both populated and unpopulated author data
-                    let isAuthor = false;
+                
+                {/* Comment Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-semibold text-gray-900">{authorData.username}</span>
+                      <span className="text-sm text-gray-500">
+                        {new Date(comment.createdAt).toLocaleString()}
+                      </span>
+                      {comment.isEdited && (
+                        <span className="text-xs text-gray-400 bg-gray-200 px-2 py-1 rounded-full">edited</span>
+                      )}
+                    </div>
                     
-                    if (user && comment.author) {
-                      const currentUserId = getUserId(user);
-                      
-                      // Handle populated author object
-                      if (typeof comment.author === 'object' && comment.author !== null) {
-                        const authorId = (comment.author as any)._id || (comment.author as any).id;
-                        isAuthor = currentUserId === authorId;
-                      }
-                      // Handle author as string ID
-                      else if (typeof comment.author === 'string') {
-                        isAuthor = currentUserId === comment.author;
-                      }
-                    }
-                    
-                    const canDelete = isAuthor || user?.role === 'admin';
-                    
-                    console.log('Comment deletion check:', {
-                      commentId: comment.id || comment._id,
-                      commentAuthor: comment.author,
-                      commentAuthorType: typeof comment.author,
-                      currentUser: user,
-                      currentUserId: user ? getUserId(user) : null,
-                      isAuthor,
-                      canDelete,
-                      userRole: user?.role
-                    });
-                    
-                    return canDelete ? (
-                      <button
-                        onClick={() => {
-                          const commentId = comment.id || comment._id;
-                          if (commentId) {
-                            console.log('Deleting comment:', commentId);
-                            handleDeleteComment(commentId);
+                    {/* Delete Button */}
+                    <div className="flex items-center space-x-2">
+                      {(() => {
+                        // Simplified author check - handle both populated and unpopulated author data
+                        let isAuthor = false;
+                        
+                        if (user && comment.author) {
+                          const currentUserId = getUserId(user);
+                          
+                          // Handle populated author object
+                          if (typeof comment.author === 'object' && comment.author !== null) {
+                            const authorId = (comment.author as any)._id || (comment.author as any).id;
+                            isAuthor = currentUserId === authorId;
                           }
-                        }}
-                        className="text-red-500 hover:text-red-600 px-2 py-1 rounded-md hover:bg-red-50 transition-colors text-sm"
-                      >
-                        Delete
-                      </button>
-                    ) : null;
-                  })()}
+                          // Handle author as string ID
+                          else if (typeof comment.author === 'string') {
+                            isAuthor = currentUserId === comment.author;
+                          }
+                        }
+                        
+                        const canDelete = isAuthor || user?.role === 'admin';
+                        
+                        console.log('Comment deletion check:', {
+                          commentId: comment.id || comment._id,
+                          commentAuthor: comment.author,
+                          commentAuthorType: typeof comment.author,
+                          currentUser: user,
+                          currentUserId: user ? getUserId(user) : null,
+                          isAuthor,
+                          canDelete,
+                          userRole: user?.role
+                        });
+                        
+                        return canDelete ? (
+                          <button
+                            onClick={() => {
+                              const commentId = comment.id || comment._id;
+                              if (commentId) {
+                                console.log('Deleting comment:', commentId);
+                                handleDeleteComment(commentId);
+                              }
+                            }}
+                            className="text-red-500 hover:text-red-600 px-2 py-1 rounded-md hover:bg-red-50 transition-colors text-sm"
+                            title="Delete comment"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        ) : null;
+                      })()}
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-gray-800 leading-relaxed">{comment.content}</p>
+                  </div>
                 </div>
               </div>
-              <p className="mt-1">{comment.content}</p>
             </div>
           );
           })}
@@ -436,12 +496,17 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
             onChange={(e) => setNewComment(e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             rows={3}
+            placeholder="Write your comment here..."
           />
           <button
             onClick={handleAddComment}
-            className="mt-2 px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="mt-2 px-4 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center space-x-2"
+            disabled={!newComment.trim()}
           >
-            Add Comment
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+            <span>Add Comment</span>
           </button>
         </div>
       </div>
