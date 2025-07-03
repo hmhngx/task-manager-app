@@ -67,7 +67,7 @@ export class Task extends Document {
   comments: string[];
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Attachment' }], default: [] })
-  attachments: string[];
+  attachments: Types.ObjectId[];
 
   @Prop({ type: Number, default: 0 })
   progress: number;
