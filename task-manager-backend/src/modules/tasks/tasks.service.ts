@@ -92,19 +92,71 @@ export class TasksService {
     // Emit WebSocket event for task creation
     await this.taskGateway.handleTaskCreated(this.convertTaskToTaskData(task), creatorId);
 
-    // Notify all users (broadcast)
+    // Notify all users (broadcast) including admin
     const allUsers = await this.usersService.findAll();
-    for (const user of allUsers) {
-      if (user._id.toString() !== creatorId) {
-        await this.notificationService.createAndSendNotification(user._id.toString(), {
-          title: 'New Task Created',
-          message: `Task "${task.title}" was created`,
-          type: NotificationType.TASK_CREATED,
-          priority: NotificationPriority.MEDIUM,
-          data: { taskId: task._id.toString() },
-          timestamp: new Date(),
-        });
+    const adminUsers = await this.usersService.findAdmins();
+    const adminIds = adminUsers.map((admin) => admin._id.toString());
+    
+    console.log(`[TasksService] Task creation - notifying users:`, {
+      taskId: task._id.toString(),
+      taskTitle: task.title,
+      creatorId,
+      totalUsers: allUsers.length,
+      adminIds,
+      assignee: task.assignee?.toString()
+    });
+    
+    // Ensure admin users are always notified, even if they are the creator
+    const usersToNotify = [...allUsers];
+    
+    // Add admin users that might not be in allUsers (defensive programming)
+    for (const admin of adminUsers) {
+      const adminExists = usersToNotify.some(user => user._id.toString() === admin._id.toString());
+      if (!adminExists) {
+        usersToNotify.push(admin);
+        console.log(`[TasksService] Added admin user to notification list: ${admin.username} (${admin._id})`);
       }
+    }
+    
+    for (const user of usersToNotify) {
+      if (user._id.toString() !== creatorId) {
+        console.log(`[TasksService] Creating task creation notification for user: ${user._id.toString()} (${user.username})`);
+        try {
+          await this.notificationService.createAndSendNotification(user._id.toString(), {
+            title: 'New Task Created',
+            message: `Task "${task.title}" was created`,
+            type: NotificationType.TASK_CREATED,
+            priority: NotificationPriority.MEDIUM,
+            data: { taskId: task._id.toString() },
+            timestamp: new Date(),
+          });
+          console.log(`[TasksService] Successfully created task creation notification for user: ${user._id.toString()} (${user.username})`);
+        } catch (error) {
+          console.error(`[TasksService] Failed to create task creation notification for user ${user._id.toString()}:`, error);
+        }
+      } else {
+        console.log(`[TasksService] Skipping task creation notification for creator: ${user._id.toString()} (${user.username})`);
+      }
+    }
+
+    // If task has an assignee, notify them specifically about being assigned
+    if (task.assignee && task.assignee.toString() !== creatorId) {
+      console.log(`[TasksService] Notifying assignee about task assignment during creation: ${task.assignee}`);
+      await this.notificationService.createAndSendNotification(task.assignee.toString(), {
+        title: 'Task Assignment',
+        message: `You have been assigned to task "${task.title}"`,
+        type: NotificationType.TASK_ASSIGNED,
+        priority: NotificationPriority.MEDIUM,
+        data: { taskId: task._id.toString() },
+        timestamp: new Date(),
+      });
+      
+      // Emit WebSocket event for task assignment
+      await this.taskGateway.handleTaskAssigned(
+        this.convertTaskToTaskData(task),
+        task.assignee.toString(),
+        creatorId,
+      );
     }
 
     return task;
@@ -118,7 +170,7 @@ export class TasksService {
     this.logger.log(`📋 Task title: ${createTaskDto.title}`);
     this.logger.log(`📝 Task description: ${createTaskDto.description}`);
     this.logger.log(`⏰ Timestamp: ${new Date().toISOString()}`);
-    
+
     const task = await this.taskModel.create({
       ...createTaskDto,
       creator: requesterId,
@@ -157,7 +209,7 @@ export class TasksService {
     // Notify all admins about the request with requester name
     const adminUsers = await this.usersService.findAdmins();
     this.logger.log(`👨‍💼 Found ${adminUsers.length} admin users to notify`);
-    
+
     for (const admin of adminUsers) {
       await this.notificationService.createAndSendNotification(admin._id.toString(), {
         title: 'New Task Request',
@@ -276,7 +328,13 @@ export class TasksService {
       .populate('creator', 'username')
       .populate('parentTask')
       .populate('subtasks')
-      .populate('comments')
+      .populate({
+        path: 'comments',
+        populate: {
+          path: 'author',
+          select: 'username _id',
+        },
+      })
       .populate('attachments')
       .populate('watchers', 'username')
       .populate('requesters', 'username');
@@ -322,8 +380,10 @@ export class TasksService {
         }
 
         // Prevent changing status of done/late tasks to pending_approval
-        if ((task.status === TaskStatus.DONE || task.status === TaskStatus.LATE) && 
-            updateTaskDto.status === TaskStatus.PENDING_APPROVAL) {
+        if (
+          (task.status === TaskStatus.DONE || task.status === TaskStatus.LATE) &&
+          updateTaskDto.status === TaskStatus.PENDING_APPROVAL
+        ) {
           throw new BadRequestException(
             `Cannot change status of a ${task.status} task to pending_approval.`,
           );
@@ -414,7 +474,7 @@ export class TasksService {
             data: { taskId: task._id.toString() },
             timestamp: new Date(),
           });
-          
+
           // Emit WebSocket event for assignment removal
           await this.taskGateway.handleTaskAssignmentRemoved(
             this.convertTaskToTaskData(updatedTask),
@@ -431,21 +491,49 @@ export class TasksService {
         changes,
       );
 
-      // Notify all participants (assignee, creator, watchers)
+      // Notify all participants (assignee, creator, watchers) and admin users
       const participantIds = [
         task.assignee?.toString(),
         task.creator?.toString(),
         ...(task.watchers || []).map((w) => w.toString()),
       ].filter(Boolean);
-      for (const userId of participantIds) {
-        await this.notificationService.createAndSendNotification(userId, {
-          type: NotificationType.TASK_STATUS_CHANGED,
-          title: 'Task Status Changed',
-          message: `Task "${task.title}" status changed to ${updateTaskDto.status}`,
-          taskId: task._id.toString(),
-          priority: NotificationPriority.MEDIUM,
-          timestamp: new Date(),
-        });
+      
+      // Also notify all admin users about task updates
+      const adminUsers = await this.usersService.findAdmins();
+      const adminIds = adminUsers.map(admin => admin._id.toString());
+      
+      // Combine participants and admins, remove duplicates
+      const allNotifyIds = [...new Set([...participantIds, ...adminIds])];
+      
+      console.log(`[TasksService] Task update - notifying participants and admins:`, {
+        taskId: id,
+        taskTitle: task.title,
+        participantIds,
+        adminIds,
+        allNotifyIds,
+        updaterId: userId,
+        statusChange: updateTaskDto.status ? `${oldStatus} -> ${updateTaskDto.status}` : 'No status change'
+      });
+      
+      for (const notifyId of allNotifyIds) {
+        if (notifyId !== userId) { // Don't notify the user who updated the task
+          console.log(`[TasksService] Creating update notification for: ${notifyId}`);
+          try {
+            await this.notificationService.createAndSendNotification(notifyId, {
+              type: NotificationType.TASK_STATUS_CHANGED,
+              title: 'Task Updated',
+              message: `Task "${task.title}" was updated${updateTaskDto.status ? ` - Status changed to ${updateTaskDto.status}` : ''}`,
+              taskId: task._id.toString(),
+              priority: NotificationPriority.MEDIUM,
+              timestamp: new Date(),
+            });
+            console.log(`[TasksService] Successfully created update notification for: ${notifyId}`);
+          } catch (error) {
+            console.error(`[TasksService] Failed to create update notification for ${notifyId}:`, error);
+          }
+        } else {
+          console.log(`[TasksService] Skipping update notification for user who updated task: ${notifyId}`);
+        }
       }
 
       return updatedTask;
@@ -481,21 +569,48 @@ export class TasksService {
     // Emit WebSocket event for task deletion
     await this.taskGateway.handleTaskDeleted(id, userId);
 
-    // Notify all participants (assignee, creator, watchers)
+    // Notify all participants (assignee, creator, watchers) and admin users
     const participantIds = [
       task.assignee?.toString(),
       task.creator?.toString(),
       ...(task.watchers || []).map((w) => w.toString()),
     ].filter(Boolean);
-    for (const userId of participantIds) {
-      await this.notificationService.createAndSendNotification(userId, {
-        type: NotificationType.TASK_DELETED,
-        title: 'Task Deleted',
-        message: `Task "${task.title}" was deleted`,
-        taskId: task._id.toString(),
-        priority: NotificationPriority.MEDIUM,
-        timestamp: new Date(),
-      });
+    
+    // Also notify all admin users about task deletion
+    const adminUsers = await this.usersService.findAdmins();
+    const adminIds = adminUsers.map(admin => admin._id.toString());
+    
+    // Combine participants and admins, remove duplicates
+    const allNotifyIds = [...new Set([...participantIds, ...adminIds])];
+    
+    console.log(`[TasksService] Task deletion - notifying participants and admins:`, {
+      taskId: id,
+      taskTitle: task.title,
+      participantIds,
+      adminIds,
+      allNotifyIds,
+      deleterId: userId
+    });
+    
+    for (const notifyId of allNotifyIds) {
+      if (notifyId !== userId) { // Don't notify the user who deleted the task
+        console.log(`[TasksService] Creating deletion notification for: ${notifyId}`);
+        try {
+          await this.notificationService.createAndSendNotification(notifyId, {
+            type: NotificationType.TASK_DELETED,
+            title: 'Task Deleted',
+            message: `Task "${task.title}" was deleted`,
+            taskId: task._id.toString(),
+            priority: NotificationPriority.HIGH,
+            timestamp: new Date(),
+          });
+          console.log(`[TasksService] Successfully created deletion notification for: ${notifyId}`);
+        } catch (error) {
+          console.error(`[TasksService] Failed to create deletion notification for ${notifyId}:`, error);
+        }
+      } else {
+        console.log(`[TasksService] Skipping deletion notification for user who deleted task: ${notifyId}`);
+      }
     }
 
     return { message: 'Task deleted successfully' };
@@ -804,7 +919,9 @@ export class TasksService {
       data: { taskId: task._id.toString() },
       timestamp: new Date(),
     });
-    this.logger.log(`Push notification sent to participant ${participantId} for add event on task ${task._id}`);
+    this.logger.log(
+      `Push notification sent to participant ${participantId} for add event on task ${task._id}`,
+    );
 
     return this.taskModel.findById(taskId).populate('watchers', 'username');
   }
@@ -840,7 +957,9 @@ export class TasksService {
       data: { taskId: task._id.toString() },
       timestamp: new Date(),
     });
-    this.logger.log(`Push notification sent to participant ${participantId} for remove event on task ${task._id}`);
+    this.logger.log(
+      `Push notification sent to participant ${participantId} for remove event on task ${task._id}`,
+    );
 
     return this.taskModel.findById(taskId).populate('watchers', 'username');
   }
@@ -922,8 +1041,10 @@ export class TasksService {
     }
 
     // Prevent changing status of done/late tasks to pending_approval
-    if ((task.status === TaskStatus.DONE || task.status === TaskStatus.LATE) && 
-        newStatus === TaskStatus.PENDING_APPROVAL) {
+    if (
+      (task.status === TaskStatus.DONE || task.status === TaskStatus.LATE) &&
+      newStatus === TaskStatus.PENDING_APPROVAL
+    ) {
       throw new BadRequestException(
         `Cannot change status of a ${task.status} task to pending_approval.`,
       );

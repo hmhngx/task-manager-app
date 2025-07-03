@@ -145,7 +145,7 @@ export class WorkflowsService {
   async requestApproval(taskId: string, userId: string) {
     this.logger.log(`🔄 User ${userId} requesting approval for task ${taskId}`);
     this.logger.log(`⏰ Timestamp: ${new Date().toISOString()}`);
-    
+
     const task = await this.taskModel.findById(taskId);
     if (!task) {
       this.logger.error(`❌ Task ${taskId} not found for approval request`);
@@ -176,19 +176,19 @@ export class WorkflowsService {
     }
 
     const userIdObj = new Types.ObjectId(userId);
-    
+
     // Check if user is the creator of the task
     if (task.creator.toString() === userIdObj.toString()) {
       this.logger.warn(`⚠️ User ${userId} is the creator of task ${taskId}`);
       throw new BadRequestException('You cannot request your own task');
     }
-    
+
     // Check if user is already assigned to the task
     if (task.assignee && task.assignee.toString() === userIdObj.toString()) {
       this.logger.warn(`⚠️ User ${userId} is already assigned to task ${taskId}`);
       throw new BadRequestException('You are already assigned to this task');
     }
-    
+
     // Check if user has already requested this task
     if (task.requesters.some((requester) => requester.toString() === userIdObj.toString())) {
       this.logger.warn(`⚠️ User ${userId} has already requested task ${taskId}`);
@@ -196,53 +196,50 @@ export class WorkflowsService {
     }
 
     this.logger.log(`✅ Adding user ${userId} to requesters for task ${taskId}`);
-    
+
     // Store the old status for WebSocket event
     const oldStatus = task.status;
-    
+
     // Only change status to pending_approval if task is currently in todo status
     // Otherwise, preserve the current status
     const updateData: any = {
       $push: { requesters: userIdObj },
     };
-    
+
     if (task.status === TaskStatus.TODO) {
       updateData.status = TaskStatus.PENDING_APPROVAL;
       this.logger.log(`✅ Task status updated to pending_approval`);
     } else {
       this.logger.log(`✅ Task status preserved as ${task.status}`);
     }
-    
-    const updatedTask = await this.taskModel.findByIdAndUpdate(
-      taskId,
-      updateData,
-      { new: true },
-    );
+
+    const updatedTask = await this.taskModel.findByIdAndUpdate(taskId, updateData, { new: true });
 
     this.logger.log(`✅ User ${userId} successfully added to requesters`);
-    
+
     // Emit WebSocket events if status changed
     if (oldStatus !== updatedTask.status) {
-      this.logger.log(`📡 Emitting WebSocket event for status change from ${oldStatus} to ${updatedTask.status}`);
+      this.logger.log(
+        `📡 Emitting WebSocket event for status change from ${oldStatus} to ${updatedTask.status}`,
+      );
       this.taskGateway.handleTaskStatusChanged(
         this.convertTaskToTaskData(updatedTask),
         oldStatus,
         updatedTask.status,
-        userId
+        userId,
       );
     }
-    
+
     // Emit task updated event
-    this.taskGateway.handleTaskUpdated(
-      this.convertTaskToTaskData(updatedTask),
-      userId,
-      { status: updatedTask.status, requesters: updatedTask.requesters }
-    );
-    
+    this.taskGateway.handleTaskUpdated(this.convertTaskToTaskData(updatedTask), userId, {
+      status: updatedTask.status,
+      requesters: updatedTask.requesters,
+    });
+
     // Get requester details for personalized notifications
     const requester = await this.usersService.findById(userId);
     this.logger.log(`👤 Requester details retrieved: ${requester?.username || 'Unknown'}`);
-    
+
     // Send confirmation notification to the requester
     await this.notificationService.createAndSendNotification(userId, {
       title: 'Task Request Submitted',
@@ -253,11 +250,11 @@ export class WorkflowsService {
       timestamp: new Date(),
     });
     this.logger.log(`📧 Confirmation notification sent to requester ${userId}`);
-    
+
     // Notify all admins about the request
     const adminUsers = await this.usersService.findAdmins();
     this.logger.log(`👨‍💼 Found ${adminUsers.length} admin users to notify`);
-    
+
     for (const admin of adminUsers) {
       await this.notificationService.createAndSendNotification(admin._id.toString(), {
         title: 'New Task Assignment Request',
@@ -269,7 +266,7 @@ export class WorkflowsService {
       });
       this.logger.log(`📧 Admin notification sent to ${admin.username} (${admin._id.toString()})`);
     }
-    
+
     return updatedTask;
   }
 
@@ -287,12 +284,14 @@ export class WorkflowsService {
       assignee: task.assignee ? task.assignee.toString() : undefined,
       creator: task.creator.toString(),
       parentTask: task.parentTask ? task.parentTask.toString() : undefined,
-      subtasks: task.subtasks ? task.subtasks.map(subtask => subtask.toString()) : [],
-      comments: task.comments ? task.comments.map(comment => comment.toString()) : [],
-      attachments: task.attachments ? task.attachments.map(attachment => attachment.toString()) : [],
+      subtasks: task.subtasks ? task.subtasks.map((subtask) => subtask.toString()) : [],
+      comments: task.comments ? task.comments.map((comment) => comment.toString()) : [],
+      attachments: task.attachments
+        ? task.attachments.map((attachment) => attachment.toString())
+        : [],
       progress: task.progress || 0,
-      watchers: task.watchers ? task.watchers.map(watcher => watcher.toString()) : [],
-      requesters: task.requesters ? task.requesters.map(requester => requester.toString()) : [],
+      watchers: task.watchers ? task.watchers.map((watcher) => watcher.toString()) : [],
+      requesters: task.requesters ? task.requesters.map((requester) => requester.toString()) : [],
       workflow: task.workflow,
     };
   }
@@ -301,7 +300,7 @@ export class WorkflowsService {
     this.logger.log(`✅ Admin ${approverId} approving request for task ${taskId}`);
     this.logger.log(`👤 Requester ID: ${requesterId}`);
     this.logger.log(`⏰ Timestamp: ${new Date().toISOString()}`);
-    
+
     const task = await this.taskModel.findById(taskId);
     if (!task) {
       this.logger.error(`❌ Task ${taskId} not found for approval`);
@@ -309,7 +308,9 @@ export class WorkflowsService {
     }
 
     this.logger.log(`📋 Task title: ${task.title}`);
-    this.logger.log(`👤 Current requesters: ${task.requesters.map((r) => r.toString()).join(', ')}`);
+    this.logger.log(
+      `👤 Current requesters: ${task.requesters.map((r) => r.toString()).join(', ')}`,
+    );
 
     if (!requesterId.match(/^[0-9a-fA-F]{24}$/)) {
       this.logger.error(`❌ Invalid requester ID format: ${requesterId}`);
@@ -338,21 +339,21 @@ export class WorkflowsService {
     );
 
     this.logger.log(`✅ Task ${taskId} successfully approved and assigned to ${requesterId}`);
-    
+
     // Emit WebSocket events
     this.taskGateway.handleTaskStatusChanged(
       this.convertTaskToTaskData(updatedTask),
       oldStatus,
       updatedTask.status,
-      approverId
+      approverId,
     );
-    
+
     this.taskGateway.handleTaskAssigned(
       this.convertTaskToTaskData(updatedTask),
       requesterId,
-      approverId
+      approverId,
     );
-    
+
     // Notify the requester that their request was approved
     await this.notificationService.createAndSendNotification(requesterId, {
       title: 'Task Request Approved',
@@ -374,7 +375,7 @@ export class WorkflowsService {
       timestamp: new Date(),
     });
     this.logger.log(`📧 Assignment notification sent to user ${requesterId}`);
-    
+
     return updatedTask;
   }
 
@@ -382,7 +383,7 @@ export class WorkflowsService {
     this.logger.log(`❌ Admin rejecting request for task ${taskId}`);
     this.logger.log(`👤 Requester ID: ${requesterId}`);
     this.logger.log(`⏰ Timestamp: ${new Date().toISOString()}`);
-    
+
     const task = await this.taskModel.findById(taskId);
     if (!task) {
       this.logger.error(`❌ Task ${taskId} not found for rejection`);
@@ -390,7 +391,9 @@ export class WorkflowsService {
     }
 
     this.logger.log(`📋 Task title: ${task.title}`);
-    this.logger.log(`👤 Current requesters: ${task.requesters.map((r) => r.toString()).join(', ')}`);
+    this.logger.log(
+      `👤 Current requesters: ${task.requesters.map((r) => r.toString()).join(', ')}`,
+    );
 
     if (!requesterId.match(/^[0-9a-fA-F]{24}$/)) {
       this.logger.error(`❌ Invalid requester ID format: ${requesterId}`);
@@ -423,7 +426,7 @@ export class WorkflowsService {
       this.convertTaskToTaskData(updatedTask),
       oldStatus,
       updatedTask.status,
-      'admin' // Since we don't have the admin ID here, we'll use 'admin'
+      'admin', // Since we don't have the admin ID here, we'll use 'admin'
     );
 
     // Notify the requester that their request was rejected

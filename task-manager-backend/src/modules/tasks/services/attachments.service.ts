@@ -205,29 +205,47 @@ export class AttachmentsService {
   }
 
   async deleteAttachment(attachmentId: string, userId: string, userRole?: string) {
-    console.log(`[AttachmentsService] Starting attachment deletion`, {
-      attachmentId,
-      userId,
-      userRole,
-    });
+    console.log(`[AttachmentsService] Starting attachment deletion - DETAILED LOG`);
+    console.log(`[AttachmentsService] Attachment ID: ${attachmentId}`);
+    console.log(`[AttachmentsService] User ID: ${userId}`);
+    console.log(`[AttachmentsService] User role: ${userRole}`);
+    console.log(`[AttachmentsService] User role type: ${typeof userRole}`);
+    console.log(`[AttachmentsService] User role === 'admin': ${userRole === 'admin'}`);
 
     try {
       const attachment = await this.attachmentModel.findById(attachmentId);
       if (!attachment) {
+        console.log(`[AttachmentsService] Attachment not found for ID: ${attachmentId}`);
         throw new NotFoundException('Attachment not found');
       }
       
-      console.log(`[AttachmentsService] Found attachment to delete`, {
-        attachmentId,
+      console.log(`[AttachmentsService] Found attachment to delete`);
+      console.log(`[AttachmentsService] Attachment details:`, {
+        attachmentId: attachment._id,
         fileName: attachment.originalName,
         taskId: attachment.task,
         uploadedBy: attachment.uploadedBy,
+        uploadedByType: typeof attachment.uploadedBy,
+        uploadedByString: attachment.uploadedBy?.toString(),
       });
       
       // Allow admins to delete any attachment, regular users can only delete their own
-      if (userRole !== 'admin' && attachment.uploadedBy.toString() !== userId) {
+      console.log(`[AttachmentsService] Authorization check:`);
+      console.log(`[AttachmentsService] - userRole !== 'admin': ${userRole !== 'admin'}`);
+      console.log(`[AttachmentsService] - attachment.uploadedBy.toString() !== userId: ${attachment.uploadedBy?.toString() !== userId}`);
+      console.log(`[AttachmentsService] - userId: ${userId}`);
+      console.log(`[AttachmentsService] - attachment.uploadedBy: ${attachment.uploadedBy}`);
+      console.log(`[AttachmentsService] - attachment.uploadedBy.toString(): ${attachment.uploadedBy?.toString()}`);
+      
+      if (userRole !== 'admin' && attachment.uploadedBy?.toString() !== userId) {
+        console.log(`[AttachmentsService] AUTHORIZATION FAILED - throwing BadRequestException`);
+        console.log(`[AttachmentsService] - userRole: ${userRole}`);
+        console.log(`[AttachmentsService] - userId: ${userId}`);
+        console.log(`[AttachmentsService] - uploadedBy: ${attachment.uploadedBy}`);
         throw new BadRequestException('Not authorized to delete this attachment');
       }
+      
+      console.log(`[AttachmentsService] AUTHORIZATION PASSED - proceeding with deletion`);
       
       // Remove attachment references
       if (attachment.task) {
@@ -251,30 +269,50 @@ export class AttachmentsService {
           userId,
         });
         
-        await this.notifyAllUsersAboutAttachment(
-          attachment.task.toString(),
-          'deleted',
-          attachment.originalName,
-          userId,
-        );
-        
-        console.log(`[AttachmentsService] Notification process completed for deletion`);
+        console.log(`[AttachmentsService] Starting notification process for deletion`);
+        try {
+          await this.notifyAllUsersAboutAttachment(
+            attachment.task.toString(),
+            'deleted',
+            attachment.originalName,
+            userId,
+          );
+          console.log(`[AttachmentsService] Notification process completed for deletion`);
+        } catch (notificationError) {
+          console.error(`[AttachmentsService] Notification process failed:`, notificationError);
+          console.error(`[AttachmentsService] But continuing with attachment deletion...`);
+        }
         
         // Emit WebSocket event
-        console.log(`[AttachmentsService] Emitting WebSocket event for attachment deletion`);
-        this.taskGateway.handleAttachmentDeleted(
-          attachmentId,
-          attachment.task.toString(),
-          userId,
-          attachment.originalName,
-        );
-        console.log(`[AttachmentsService] WebSocket event emitted successfully for deletion`);
+        console.log(`[AttachmentsService] Starting WebSocket event emission for deletion`);
+        try {
+          this.taskGateway.handleAttachmentDeleted(
+            attachmentId,
+            attachment.task.toString(),
+            userId,
+            attachment.originalName,
+          );
+          console.log(`[AttachmentsService] WebSocket event emitted successfully for deletion`);
+        } catch (websocketError) {
+          console.error(`[AttachmentsService] WebSocket event emission failed:`, websocketError);
+          console.error(`[AttachmentsService] But continuing with attachment deletion...`);
+        }
       }
 
-      console.log(`[AttachmentsService] Attachment deleted`, { attachmentId, userId, userRole });
-      return this.attachmentModel.findByIdAndDelete(attachmentId);
+      console.log(`[AttachmentsService] About to delete attachment from database`);
+      const deletedAttachment = await this.attachmentModel.findByIdAndDelete(attachmentId);
+      console.log(`[AttachmentsService] Attachment deleted from database successfully`);
+      console.log(`[AttachmentsService] Deleted attachment:`, deletedAttachment);
+      console.log(`[AttachmentsService] Attachment deletion completed successfully`);
+      return deletedAttachment;
     } catch (error) {
       console.error('[AttachmentsService] Error in deleteAttachment:', error);
+      console.error('[AttachmentsService] Error type:', typeof error);
+      console.error('[AttachmentsService] Error constructor:', error?.constructor?.name);
+      if (error instanceof Error) {
+        console.error('[AttachmentsService] Error message:', error.message);
+        console.error('[AttachmentsService] Error stack:', error.stack);
+      }
       throw error;
     }
   }

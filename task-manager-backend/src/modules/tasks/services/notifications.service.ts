@@ -72,17 +72,14 @@ export class NotificationsService {
     await this.sendEmail(task.assignee.email, subject, html);
 
     // Create in-app notification (this automatically sends WebSocket notification)
-    await this.notificationService.createAndSendNotification(
-      task.assignee._id.toString(),
-      {
-        title: 'Task Assigned',
-        message: `You have been assigned to task: ${task.title}`,
-        type: NotificationType.TASK_ASSIGNED,
-        priority: this.mapPriorityToNotificationPriority(task.priority),
-        data: { taskId: task._id.toString() },
-        timestamp: new Date(),
-      },
-    );
+    await this.notificationService.createAndSendNotification(task.assignee._id.toString(), {
+      title: 'Task Assigned',
+      message: `You have been assigned to task: ${task.title}`,
+      type: NotificationType.TASK_ASSIGNED,
+      priority: this.mapPriorityToNotificationPriority(task.priority),
+      data: { taskId: task._id.toString() },
+      timestamp: new Date(),
+    });
   }
 
   async notifyTaskStatusChanged(taskId: string) {

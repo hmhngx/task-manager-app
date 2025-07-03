@@ -310,16 +310,30 @@ export class TasksController {
   @Delete('attachments/:attachmentId')
   async deleteAttachment(@Param('attachmentId') attachmentId: string, @Req() req: RequestWithUser) {
     try {
-      console.log(`[TasksController] Deleting attachment`, { attachmentId, user: req.user });
-      return await this.attachmentsService.deleteAttachment(
+      console.log(`[TasksController] Deleting attachment - START`);
+      console.log(`[TasksController] Attachment ID: ${attachmentId}`);
+      console.log(`[TasksController] User object:`, req.user);
+      console.log(`[TasksController] User ID: ${req.user.id}`);
+      console.log(`[TasksController] User role: ${req.user.role}`);
+      console.log(`[TasksController] User username: ${req.user.username}`);
+      
+      const result = await this.attachmentsService.deleteAttachment(
         attachmentId,
         req.user.id,
         req.user.role,
       );
+      
+      console.log(`[TasksController] Attachment deletion successful`);
+      console.log(`[TasksController] Result:`, result);
+      return result;
     } catch (error) {
+      console.error(`[TasksController] Attachment deletion FAILED`);
       if (error instanceof Error) {
-        console.error('[deleteAttachment] Error deleting attachment:', error.message, error.stack);
+        console.error('[deleteAttachment] Error type: Error');
+        console.error('[deleteAttachment] Error message:', error.message);
+        console.error('[deleteAttachment] Error stack:', error.stack);
       } else {
+        console.error('[deleteAttachment] Error type: Unknown');
         console.error('[deleteAttachment] Unknown error:', error);
       }
       throw new BadRequestException('Failed to delete attachment');
