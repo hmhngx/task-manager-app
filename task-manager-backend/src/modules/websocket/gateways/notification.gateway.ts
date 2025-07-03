@@ -43,7 +43,7 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
     if (user) {
       const userId = user._id.toString();
       this.logger.log(`User ${user.username} (${userId}) connected to notifications`);
-      
+
       if (!this.userSockets.has(userId)) {
         this.userSockets.set(userId, []);
       }
@@ -55,7 +55,7 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
         client.join('admins');
         this.logger.log(`Admin user ${user.username} joined admin room`);
       }
-      
+
       this.logger.log(`User ${user.username} joined room user:${userId}`);
       this.logger.log(`Total connected users: ${this.userSockets.size}`);
     } else {
@@ -85,17 +85,21 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
     this.logger.log(`Notification payload: ${JSON.stringify(notification)}`);
     this.logger.log(`User sockets count: ${this.userSockets.get(userId)?.length || 0}`);
     this.logger.log(`Available user IDs: ${Array.from(this.userSockets.keys()).join(', ')}`);
-    
+
     // Check if user has any connected sockets
     const userSocketList = this.userSockets.get(userId);
     if (!userSocketList || userSocketList.length === 0) {
       this.logger.warn(`No connected sockets found for user ${userId}`);
+      this.logger.warn(`User ${userId} is not connected to WebSocket`);
       return;
     }
-    
+
+    this.logger.log(`Found ${userSocketList.length} socket(s) for user ${userId}`);
+
     // Only emit to the room - this will automatically send to all user's connected sockets
     this.server.to(`user:${userId}`).emit('notification', notification);
     this.logger.log(`Notification emitted to room user:${userId}`);
+    this.logger.log(`Notification sent successfully to user ${userId}`);
   }
 
   sendNotificationToUsers(userIds: string[], notification: NotificationPayload): void {

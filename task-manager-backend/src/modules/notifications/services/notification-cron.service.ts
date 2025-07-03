@@ -55,7 +55,9 @@ export class NotificationCronService {
           });
 
           if (existingNotification) {
-            this.logger.log(`Overdue notification already sent recently for user ${userId} and task ${task._id}. Skipping.`);
+            this.logger.log(
+              `Overdue notification already sent recently for user ${userId} and task ${task._id}. Skipping.`,
+            );
             continue;
           }
 
@@ -112,7 +114,9 @@ export class NotificationCronService {
           });
 
           if (existingNotification) {
-            this.logger.log(`Deadline approaching notification already sent recently for user ${userId} and task ${task._id}. Skipping.`);
+            this.logger.log(
+              `Deadline approaching notification already sent recently for user ${userId} and task ${task._id}. Skipping.`,
+            );
             continue;
           }
 
