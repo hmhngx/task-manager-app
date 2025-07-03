@@ -120,7 +120,10 @@ const notificationSlice = createSlice({
   initialState,
   reducers: {
     addNotification: (state, action: PayloadAction<NotificationPayload>) => {
-      console.log('Adding notification to Redux store:', action.payload);
+      console.log('📥 Adding notification to Redux store:', action.payload);
+      console.log('📋 Current notifications count:', state.notifications.length);
+      console.log('📊 Current unread count:', state.unreadCount);
+      
       // Only add if not already present (deduplication by id)
       const exists = state.notifications.some(n => n.id === action.payload.id);
       if (!exists) {
@@ -128,10 +131,13 @@ const notificationSlice = createSlice({
         if (!action.payload.read) {
           state.unreadCount += 1;
         }
-        console.log('Notification added successfully. Total notifications:', state.notifications.length);
-        console.log('Unread count:', state.unreadCount);
+        console.log('✅ Notification added successfully. Total notifications:', state.notifications.length);
+        console.log('📊 New unread count:', state.unreadCount);
+        console.log('📋 Notification type:', action.payload.type);
+        console.log('📝 Notification title:', action.payload.title);
       } else {
-        console.log('Notification already exists, skipping...');
+        console.log('⚠️ Notification already exists, skipping...');
+        console.log('🆔 Duplicate ID:', action.payload.id);
       }
     },
     markAsRead: (state, action: PayloadAction<string>) => {

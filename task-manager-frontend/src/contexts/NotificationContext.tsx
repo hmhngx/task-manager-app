@@ -107,13 +107,16 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
     // Handle incoming notifications
     notificationSocket.on('notification', (notification: NotificationPayload) => {
-      console.log('Received notification:', notification);
-      console.log('Notification type:', notification.type);
-      console.log('Notification title:', notification.title);
-      console.log('Notification message:', notification.message);
-      console.log('Dispatching to Redux store...');
+      console.log('🔔 Received notification:', notification);
+      console.log('📋 Notification type:', notification.type);
+      console.log('📝 Notification title:', notification.title);
+      console.log('💬 Notification message:', notification.message);
+      console.log('📊 Notification data:', notification.data);
+      console.log('🆔 Notification ID:', notification.id);
+      console.log('📅 Notification timestamp:', notification.timestamp);
+      console.log('📤 Dispatching to Redux store...');
       dispatch(addNotification(notification));
-      console.log('Notification dispatched successfully');
+      console.log('✅ Notification dispatched successfully');
     });
 
     setSocket(notificationSocket);

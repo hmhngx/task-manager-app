@@ -8,8 +8,6 @@ import {
   Req,
   Post,
   Body,
-  HttpException,
-  HttpStatus,
   InternalServerErrorException,
   Delete,
   Logger,
@@ -225,9 +223,7 @@ export class NotificationController {
   @Delete('clear/read')
   @ApiOperation({ summary: 'Clear read notifications' })
   @ApiResponse({ status: 200, description: 'Read notifications cleared successfully' })
-  async clearReadNotifications(
-    @Req() req: AuthenticatedRequest,
-  ): Promise<{ success: boolean }> {
+  async clearReadNotifications(@Req() req: AuthenticatedRequest): Promise<{ success: boolean }> {
     try {
       const userId = req.user.id;
       if (!userId) {
@@ -275,6 +271,81 @@ export class NotificationController {
       );
       throw new InternalServerErrorException(
         `Failed to send test notification: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  @Post('test/attachment')
+  @ApiOperation({ summary: 'Test attachment notification (for debugging)' })
+  @ApiResponse({ status: 200, description: 'Test attachment notification sent' })
+  async testAttachmentNotification(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<{ success: boolean }> {
+    try {
+      const userId = req.user.id;
+      if (!userId) {
+        throw new InternalServerErrorException('User ID not found in user object');
+      }
+
+      // Create a test attachment notification
+      await this.notificationService.createAndSendNotification(userId, {
+        title: 'Test Attachment Uploaded',
+        message: 'This is a test attachment notification to verify the system is working',
+        type: NotificationType.ATTACHMENT_UPLOADED,
+        priority: NotificationPriority.MEDIUM,
+        data: {
+          taskId: 'test-task-id',
+          fileName: 'test-file.jpg',
+          action: 'uploaded',
+          userId: userId,
+        },
+        timestamp: new Date(),
+      });
+
+      return { success: true };
+    } catch (error) {
+      this.logger.error(
+        `Error in testAttachmentNotification: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : '',
+      );
+      throw new InternalServerErrorException(
+        `Failed to send test attachment notification: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  @Post('test/task-deleted')
+  @ApiOperation({ summary: 'Test task deletion notification (for debugging)' })
+  @ApiResponse({ status: 200, description: 'Test task deletion notification sent' })
+  async testTaskDeletedNotification(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<{ success: boolean }> {
+    try {
+      const userId = req.user.id;
+      if (!userId) {
+        throw new InternalServerErrorException('User ID not found in user object');
+      }
+
+      // Create a test task deletion notification
+      await this.notificationService.createAndSendNotification(userId, {
+        title: 'Test Task Deleted',
+        message: 'This is a test task deletion notification to verify the system is working',
+        type: NotificationType.TASK_DELETED,
+        priority: NotificationPriority.HIGH,
+        data: {
+          taskId: 'test-task-id',
+        },
+        timestamp: new Date(),
+      });
+
+      return { success: true };
+    } catch (error) {
+      this.logger.error(
+        `Error in testTaskDeletedNotification: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : '',
+      );
+      throw new InternalServerErrorException(
+        `Failed to send test task deletion notification: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }
