@@ -4,6 +4,7 @@ import { getUserId, getUserDisplayName } from '../types/user';
 import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { useCommentSocket } from '../hooks/useCommentSocket';
+import { useAttachmentSocket } from '../hooks/useAttachmentSocket';
 import taskService, { canRequestTask, getTaskRequestRestrictionMessage } from '../services/taskService';
 import TaskForm from './TaskForm';
 import Button from './ui/Button';
@@ -44,6 +45,28 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
       console.log('Comment deleted via WebSocket:', commentId);
       // Refresh task details to get updated comment list
       fetchTaskDetails();
+    },
+  });
+
+  // WebSocket subscription for real-time attachment updates
+  const { isConnected: attachmentSocketConnected } = useAttachmentSocket({
+    taskId,
+    callbacks: {
+      onAttachmentUploaded: (data) => {
+        console.log('📤 New attachment uploaded via WebSocket:', data);
+        console.log('📁 Attachment details:', data.attachment);
+        console.log('👤 Uploader:', data.uploader);
+        // Refresh task details to get updated attachment list
+        fetchTaskDetails();
+      },
+      onAttachmentDeleted: (data) => {
+        console.log('🗑️ Attachment deleted via WebSocket:', data);
+        console.log('🆔 Deleted attachment ID:', data.attachmentId);
+        console.log('📁 Deleted file name:', data.fileName);
+        console.log('👤 Deleter:', data.deleter);
+        // Refresh task details to get updated attachment list
+        fetchTaskDetails();
+      },
     },
   });
 
