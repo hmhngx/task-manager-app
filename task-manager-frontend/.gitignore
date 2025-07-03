@@ -28,3 +28,11 @@ yarn-error.log*
 *.postman_globals.json
 postman/
 Postman/ 
+
+test-*.js
+test-*.ts
+test-*.mjs
+*test*.js
+*test*.ts
+*test*.mjs
+*.js
