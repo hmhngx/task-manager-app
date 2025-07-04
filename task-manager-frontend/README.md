@@ -1,6 +1,6 @@
 # Task Manager Frontend
 
-A modern React frontend with **real-time WebSocket integration**, **comprehensive notification system**, and **advanced task management** for the Task Manager application.
+A modern React frontend with **real-time WebSocket integration**, **comprehensive notification system**, **advanced comment system**, and **workflow management** for the Task Manager application.
 
 ## 🚀 Key Features
 
@@ -8,26 +8,41 @@ A modern React frontend with **real-time WebSocket integration**, **comprehensiv
 - **User Authentication** with JWT and role-based access
 - **Task CRUD Operations** with assignment workflows
 - **Real-time Collaboration** via WebSocket integration
-- **Comments & Attachments** with file upload support
+- **Advanced Comment System** with voting, replies, and mentions
+- **File Attachments** with upload/download support
 - **Task Status Management** with custom workflows
 - **Admin Dashboard** with live monitoring
 - **Participant Management** with add/remove functionality
+- **Task Request System** with approval workflows
+
+### Advanced Comment System
+- **Threaded Comments** with parent-child relationships
+- **Voting System** with up/down votes and vote counts
+- **Comment Replies** with nested display
+- **User Mentions** with notification system
+- **Comment Editing** with inline form controls
+- **Real-time Updates** via WebSocket
+- **Attachment Support** for comments
+- **Moderation Tools** for admins
 
 ### Real-Time Features
-- **WebSocket Notifications** - Instant updates for task changes
+- **WebSocket Integration** for live updates across all features
+- **Real-time Comments** with instant updates and notifications
 - **Live Task Updates** and status changes
-- **Real-time Comments** with mentions
-- **Admin Dashboard** with live statistics
+- **Admin Dashboard** with live monitoring and analytics
 - **User Activity Tracking** in real-time
 - **Attachment Events** for file upload/delete notifications
+- **Participant Management** with live updates
 
-### Notification System
+### Comprehensive Notification System
 - **In-App Notifications** - Real-time notification box with filtering
 - **Web Push Notifications** - Browser notifications via service worker
 - **Notification Management** - Mark as read, filtering, preferences
 - **Toast Notifications** - User-friendly alerts
 - **Priority-based Display** - Color-coded notification priorities
 - **Bulk Operations** - Mark all as read, clear notifications
+- **Comment Notifications** - Mentions, replies, and voting alerts
+- **Task Notifications** - Assignments, status changes, and requests
 
 ## 🛠️ Tech Stack
 
@@ -49,6 +64,12 @@ A modern React frontend with **real-time WebSocket integration**, **comprehensiv
 - **Service Worker** for push notifications
 - **Custom Hooks** for WebSocket events
 - **Real-time State Sync** with Redux
+
+### Utilities
+- **Axios** for HTTP requests
+- **Date-fns** for date manipulation
+- **React Query** for data fetching
+- **React Hot Toast** for notifications
 
 ## 📦 Quick Start
 
@@ -78,6 +99,7 @@ REACT_APP_ENV=development
 - **TaskCard** - Individual task display with status
 - **TaskDetails** - Detailed task view with comments and attachments
 - **TaskForm** - Create and edit tasks with validation
+- **CommentItem** - Individual comment with voting and replies
 - **NotificationBox** - Comprehensive notification management interface
 - **AdminDashboard** - Admin monitoring and analytics
 - **UserAvatar** - User profile display component
@@ -107,10 +129,11 @@ subscribeToTask(taskId);
 
 ### Real-Time Events
 - **Task Updates** - Live task changes and status updates
-- **Comments** - Real-time comment updates with mentions
+- **Comments** - Real-time comment updates with mentions, replies, and voting
 - **Notifications** - Instant notification delivery
 - **Admin Dashboard** - Live monitoring and statistics
 - **Attachments** - Real-time file upload and deletion events
+- **Participants** - Live participant management updates
 
 ## 🔔 Notification System
 
@@ -131,7 +154,7 @@ subscribeToTask(taskId);
 
 ### Notification Types
 - **Task Events** - Created, updated, deleted, assigned
-- **Comment Events** - New comments, mentions
+- **Comment Events** - New comments, mentions, replies, voting
 - **Attachment Events** - File uploads, deletions
 - **Participant Events** - Added, removed
 - **Deadline Events** - Approaching, overdue
@@ -170,6 +193,7 @@ subscribeToTask(taskId);
 ### Component Features
 - **Task Cards** - Status indicators, priority badges, participant avatars
 - **Task Details** - Rich text editor, file attachments, comment threads
+- **Comment System** - Voting buttons, reply threads, edit controls
 - **Notification Box** - Tabbed interface, filtering, bulk actions
 - **Admin Dashboard** - Real-time charts, user activity, task statistics
 
@@ -181,6 +205,42 @@ subscribeToTask(taskId);
 - **Input Validation** - Client-side form validation
 - **XSS Protection** - Sanitized content rendering
 - **CSRF Protection** - Secure API requests
+
+## 📁 Project Structure
+
+```
+src/
+├── components/          # React components
+│   ├── ui/             # Reusable UI components
+│   └── Reports/        # Report components
+├── contexts/           # React contexts
+├── hooks/              # Custom hooks
+├── pages/              # Page components
+│   └── auth/           # Authentication pages
+├── services/           # API services
+├── shared/             # Shared utilities
+│   └── interfaces/     # TypeScript interfaces
+├── store/              # Redux store
+├── types/              # TypeScript types
+└── config/             # Configuration files
+```
+
+## 🧪 Testing
+
+### Unit Tests
+```bash
+npm test
+```
+
+### E2E Tests
+```bash
+npm run test:e2e
+```
+
+### Test Coverage
+```bash
+npm run test:coverage
+```
 
 ## 🚀 Deployment
 
@@ -200,82 +260,41 @@ npm run build
 REACT_APP_BACKEND_URL=http://localhost:3000
 
 # Production
-REACT_APP_BACKEND_URL=https://your-backend-domain.com
+REACT_APP_BACKEND_URL=https://your-api-domain.com
 ```
 
-### Docker Deployment
-```bash
-docker build -t task-manager-frontend .
-docker run -p 3001:3001 task-manager-frontend
-```
+## 📱 Progressive Web App
 
-## 📚 Component Documentation
-
-### Task Components
-- **TaskList** - Displays tasks with filtering, pagination, and sorting
-- **TaskCard** - Individual task card with status, priority, and participant info
-- **TaskDetails** - Detailed task view with comments, attachments, and real-time updates
-- **TaskForm** - Form for creating and editing tasks with validation
-
-### Notification Components
-- **NotificationBox** - Main notification interface with filtering and bulk operations
-- **NotificationToast** - Toast notifications for alerts and user feedback
-- **NotificationContext** - Notification state management and WebSocket integration
-
-### Admin Components
-- **AdminDashboard** - Admin overview with real-time analytics and monitoring
-- **AdminTasksDashboard** - Task management interface for administrators
-- **Reports** - Analytics and reporting interface with data visualization
-
-### UI Components
-- **UserAvatar** - User profile display with fallback images
-- **Sidebar** - Navigation sidebar with role-based menu items
-- **Navbar** - Top navigation with notifications and user menu
-- **Button** - Reusable button component with variants
-
-## 🧪 Testing
-
-```bash
-# Unit tests
-npm test
-
-# E2E tests
-npm run test:e2e
-
-# Test coverage
-npm run test:coverage
-```
+### Features
+- **Service Worker** - Offline functionality
+- **Push Notifications** - Browser notifications
+- **App Manifest** - Installable app
+- **Offline Support** - Basic offline functionality
+- **Background Sync** - Sync when online
 
 ## 🔧 Development
 
-### Project Structure
-```
-src/
-├── components/         # React components
-│   ├── ui/            # Reusable UI components
-│   └── Reports/       # Report components
-├── contexts/          # React contexts
-├── hooks/             # Custom hooks
-├── pages/             # Page components
-├── services/          # API services
-├── store/             # Redux store
-├── types/             # TypeScript types
-└── shared/            # Shared utilities
-```
+### Code Style
+- **ESLint** for code linting
+- **Prettier** for code formatting
+- **TypeScript** for type safety
+- **Conventional Commits** for commit messages
 
-### Key Features
-- **TypeScript** - Full type safety
-- **ESLint & Prettier** - Code quality and formatting
-- **Husky** - Git hooks for code quality
-- **Storybook** - Component documentation (optional)
+### Adding New Features
+1. Create component in `src/components/`
+2. Add types in `src/types/`
+3. Update Redux store if needed
+4. Add WebSocket events if real-time
+5. Update tests and documentation
 
-## 🆘 Support
+## 🤝 Contributing
 
-For issues and questions:
-1. Check the [Issues](../../issues) page
-2. Review the component documentation
-3. Create a new issue with detailed information
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
----
+## 📄 License
 
-**Built with ❤️ using React, Redux Toolkit, and Tailwind CSS**
+This project is licensed under the MIT License.

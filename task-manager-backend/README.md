@@ -1,6 +1,6 @@
 # Task Manager Backend
 
-A robust NestJS backend with **real-time WebSocket integration**, **comprehensive notification system**, and **advanced task management** for the Task Manager application.
+A robust NestJS backend with **real-time WebSocket integration**, **comprehensive notification system**, **advanced comment system**, and **workflow management** for the Task Manager application.
 
 ## 🚀 Key Features
 
@@ -9,23 +9,37 @@ A robust NestJS backend with **real-time WebSocket integration**, **comprehensiv
 - **Role-based Access Control** (Admin/User)
 - **Task CRUD Operations** with assignment workflows
 - **File Upload** and attachment management
-- **Comments System** with mentions and real-time updates
+- **Advanced Comment System** with voting, replies, and mentions
 - **Reporting & Analytics** with Excel export
 - **Participant Management** with add/remove functionality
+- **Task Request System** with approval workflows
+
+### Advanced Comment System
+- **Threaded Comments** with parent-child relationships
+- **Voting System** with up/down votes and vote counts
+- **Comment Replies** with nested structure
+- **User Mentions** with notification system
+- **Comment Editing** with edit history tracking
+- **Real-time Updates** via WebSocket
+- **Attachment Support** for comments
+- **Moderation Tools** for admins
 
 ### Real-Time Features
-- **WebSocket Integration** for live updates
-- **Real-time Notifications** across multiple channels
+- **WebSocket Integration** for live updates across all features
+- **Real-time Comments** with instant updates and notifications
 - **Live Task Updates** and status changes
 - **Admin Dashboard** with live monitoring
 - **User Activity Tracking** in real-time
 - **Attachment Events** for file upload/delete notifications
+- **Participant Management** with live updates
 
-### Notification System
+### Comprehensive Notification System
 - **WebSocket Notifications** - Instant in-app updates
 - **Web Push Notifications** - Browser notifications via VAPID
 - **Email Notifications** - SMTP integration
 - **Scheduled Notifications** - Automated reminders via cron jobs
+- **Comment Notifications** - Mentions, replies, and voting alerts
+- **Task Notifications** - Assignments, status changes, and requests
 - **Notification Management** - Mark as read, filtering, bulk operations
 - **Priority-based Notifications** - Urgent, high, medium, low priorities
 
@@ -113,17 +127,24 @@ NODE_ENV=development
 - `POST /tasks/:id/request` - Request task assignment
 - `POST /tasks/:id/participants` - Add participant
 - `DELETE /tasks/:id/participants/:userId` - Remove participant
+- `GET /tasks/my-tasks` - Get user's assigned tasks
+- `GET /tasks/created-by-me` - Get user's created tasks
+- `GET /tasks/status/:status` - Get tasks by status
+- `GET /tasks/stats/weekly` - Get weekly statistics
+- `GET /tasks/stats/monthly` - Get monthly statistics
 
 ### Comments
 - `GET /tasks/:id/comments` - Get task comments
 - `POST /tasks/:id/comments` - Add comment
 - `PUT /tasks/:id/comments/:commentId` - Update comment
 - `DELETE /tasks/:id/comments/:commentId` - Delete comment
+- `POST /tasks/:id/comments/:commentId/vote` - Vote on comment
 
 ### Attachments
 - `POST /tasks/:id/attachments` - Upload attachment
 - `DELETE /tasks/:id/attachments/:attachmentId` - Delete attachment
 - `GET /tasks/:id/attachments` - Get task attachments
+- `GET /attachments/:id/download` - Download attachment
 
 ### Notifications
 - `GET /notifications` - Get user notifications
@@ -159,20 +180,28 @@ NODE_ENV=development
 - `subscribe:dashboard` - Admin dashboard (admin only)
 - `subscribe:comments` - Subscribe to comment updates
 - `subscribe:attachments` - Subscribe to attachment events
+- `subscribe:all-tasks` - Subscribe to all tasks (admin only)
 
 ### Server → Client
 - `notification:new` - New notification
 - `task:updated` - Task changes
 - `task:created` - New task created
 - `task:deleted` - Task deleted
+- `task:assigned` - Task assigned
+- `task:assignment_removed` - Task assignment removed
+- `task:status_changed` - Task status changed
 - `comment:added` - New comment
-- `comment:updated` - Comment updated
+- `comment:replied` - Comment reply
+- `comment:edited` - Comment updated
 - `comment:deleted` - Comment deleted
+- `comment:voted` - Comment voted
 - `attachment:uploaded` - File uploaded
 - `attachment:deleted` - File deleted
 - `participant:added` - Participant added
 - `participant:removed` - Participant removed
 - `admin:task_activity` - Admin activity feed
+- `deadline:reminder` - Deadline reminder
+- `task:overdue` - Overdue task alert
 
 ## 🔒 Security Features
 
@@ -183,6 +212,8 @@ NODE_ENV=development
 - **Input Validation** with class-validator
 - **Rate Limiting** and security headers
 - **File Upload Security** with type and size validation
+- **SQL Injection Protection** with Mongoose
+- **XSS Protection** with input sanitization
 
 ## 📊 Database Schema
 
@@ -198,25 +229,63 @@ NODE_ENV=development
 - Metadata (priority, labels, deadlines)
 - Workflow and approval status
 - Participants array
+- Comments and attachments references
 
 ### Comments
-- Content and metadata
-- User associations
-- Task associations
-- Timestamps and edit history
+- Content and author information
+- Parent-child relationships for replies
+- Voting system with user votes
+- Mentions and attachments
+- Edit history tracking
+- Timestamps and metadata
+
+### Notifications
+- Type and priority classification
+- User targeting and delivery status
+- Read/unread state tracking
+- Timestamp and metadata
+- Action data for deep linking
 
 ### Attachments
 - File metadata (name, size, type)
-- Storage information
-- User and task associations
-- Upload timestamps
+- Storage information and URLs
+- Upload tracking and permissions
+- Thumbnail generation for images
+- Download tracking
 
-### Notifications
-- Notification content (title, message, type)
-- Delivery status (sent, delivered, read)
-- Channel information (websocket, push, email)
-- User and task associations
-- Priority levels
+## 🧪 Testing
+
+### Unit Tests
+```bash
+npm run test
+```
+
+### E2E Tests
+```bash
+npm run test:e2e
+```
+
+### Test Coverage
+```bash
+npm run test:cov
+```
+
+## 📈 Performance
+
+### Optimization Features
+- **Database Indexing** for fast queries
+- **Caching** for frequently accessed data
+- **Connection Pooling** for MongoDB
+- **File Upload Streaming** for large files
+- **WebSocket Connection Management**
+- **Rate Limiting** for API protection
+
+### Monitoring
+- **Request Logging** with timestamps
+- **Error Tracking** and debugging
+- **Performance Metrics** collection
+- **Database Query Optimization**
+- **Memory Usage Monitoring**
 
 ## 🚀 Deployment
 
@@ -239,21 +308,11 @@ docker run -p 3000:3000 task-manager-backend
 
 ## 📚 API Documentation
 
-- **Swagger UI**: `http://localhost:3000/api`
-- **OpenAPI Spec**: `http://localhost:3000/api-json`
+### Swagger UI
+Access the interactive API documentation at `/api` when running in development mode.
 
-## 🧪 Testing
-
-```bash
-# Unit tests
-npm run test
-
-# E2E tests
-npm run test:e2e
-
-# Test coverage
-npm run test:cov
-```
+### OpenAPI Specification
+The API specification is available at `/api-json` for integration with other tools.
 
 ## 🔧 Development
 
@@ -264,28 +323,31 @@ src/
 │   ├── auth/           # Authentication & authorization
 │   ├── tasks/          # Task management
 │   ├── notifications/  # Notification system
-│   ├── users/          # User management
 │   ├── reports/        # Analytics & reporting
-│   └── websocket/      # WebSocket gateways
+│   ├── users/          # User management
+│   └── websocket/      # Real-time features
 ├── shared/
-│   └── interfaces/     # Shared interfaces
-└── config/             # Configuration files
+│   └── interfaces/     # Shared TypeScript interfaces
+├── config/             # Configuration files
+└── exceptions/         # Error handling
 ```
 
-### Key Services
-- **TaskService** - Core task management
-- **NotificationService** - Notification handling
-- **WebSocketService** - Real-time communication
-- **AttachmentService** - File management
-- **CommentService** - Comment handling
+### Adding New Features
+1. Create module in `src/modules/`
+2. Define DTOs and schemas
+3. Implement service logic
+4. Add controller endpoints
+5. Update WebSocket events if needed
+6. Add tests and documentation
 
-## 🆘 Support
+## 🤝 Contributing
 
-For issues and questions:
-1. Check the [Issues](../../issues) page
-2. Review the API documentation
-3. Create a new issue with detailed information
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
----
+## 📄 License
 
-**Built with ❤️ using NestJS, MongoDB, and Socket.IO**
+This project is licensed under the MIT License.

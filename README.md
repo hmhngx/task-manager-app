@@ -1,6 +1,6 @@
 # Task Manager Application
 
-A modern, full-stack task management application with **real-time collaboration**, **comprehensive notifications**, and **advanced workflow management**. Built with React, NestJS, and MongoDB.
+A modern, full-stack task management application with **real-time collaboration**, **comprehensive notifications**, **advanced comment system**, and **workflow management**. Built with React, NestJS, and MongoDB.
 
 ## 🚀 Key Features
 
@@ -8,17 +8,41 @@ A modern, full-stack task management application with **real-time collaboration*
 - **User Authentication** with JWT and role-based access (Admin/User)
 - **Task CRUD Operations** with assignment and approval workflows
 - **Real-time Collaboration** via WebSocket integration
-- **Comments & Attachments** with file upload support
+- **Advanced Comment System** with voting, replies, and mentions
+- **File Attachments** with upload/download support
 - **Task Status Management** with custom workflows
 - **Deadline Tracking** with automated reminders
 - **Participant Management** with add/remove functionality
+- **Task Request System** with approval workflows
 
-### Real-Time Notifications
-- **WebSocket Notifications** - Instant updates for task changes, assignments, and comments
+### Advanced Comment System
+- **Threaded Comments** with parent-child relationships
+- **Voting System** with up/down votes and vote counts
+- **Comment Replies** with nested display
+- **User Mentions** with notification system
+- **Comment Editing** with edit history tracking
+- **Real-time Updates** via WebSocket
+- **Attachment Support** for comments
+- **Moderation Tools** for admins
+
+### Real-Time Features
+- **WebSocket Integration** for live updates across all features
+- **Real-time Comments** with instant updates and notifications
+- **Live Task Updates** and status changes
+- **Admin Dashboard** with live monitoring and analytics
+- **User Activity Tracking** in real-time
+- **Attachment Events** for file upload/delete notifications
+- **Participant Management** with live updates
+
+### Comprehensive Notification System
+- **WebSocket Notifications** - Instant updates for all activities
 - **Web Push Notifications** - Browser notifications even when app is closed
 - **Email Notifications** - SMTP integration for important updates
 - **Scheduled Notifications** - Automated deadline and overdue reminders
+- **Comment Notifications** - Mentions, replies, and voting alerts
+- **Task Notifications** - Assignments, status changes, and requests
 - **Notification Management** - Mark as read, filtering, and bulk operations
+- **Priority-based Notifications** - Urgent, high, medium, low priorities
 
 ### Advanced Features
 - **Admin Dashboard** with live monitoring and analytics
@@ -27,6 +51,8 @@ A modern, full-stack task management application with **real-time collaboration*
 - **State Management** with Redux Toolkit
 - **File Management** with attachment support
 - **Real-time Statistics** and activity tracking
+- **Workflow Management** with custom transitions
+- **User Management** with role-based permissions
 
 ## 🛠️ Tech Stack
 
@@ -38,16 +64,18 @@ A modern, full-stack task management application with **real-time collaboration*
 - **React Router** for navigation
 - **React Hook Form** for form handling
 - **React Datepicker** for date selection
+- **React Icons** for iconography
 
 ### Backend
 - **NestJS** with TypeScript
 - **MongoDB** with Mongoose ODM
-- **Socket.io** for WebSocket implementation
+- **Socket.IO** for WebSocket implementation
 - **JWT** for authentication with refresh tokens
 - **Nodemailer** for email notifications
 - **Web Push** for browser notifications
 - **Multer** for file uploads
 - **ExcelJS** for report generation
+- **Cron** for scheduled tasks
 
 ## 📦 Quick Start
 
@@ -125,6 +153,21 @@ REACT_APP_ENV=development
 - `DELETE /tasks/:id` - Delete task
 - `POST /tasks/:id/assign` - Assign task
 - `POST /tasks/:id/request` - Request task assignment
+- `POST /tasks/:id/participants` - Add participant
+- `DELETE /tasks/:id/participants/:userId` - Remove participant
+
+### Comments
+- `GET /tasks/:id/comments` - Get task comments
+- `POST /tasks/:id/comments` - Add comment
+- `PUT /tasks/:id/comments/:commentId` - Update comment
+- `DELETE /tasks/:id/comments/:commentId` - Delete comment
+- `POST /tasks/:id/comments/:commentId/vote` - Vote on comment
+
+### Attachments
+- `POST /tasks/:id/attachments` - Upload attachment
+- `DELETE /tasks/:id/attachments/:attachmentId` - Delete attachment
+- `GET /tasks/:id/attachments` - Get task attachments
+- `GET /attachments/:id/download` - Download attachment
 
 ### Notifications
 - `GET /notifications` - Get user notifications
@@ -147,10 +190,11 @@ REACT_APP_ENV=development
 
 ### WebSocket Events
 - **Task Updates**: Real-time task changes and status updates
-- **Comments**: Live comment updates with mentions
+- **Comments**: Live comment updates with mentions, replies, and voting
 - **Notifications**: Instant notification delivery
 - **Admin Dashboard**: Live monitoring and statistics
 - **Attachments**: Real-time file upload and deletion events
+- **Participants**: Live participant management updates
 
 ### Notification Channels
 - **In-App**: Real-time notifications in the UI
@@ -166,6 +210,7 @@ REACT_APP_ENV=development
 - **CORS Configuration** for secure cross-origin requests
 - **Input Validation** and sanitization
 - **Rate Limiting** and security headers
+- **File Upload Security** with type and size validation
 
 ## 📊 Monitoring & Analytics
 
@@ -174,6 +219,7 @@ REACT_APP_ENV=development
 - **Notification Delivery Analytics**
 - **Performance Monitoring** with logging
 - **Error Tracking** and debugging tools
+- **Comment Analytics** with voting statistics
 
 ## 🚀 Deployment
 
@@ -200,28 +246,6 @@ docker build -t task-manager-frontend ./task-manager-frontend
 docker run -p 3001:3001 task-manager-frontend
 ```
 
-## 📚 Documentation
-
-- **Backend API**: Swagger docs at `/api`
-- **WebSocket Events**: See backend README for detailed events
-- **Frontend Components**: See frontend README for component documentation
-
-## 🧪 Testing
-
-### Backend Testing
-```bash
-cd task-manager-backend
-npm run test          # Unit tests
-npm run test:e2e      # E2E tests
-```
-
-### Frontend Testing
-```bash
-cd task-manager-frontend
-npm test              # Unit tests
-npm run test:e2e      # E2E tests
-```
-
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -236,12 +260,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-If you encounter any issues or have questions:
+For support, email support@taskmanager.com or join our Slack channel.
 
-1. Check the [Issues](../../issues) page
-2. Review the documentation in the backend and frontend README files
-3. Create a new issue with detailed information
+## 🔄 Version History
 
----
-
-**Built with ❤️ using React, NestJS, and MongoDB**
+- **v2.0.0** - Advanced comment system with voting and replies
+- **v1.5.0** - Real-time notifications and WebSocket integration
+- **v1.0.0** - Initial release with basic task management
