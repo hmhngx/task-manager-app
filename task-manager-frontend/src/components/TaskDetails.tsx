@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Task, User } from '../types/Task';
+import { Task, User, Comment } from '../types/Task';
 import { getUserId, getUserDisplayName } from '../types/user';
 import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket } from '../contexts/WebSocketContext';
@@ -9,6 +9,7 @@ import taskService, { canRequestTask, getTaskRequestRestrictionMessage } from '.
 import TaskForm from './TaskForm';
 import Button from './ui/Button';
 import UserAvatar from './UserAvatar';
+import { CommentItem } from './CommentItem';
 import dayjs from 'dayjs';
 
 interface TaskDetailsProps {
@@ -20,6 +21,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   const { user } = useAuth();
   const { subscribeToTask, unsubscribeFromTask } = useWebSocket();
   const [task, setTask] = useState<Task | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -36,6 +38,11 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
       // Refresh task details to get updated comment list
       fetchTaskDetails();
     },
+    onCommentReplied: (comment) => {
+      console.log('New reply received via WebSocket:', comment);
+      // Refresh task details to get updated comment list
+      fetchTaskDetails();
+    },
     onCommentEdited: (comment) => {
       console.log('Comment edited via WebSocket:', comment);
       // Refresh task details to get updated comment list
@@ -43,6 +50,11 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
     },
     onCommentDeleted: (commentId) => {
       console.log('Comment deleted via WebSocket:', commentId);
+      // Refresh task details to get updated comment list
+      fetchTaskDetails();
+    },
+    onCommentVoted: (comment) => {
+      console.log('Comment voted via WebSocket:', comment);
       // Refresh task details to get updated comment list
       fetchTaskDetails();
     },
@@ -72,11 +84,21 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
 
   const fetchTaskDetails = useCallback(async () => {
     try {
+      console.log('Fetching task details for taskId:', taskId);
       const taskData = await taskService.getTaskById(taskId);
       if (!taskData || !taskData.title) {
         console.error('Fetched task is missing required fields:', taskData);
       }
+      console.log('Fetched task data:', taskData);
+      
+      // Fetch comments separately to get nested structure
+      console.log('Fetching comments separately for nested structure...');
+      const commentsData = await taskService.getTaskComments(taskId);
+      console.log('Comments data received:', commentsData);
+      
       setTask(taskData);
+      setComments(commentsData);
+      console.log('Comments set from separate endpoint:', commentsData);
     } catch (error) {
       console.error('Error fetching task details:', error);
       setTask(null);
@@ -125,7 +147,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
     if (!newComment.trim()) return;
 
     try {
-      await taskService.createComment(taskId, newComment);
+      await taskService.createComment(taskId, newComment, [], undefined);
       setNewComment('');
       fetchTaskDetails();
     } catch (error) {
@@ -420,94 +442,30 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
       <div className="mt-6">
         <h3 className="font-semibold">Comments</h3>
         <div className="mt-2 space-y-4">
-          {task.comments.map((comment, idx) => {
-            // Handle both populated and unpopulated author data
-            const authorData = typeof comment.author === 'object' && comment.author !== null 
-              ? comment.author 
-              : { username: 'Unknown User', _id: comment.author };
-            
-            return (
-            <div key={comment.id || comment._id || idx} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <div className="flex items-start space-x-3">
-                {/* User Avatar */}
-                <div className="flex-shrink-0">
-                  <UserAvatar user={authorData as User} className="h-8 w-8" />
-                </div>
-                
-                {/* Comment Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-gray-900">{authorData.username}</span>
-                      <span className="text-sm text-gray-500">
-                        {new Date(comment.createdAt).toLocaleString()}
-                      </span>
-                      {comment.isEdited && (
-                        <span className="text-xs text-gray-400 bg-gray-200 px-2 py-1 rounded-full">edited</span>
-                      )}
-                    </div>
-                    
-                    {/* Delete Button */}
-                    <div className="flex items-center space-x-2">
-                      {(() => {
-                        // Simplified author check - handle both populated and unpopulated author data
-                        let isAuthor = false;
-                        
-                        if (user && comment.author) {
-                          const currentUserId = getUserId(user);
-                          
-                          // Handle populated author object
-                          if (typeof comment.author === 'object' && comment.author !== null) {
-                            const authorId = (comment.author as any)._id || (comment.author as any).id;
-                            isAuthor = currentUserId === authorId;
-                          }
-                          // Handle author as string ID
-                          else if (typeof comment.author === 'string') {
-                            isAuthor = currentUserId === comment.author;
-                          }
-                        }
-                        
-                        const canDelete = isAuthor || user?.role === 'admin';
-                        
-                        console.log('Comment deletion check:', {
-                          commentId: comment.id || comment._id,
-                          commentAuthor: comment.author,
-                          commentAuthorType: typeof comment.author,
-                          currentUser: user,
-                          currentUserId: user ? getUserId(user) : null,
-                          isAuthor,
-                          canDelete,
-                          userRole: user?.role
-                        });
-                        
-                        return canDelete ? (
-                          <button
-                            onClick={() => {
-                              const commentId = comment.id || comment._id;
-                              if (commentId) {
-                                console.log('Deleting comment:', commentId);
-                                handleDeleteComment(commentId);
-                              }
-                            }}
-                            className="text-red-500 hover:text-red-600 px-2 py-1 rounded-md hover:bg-red-50 transition-colors text-sm"
-                            title="Delete comment"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        ) : null;
-                      })()}
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <p className="text-gray-800 leading-relaxed">{comment.content}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-          })}
+          {comments.map((comment, idx) => (
+            <CommentItem
+              key={comment.id || comment._id || idx}
+              comment={comment}
+              onCommentEdited={(updatedComment) => {
+                console.log('Comment edited:', updatedComment);
+                fetchTaskDetails();
+              }}
+              onCommentDeleted={(commentId) => {
+                console.log('Comment deleted:', commentId);
+                fetchTaskDetails();
+              }}
+              onCommentVoted={(updatedComment) => {
+                console.log('Comment voted:', updatedComment);
+                fetchTaskDetails();
+              }}
+              onReplyAdded={(newReply) => {
+                console.log('Reply added:', newReply);
+                console.log('Calling fetchTaskDetails to refresh comments...');
+                fetchTaskDetails();
+              }}
+              taskId={taskId}
+            />
+          ))}
         </div>
         <div className="mt-4">
           <label htmlFor="newComment" className="block text-sm font-medium text-gray-700">
