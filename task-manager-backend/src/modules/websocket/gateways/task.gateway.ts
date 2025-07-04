@@ -256,6 +256,34 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
+   * Handle comment reply event
+   */
+  handleCommentReplied(
+    comment: CommentData,
+    taskId: string,
+    authorId: string,
+    parentCommentId: string,
+  ) {
+    // Broadcast to task room
+    this.webSocketService.broadcastToRoom(`task:${taskId}`, 'comment:replied', {
+      comment,
+      taskId,
+      author: authorId,
+      parentCommentId,
+      timestamp: new Date(),
+    });
+
+    // Broadcast to admin room
+    this.webSocketService.broadcastToAdmins('admin:task_activity', {
+      type: 'comment_replied',
+      task: { _id: taskId },
+      user: authorId,
+      parentCommentId,
+      timestamp: new Date(),
+    });
+  }
+
+  /**
    * Handle comment edit event
    */
   handleCommentEdited(comment: CommentData, taskId: string, editorId: string) {
@@ -298,6 +326,34 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
+   * Handle comment vote event
+   */
+  handleCommentVoted(
+    comment: CommentData,
+    taskId: string,
+    voterId: string,
+    voteType: 'up' | 'down',
+  ) {
+    // Broadcast to task room
+    this.webSocketService.broadcastToRoom(`task:${taskId}`, 'comment:voted', {
+      comment,
+      taskId,
+      voter: voterId,
+      voteType,
+      timestamp: new Date(),
+    });
+
+    // Broadcast to admin room
+    this.webSocketService.broadcastToAdmins('admin:task_activity', {
+      type: 'comment_voted',
+      task: { _id: taskId },
+      user: voterId,
+      voteType,
+      timestamp: new Date(),
+    });
+  }
+
+  /**
    * Handle attachment upload event
    */
   handleAttachmentUploaded(attachment: any, taskId: string, uploaderId: string) {
@@ -321,7 +377,12 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /**
    * Handle attachment deletion event
    */
-  handleAttachmentDeleted(attachmentId: string, taskId: string, deleterId: string, fileName: string) {
+  handleAttachmentDeleted(
+    attachmentId: string,
+    taskId: string,
+    deleterId: string,
+    fileName: string,
+  ) {
     // Broadcast to task room
     this.webSocketService.broadcastToRoom(`task:${taskId}`, 'attachment:deleted', {
       attachmentId,

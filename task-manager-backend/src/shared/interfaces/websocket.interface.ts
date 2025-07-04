@@ -45,12 +45,14 @@ export interface CommentData {
   content: string;
   author: string;
   task: string;
+  parentComment?: string;
   mentions: string[];
   attachments: string[];
   isEdited: boolean;
   editedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
+  votes?: Record<string, string>; // userId -> "up" | "down"
 }
 
 export interface TaskChanges {
