@@ -124,16 +124,16 @@ export class AttachmentsService {
           fileName: attachment.originalName,
           uploadedBy,
         });
-        
+
         await this.notifyAllUsersAboutAttachment(
           taskId,
           'uploaded',
           attachment.originalName,
           uploadedBy,
         );
-        
+
         console.log(`[AttachmentsService] Notification process completed for upload`);
-        
+
         // Emit WebSocket event
         console.log(`[AttachmentsService] Emitting WebSocket event for attachment upload`);
         this.taskGateway.handleAttachmentUploaded(result, taskId, uploadedBy);
@@ -218,7 +218,7 @@ export class AttachmentsService {
         console.log(`[AttachmentsService] Attachment not found for ID: ${attachmentId}`);
         throw new NotFoundException('Attachment not found');
       }
-      
+
       console.log(`[AttachmentsService] Found attachment to delete`);
       console.log(`[AttachmentsService] Attachment details:`, {
         attachmentId: attachment._id,
@@ -228,15 +228,19 @@ export class AttachmentsService {
         uploadedByType: typeof attachment.uploadedBy,
         uploadedByString: attachment.uploadedBy?.toString(),
       });
-      
+
       // Allow admins to delete any attachment, regular users can only delete their own
       console.log(`[AttachmentsService] Authorization check:`);
       console.log(`[AttachmentsService] - userRole !== 'admin': ${userRole !== 'admin'}`);
-      console.log(`[AttachmentsService] - attachment.uploadedBy.toString() !== userId: ${attachment.uploadedBy?.toString() !== userId}`);
+      console.log(
+        `[AttachmentsService] - attachment.uploadedBy.toString() !== userId: ${attachment.uploadedBy?.toString() !== userId}`,
+      );
       console.log(`[AttachmentsService] - userId: ${userId}`);
       console.log(`[AttachmentsService] - attachment.uploadedBy: ${attachment.uploadedBy}`);
-      console.log(`[AttachmentsService] - attachment.uploadedBy.toString(): ${attachment.uploadedBy?.toString()}`);
-      
+      console.log(
+        `[AttachmentsService] - attachment.uploadedBy.toString(): ${attachment.uploadedBy?.toString()}`,
+      );
+
       if (userRole !== 'admin' && attachment.uploadedBy?.toString() !== userId) {
         console.log(`[AttachmentsService] AUTHORIZATION FAILED - throwing BadRequestException`);
         console.log(`[AttachmentsService] - userRole: ${userRole}`);
@@ -244,9 +248,9 @@ export class AttachmentsService {
         console.log(`[AttachmentsService] - uploadedBy: ${attachment.uploadedBy}`);
         throw new BadRequestException('Not authorized to delete this attachment');
       }
-      
+
       console.log(`[AttachmentsService] AUTHORIZATION PASSED - proceeding with deletion`);
-      
+
       // Remove attachment references
       if (attachment.task) {
         await this.taskModel.findByIdAndUpdate(attachment.task, {
@@ -260,7 +264,7 @@ export class AttachmentsService {
         });
         console.log(`[AttachmentsService] Removed attachment reference from comment`);
       }
-      
+
       // Notify all users about the attachment deletion
       if (attachment.task) {
         console.log(`[AttachmentsService] Starting notification process for deletion`, {
@@ -268,7 +272,7 @@ export class AttachmentsService {
           fileName: attachment.originalName,
           userId,
         });
-        
+
         console.log(`[AttachmentsService] Starting notification process for deletion`);
         try {
           await this.notifyAllUsersAboutAttachment(
@@ -282,7 +286,7 @@ export class AttachmentsService {
           console.error(`[AttachmentsService] Notification process failed:`, notificationError);
           console.error(`[AttachmentsService] But continuing with attachment deletion...`);
         }
-        
+
         // Emit WebSocket event
         console.log(`[AttachmentsService] Starting WebSocket event emission for deletion`);
         try {
@@ -345,7 +349,7 @@ export class AttachmentsService {
         taskId,
         fileName,
         userId,
-        action
+        action,
       });
 
       // Get the task to include task title in notification
@@ -356,20 +360,21 @@ export class AttachmentsService {
       }
 
       // Get task with all participants (creator, assignee, and watchers)
-      const taskWithParticipants = await this.taskModel.findById(taskId)
+      const taskWithParticipants = await this.taskModel
+        .findById(taskId)
         .populate('assignee', 'username _id')
         .populate('creator', 'username _id')
         .populate('watchers', 'username _id');
 
       const participants = new Set<string>();
-      
+
       // Add task creator
       if (taskWithParticipants.creator) {
         const creatorId = taskWithParticipants.creator._id.toString();
         participants.add(creatorId);
         console.log(`[AttachmentsService] Added creator to participants: ${creatorId}`);
       }
-      
+
       // Add assigned users
       if (taskWithParticipants.assignee) {
         if (Array.isArray(taskWithParticipants.assignee)) {
@@ -395,42 +400,52 @@ export class AttachmentsService {
       }
 
       const actionText = action === 'uploaded' ? 'uploaded' : 'deleted';
-      const notificationType = action === 'uploaded' ? NotificationType.ATTACHMENT_UPLOADED : NotificationType.ATTACHMENT_DELETED;
+      const notificationType =
+        action === 'uploaded'
+          ? NotificationType.ATTACHMENT_UPLOADED
+          : NotificationType.ATTACHMENT_DELETED;
 
       console.log(`[AttachmentsService] Total participants found: ${participants.size}`, {
         participants: Array.from(participants),
         actionText,
-        notificationType
+        notificationType,
       });
 
       // Create notifications for all participants
       for (const participantId of participants) {
-        if (participantId !== userId) { // Don't notify the user who performed the action
-          console.log(`[AttachmentsService] Creating notification for participant: ${participantId}`);
-          
+        if (participantId !== userId) {
+          // Don't notify the user who performed the action
+          console.log(
+            `[AttachmentsService] Creating notification for participant: ${participantId}`,
+          );
+
           try {
-            await this.notificationService.createAndSendNotification(
-              participantId,
-              {
-                type: notificationType,
-                title: `Attachment ${actionText}`,
-                message: `A file "${fileName}" was ${actionText} to task "${task.title}"`,
-                data: {
-                  taskId,
-                  fileName,
-                  action,
-                  userId,
-                },
-                timestamp: new Date(),
-                priority: NotificationPriority.MEDIUM,
+            await this.notificationService.createAndSendNotification(participantId, {
+              type: notificationType,
+              title: `Attachment ${actionText}`,
+              message: `A file "${fileName}" was ${actionText} to task "${task.title}"`,
+              data: {
+                taskId,
+                fileName,
+                action,
+                userId,
               },
+              timestamp: new Date(),
+              priority: NotificationPriority.MEDIUM,
+            });
+            console.log(
+              `[AttachmentsService] Successfully created notification for participant: ${participantId}`,
             );
-            console.log(`[AttachmentsService] Successfully created notification for participant: ${participantId}`);
           } catch (error) {
-            console.error(`[AttachmentsService] Failed to create notification for participant ${participantId}:`, error);
+            console.error(
+              `[AttachmentsService] Failed to create notification for participant ${participantId}:`,
+              error,
+            );
           }
         } else {
-          console.log(`[AttachmentsService] Skipping notification for user who performed action: ${participantId}`);
+          console.log(
+            `[AttachmentsService] Skipping notification for user who performed action: ${participantId}`,
+          );
         }
       }
 
