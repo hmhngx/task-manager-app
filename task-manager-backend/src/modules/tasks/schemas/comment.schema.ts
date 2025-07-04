@@ -14,6 +14,9 @@ export class Comment {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Task', required: true })
   task: string;
 
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Comment', default: null })
+  parentComment: string;
+
   @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }], default: [] })
   mentions: string[];
 
@@ -25,6 +28,13 @@ export class Comment {
 
   @Prop({ type: Date })
   editedAt: Date;
+
+  @Prop({
+    type: Map,
+    of: String, // "up" | "down"
+    default: {},
+  })
+  votes: Map<string, string>;
 }
 
 export const CommentSchema = SchemaFactory.createForClass(Comment);

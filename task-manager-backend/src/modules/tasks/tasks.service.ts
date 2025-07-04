@@ -96,31 +96,37 @@ export class TasksService {
     const allUsers = await this.usersService.findAll();
     const adminUsers = await this.usersService.findAdmins();
     const adminIds = adminUsers.map((admin) => admin._id.toString());
-    
+
     console.log(`[TasksService] Task creation - notifying users:`, {
       taskId: task._id.toString(),
       taskTitle: task.title,
       creatorId,
       totalUsers: allUsers.length,
       adminIds,
-      assignee: task.assignee?.toString()
+      assignee: task.assignee?.toString(),
     });
-    
+
     // Ensure admin users are always notified, even if they are the creator
     const usersToNotify = [...allUsers];
-    
+
     // Add admin users that might not be in allUsers (defensive programming)
     for (const admin of adminUsers) {
-      const adminExists = usersToNotify.some(user => user._id.toString() === admin._id.toString());
+      const adminExists = usersToNotify.some(
+        (user) => user._id.toString() === admin._id.toString(),
+      );
       if (!adminExists) {
         usersToNotify.push(admin);
-        console.log(`[TasksService] Added admin user to notification list: ${admin.username} (${admin._id})`);
+        console.log(
+          `[TasksService] Added admin user to notification list: ${admin.username} (${admin._id})`,
+        );
       }
     }
-    
+
     for (const user of usersToNotify) {
       if (user._id.toString() !== creatorId) {
-        console.log(`[TasksService] Creating task creation notification for user: ${user._id.toString()} (${user.username})`);
+        console.log(
+          `[TasksService] Creating task creation notification for user: ${user._id.toString()} (${user.username})`,
+        );
         try {
           await this.notificationService.createAndSendNotification(user._id.toString(), {
             title: 'New Task Created',
@@ -130,18 +136,27 @@ export class TasksService {
             data: { taskId: task._id.toString() },
             timestamp: new Date(),
           });
-          console.log(`[TasksService] Successfully created task creation notification for user: ${user._id.toString()} (${user.username})`);
+          console.log(
+            `[TasksService] Successfully created task creation notification for user: ${user._id.toString()} (${user.username})`,
+          );
         } catch (error) {
-          console.error(`[TasksService] Failed to create task creation notification for user ${user._id.toString()}:`, error);
+          console.error(
+            `[TasksService] Failed to create task creation notification for user ${user._id.toString()}:`,
+            error,
+          );
         }
       } else {
-        console.log(`[TasksService] Skipping task creation notification for creator: ${user._id.toString()} (${user.username})`);
+        console.log(
+          `[TasksService] Skipping task creation notification for creator: ${user._id.toString()} (${user.username})`,
+        );
       }
     }
 
     // If task has an assignee, notify them specifically about being assigned
     if (task.assignee && task.assignee.toString() !== creatorId) {
-      console.log(`[TasksService] Notifying assignee about task assignment during creation: ${task.assignee}`);
+      console.log(
+        `[TasksService] Notifying assignee about task assignment during creation: ${task.assignee}`,
+      );
       await this.notificationService.createAndSendNotification(task.assignee.toString(), {
         title: 'Task Assignment',
         message: `You have been assigned to task "${task.title}"`,
@@ -150,7 +165,7 @@ export class TasksService {
         data: { taskId: task._id.toString() },
         timestamp: new Date(),
       });
-      
+
       // Emit WebSocket event for task assignment
       await this.taskGateway.handleTaskAssigned(
         this.convertTaskToTaskData(task),
@@ -497,14 +512,14 @@ export class TasksService {
         task.creator?.toString(),
         ...(task.watchers || []).map((w) => w.toString()),
       ].filter(Boolean);
-      
+
       // Also notify all admin users about task updates
       const adminUsers = await this.usersService.findAdmins();
-      const adminIds = adminUsers.map(admin => admin._id.toString());
-      
+      const adminIds = adminUsers.map((admin) => admin._id.toString());
+
       // Combine participants and admins, remove duplicates
       const allNotifyIds = [...new Set([...participantIds, ...adminIds])];
-      
+
       console.log(`[TasksService] Task update - notifying participants and admins:`, {
         taskId: id,
         taskTitle: task.title,
@@ -512,11 +527,14 @@ export class TasksService {
         adminIds,
         allNotifyIds,
         updaterId: userId,
-        statusChange: updateTaskDto.status ? `${oldStatus} -> ${updateTaskDto.status}` : 'No status change'
+        statusChange: updateTaskDto.status
+          ? `${oldStatus} -> ${updateTaskDto.status}`
+          : 'No status change',
       });
-      
+
       for (const notifyId of allNotifyIds) {
-        if (notifyId !== userId) { // Don't notify the user who updated the task
+        if (notifyId !== userId) {
+          // Don't notify the user who updated the task
           console.log(`[TasksService] Creating update notification for: ${notifyId}`);
           try {
             await this.notificationService.createAndSendNotification(notifyId, {
@@ -529,10 +547,15 @@ export class TasksService {
             });
             console.log(`[TasksService] Successfully created update notification for: ${notifyId}`);
           } catch (error) {
-            console.error(`[TasksService] Failed to create update notification for ${notifyId}:`, error);
+            console.error(
+              `[TasksService] Failed to create update notification for ${notifyId}:`,
+              error,
+            );
           }
         } else {
-          console.log(`[TasksService] Skipping update notification for user who updated task: ${notifyId}`);
+          console.log(
+            `[TasksService] Skipping update notification for user who updated task: ${notifyId}`,
+          );
         }
       }
 
@@ -575,25 +598,26 @@ export class TasksService {
       task.creator?.toString(),
       ...(task.watchers || []).map((w) => w.toString()),
     ].filter(Boolean);
-    
+
     // Also notify all admin users about task deletion
     const adminUsers = await this.usersService.findAdmins();
-    const adminIds = adminUsers.map(admin => admin._id.toString());
-    
+    const adminIds = adminUsers.map((admin) => admin._id.toString());
+
     // Combine participants and admins, remove duplicates
     const allNotifyIds = [...new Set([...participantIds, ...adminIds])];
-    
+
     console.log(`[TasksService] Task deletion - notifying participants and admins:`, {
       taskId: id,
       taskTitle: task.title,
       participantIds,
       adminIds,
       allNotifyIds,
-      deleterId: userId
+      deleterId: userId,
     });
-    
+
     for (const notifyId of allNotifyIds) {
-      if (notifyId !== userId) { // Don't notify the user who deleted the task
+      if (notifyId !== userId) {
+        // Don't notify the user who deleted the task
         console.log(`[TasksService] Creating deletion notification for: ${notifyId}`);
         try {
           await this.notificationService.createAndSendNotification(notifyId, {
@@ -606,10 +630,15 @@ export class TasksService {
           });
           console.log(`[TasksService] Successfully created deletion notification for: ${notifyId}`);
         } catch (error) {
-          console.error(`[TasksService] Failed to create deletion notification for ${notifyId}:`, error);
+          console.error(
+            `[TasksService] Failed to create deletion notification for ${notifyId}:`,
+            error,
+          );
         }
       } else {
-        console.log(`[TasksService] Skipping deletion notification for user who deleted task: ${notifyId}`);
+        console.log(
+          `[TasksService] Skipping deletion notification for user who deleted task: ${notifyId}`,
+        );
       }
     }
 

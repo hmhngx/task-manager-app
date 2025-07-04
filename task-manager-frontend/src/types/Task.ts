@@ -36,6 +36,9 @@ export interface Comment {
   author: User;
   createdAt: Date;
   isEdited: boolean;
+  parentComment?: string;
+  replies?: Comment[];
+  votes?: Record<string, string>; // userId -> "up" | "down"
 }
 
 export interface Attachment {

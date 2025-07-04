@@ -258,16 +258,27 @@ export const getTaskComments = async (taskId: string): Promise<Comment[]> => {
   }
 };
 
-export const createComment = async (taskId: string, content: string, mentions: string[] = []): Promise<Comment> => {
+export const createComment = async (taskId: string, content: string, mentions: string[] = [], parentCommentId?: string): Promise<Comment> => {
   try {
+    console.log('Sending createComment request:', {
+      taskId,
+      content,
+      mentions,
+      parentCommentId
+    });
+    
     const response = await axios.post(`${API_URL}/tasks/${taskId}/comments`, {
       content,
       mentions,
+      parentCommentId,
     }, {
       headers: getAuthHeader(),
     });
+    
+    console.log('createComment response:', response.data);
     return response.data;
   } catch (error) {
+    console.error('createComment error:', error);
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
       window.location.href = '/login';
@@ -278,7 +289,11 @@ export const createComment = async (taskId: string, content: string, mentions: s
 
 export const updateComment = async (commentId: string, content: string): Promise<Comment> => {
   try {
-    const response = await axios.patch(`${API_URL}/tasks/comments/${commentId}`, { content });
+    const response = await axios.patch(`${API_URL}/tasks/comments/${commentId}`, { 
+      content,
+    }, {
+      headers: getAuthHeader(),
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -294,6 +309,23 @@ export const deleteComment = async (commentId: string): Promise<void> => {
     await axios.delete(`${API_URL}/tasks/comments/${commentId}`, {
       headers: getAuthHeader(),
     });
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      logoutUser();
+      window.location.href = '/login';
+    }
+    throw error;
+  }
+};
+
+export const voteComment = async (commentId: string, voteType: 'up' | 'down'): Promise<Comment> => {
+  try {
+    const response = await axios.post(`${API_URL}/tasks/comments/${commentId}/vote`, {
+      voteType,
+    }, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();

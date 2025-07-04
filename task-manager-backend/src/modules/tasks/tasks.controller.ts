@@ -200,8 +200,15 @@ export class TasksController {
     @Body('content') content: string,
     @Body('mentions') mentions: string[],
     @Req() req: RequestWithUser,
+    @Body('parentCommentId') parentCommentId?: string,
   ) {
-    return this.commentsService.createComment(taskId, content, req.user.id, mentions);
+    return this.commentsService.createComment(
+      taskId,
+      content,
+      req.user.id,
+      mentions,
+      parentCommentId,
+    );
   }
 
   @Get(':id/comments')
@@ -221,6 +228,15 @@ export class TasksController {
   @Delete('comments/:commentId')
   deleteComment(@Param('commentId') commentId: string, @Req() req: RequestWithUser) {
     return this.commentsService.deleteComment(commentId, req.user.id, req.user.role);
+  }
+
+  @Post('comments/:commentId/vote')
+  voteComment(
+    @Param('commentId') commentId: string,
+    @Body('voteType') voteType: 'up' | 'down',
+    @Req() req: RequestWithUser,
+  ) {
+    return this.commentsService.voteComment(commentId, req.user.id, voteType);
   }
 
   // Attachments endpoints
@@ -316,13 +332,13 @@ export class TasksController {
       console.log(`[TasksController] User ID: ${req.user.id}`);
       console.log(`[TasksController] User role: ${req.user.role}`);
       console.log(`[TasksController] User username: ${req.user.username}`);
-      
+
       const result = await this.attachmentsService.deleteAttachment(
         attachmentId,
         req.user.id,
         req.user.role,
       );
-      
+
       console.log(`[TasksController] Attachment deletion successful`);
       console.log(`[TasksController] Result:`, result);
       return result;
