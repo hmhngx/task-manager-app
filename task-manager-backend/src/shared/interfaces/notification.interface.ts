@@ -9,8 +9,6 @@ export interface NotificationPayload {
   priority: NotificationPriority;
   userId?: string;
   taskId?: string;
-  commentId?: string;
-  attachmentId?: string;
 }
 
 export enum NotificationType {
@@ -24,6 +22,7 @@ export enum NotificationType {
   TASK_REQUEST_CONFIRMATION = 'task_request_confirmation',
   TASK_REQUEST_RESPONSE = 'task_request_response',
   COMMENT_ADDED = 'comment_added',
+  COMMENT_REPLIED = 'comment_replied',
   COMMENT_EDITED = 'comment_edited',
   COMMENT_DELETED = 'comment_deleted',
   PARTICIPANT_ADDED = 'participant_added',
@@ -80,6 +79,13 @@ export interface ServerToClientEvents {
     author: string;
     timestamp: Date;
   }) => void;
+  'comment:replied': (data: {
+    comment: any;
+    taskId: string;
+    author: string;
+    parentCommentId: string;
+    timestamp: Date;
+  }) => void;
   'comment:edited': (data: {
     comment: any;
     taskId: string;
@@ -120,8 +126,6 @@ export interface ClientToServerEvents {
   'subscribe:dashboard': () => void;
   'subscribe:user-activity': () => void;
   'subscribe:stats': () => void;
-  'subscribe:comments': (taskId: string) => void;
-  'subscribe:attachments': (taskId: string) => void;
 }
 
 export interface InterServerEvents {

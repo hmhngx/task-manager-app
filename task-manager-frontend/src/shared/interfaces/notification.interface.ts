@@ -22,6 +22,7 @@ export enum NotificationType {
   TASK_REQUEST_CONFIRMATION = 'task_request_confirmation',
   TASK_REQUEST_RESPONSE = 'task_request_response',
   COMMENT_ADDED = 'comment_added',
+  COMMENT_REPLIED = 'comment_replied',
   COMMENT_EDITED = 'comment_edited',
   COMMENT_DELETED = 'comment_deleted',
   PARTICIPANT_ADDED = 'participant_added',
@@ -57,6 +58,7 @@ export interface ServerToClientEvents {
   'task:status_changed': (data: { task: any; oldStatus: string; newStatus: string; updater: string; timestamp: Date }) => void;
   'task:deleted': (data: { taskId: string; deleter: string; timestamp: Date }) => void;
   'comment:added': (data: { comment: any; taskId: string; author: string; timestamp: Date }) => void;
+  'comment:replied': (data: { comment: any; taskId: string; author: string; parentCommentId: string; timestamp: Date }) => void;
   'comment:edited': (data: { comment: any; taskId: string; editor: string; timestamp: Date }) => void;
   'comment:deleted': (data: { commentId: string; taskId: string; deleter: string; timestamp: Date }) => void;
   'attachment:uploaded': (data: { attachmentId: string; taskId: string; uploader: string; fileName: string; timestamp: Date }) => void;
