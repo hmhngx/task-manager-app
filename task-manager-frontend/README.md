@@ -238,16 +238,16 @@ npm run test:e2e
 ```
 
 ### Test Coverage
-```bash
+   ```bash
 npm run test:coverage
-```
+   ```
 
 ## 🚀 Deployment
 
 ### Development
-```bash
-npm start
-```
+   ```bash
+   npm start
+   ```
 
 ### Production Build
 ```bash

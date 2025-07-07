@@ -19,6 +19,6 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
   },
-  "include": ["src/**/*", "scripts/**/*", "test-notifications.js"],
+  "include": ["src/**/*", "scripts/**/*", "test/test-notifications.js"],
   "exclude": ["node_modules", "dist"]
 }

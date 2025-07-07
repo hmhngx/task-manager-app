@@ -73,8 +73,8 @@ A robust NestJS backend with **real-time WebSocket integration**, **comprehensiv
 - VAPID keys for push notifications
 
 ### Installation
-```bash
-npm install
+   ```bash
+   npm install
 cp .env.example .env
 # Configure environment variables
 npm run start:dev
@@ -85,7 +85,7 @@ npm run start:dev
 ```bash
 # Database
 MONGODB_URI=your_mongodb_connection
-JWT_SECRET=your_jwt_secret
+   JWT_SECRET=your_jwt_secret
 JWT_REFRESH_SECRET=your_refresh_secret
 
 # Frontend URL (CORS)
@@ -105,8 +105,8 @@ SMTP_PASS=your_app_password
 SMTP_FROM=your_email@gmail.com
 
 # Application
-PORT=3000
-NODE_ENV=development
+   PORT=3000
+   NODE_ENV=development
 ```
 
 ## 🌐 API Endpoints
