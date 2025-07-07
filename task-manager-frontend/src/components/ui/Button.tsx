@@ -2,6 +2,7 @@ import React from 'react';
 
 type ButtonOwnProps = {
   variant?: 'primary' | 'secondary' | 'danger' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   fullWidth?: boolean;
   leftIcon?: React.ReactNode;
@@ -41,6 +42,7 @@ export const Button = React.forwardRef(
     {
       as,
       variant = 'primary',
+      size = 'md',
       loading = false,
       fullWidth = false,
       leftIcon,
@@ -59,7 +61,7 @@ export const Button = React.forwardRef(
         className: [
           base,
           variants[variant],
-          sizes.md,
+          sizes[size],
           fullWidth ? 'w-full' : '',
           loading ? 'opacity-75 cursor-not-allowed' : '',
           className || '',
