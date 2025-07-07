@@ -10,6 +10,8 @@ import {
   clearAllNotifications,
   clearReadNotifications
 } from '../store/notificationSlice';
+import NotificationItem from './ui/NotificationItem';
+import ClearNotificationButton from './ui/ClearNotificationButton';
 
 interface NotificationBoxProps {
   isOpen: boolean;
@@ -21,7 +23,6 @@ const NotificationBox: React.FC<NotificationBoxProps> = ({ isOpen, onClose }) =>
   const navigate = useNavigate();
   const { notifications, unreadCount, loading } = useSelector((state: RootState) => state.notifications);
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
-  const [showClearOptions, setShowClearOptions] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -29,22 +30,7 @@ const NotificationBox: React.FC<NotificationBoxProps> = ({ isOpen, onClose }) =>
     }
   }, [isOpen, dispatch]);
 
-  // Close clear options when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showClearOptions) {
-        setShowClearOptions(false);
-      }
-    };
 
-    if (showClearOptions) {
-      document.addEventListener('click', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [showClearOptions]);
 
   const handleMarkAsRead = (notificationId: string) => {
     dispatch(markNotificationAsRead(notificationId));
@@ -61,14 +47,12 @@ const NotificationBox: React.FC<NotificationBoxProps> = ({ isOpen, onClose }) =>
   const handleClearAllNotifications = () => {
     if (window.confirm('Are you sure you want to clear all notifications? This action cannot be undone.')) {
       dispatch(clearAllNotifications());
-      setShowClearOptions(false);
     }
   };
 
   const handleClearReadNotifications = () => {
     if (window.confirm('Are you sure you want to clear all read notifications? This action cannot be undone.')) {
       dispatch(clearReadNotifications());
-      setShowClearOptions(false);
     }
   };
 
@@ -198,63 +182,41 @@ const NotificationBox: React.FC<NotificationBoxProps> = ({ isOpen, onClose }) =>
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose} />
-      <div className="absolute right-0 top-0 h-full w-96 bg-white shadow-xl flex flex-col">
+      <div className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300" onClick={onClose} />
+      <div className="absolute right-0 top-0 h-full w-96 bg-white shadow-2xl border-l border-gray-200 flex flex-col transform transition-transform duration-300 ease-in-out">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center space-x-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-5 5v-5zM10.5 3.75a6 6 0 0 1 6 6v4.5l2.25 2.25a.75.75 0 0 1-.75 1.25H3a.75.75 0 0 1-.75-.75L4.5 14.25V9.75a6 6 0 0 1 6-6z" />
-            </svg>
-            <h2 className="text-lg font-semibold">Notifications</h2>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-5 5v-5zM10.5 3.75a6 6 0 0 1 6 6v4.5l2.25 2.25a.75.75 0 0 1-.75 1.25H3a.75.75 0 0 1-.75-.75L4.5 14.25V9.75a6 6 0 0 1 6-6z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Notifications</h2>
+              <p className="text-sm text-gray-500">{notifications.length} total</p>
+            </div>
             {unreadCount > 0 && (
-              <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1">
-                {unreadCount}
-              </span>
+              <div className="relative">
+                <span className="bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold rounded-full px-2 py-1 shadow-lg">
+                  {unreadCount}
+                </span>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full animate-pulse" />
+              </div>
             )}
           </div>
           <div className="flex items-center space-x-2">
-            {notifications.length > 0 && (
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowClearOptions(!showClearOptions);
-                  }}
-                  className="p-1 hover:bg-gray-100 rounded"
-                  title="Clear options"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-                {showClearOptions && (
-                  <div 
-                    className="absolute right-0 top-8 bg-white border rounded-lg shadow-lg z-10 min-w-48"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      onClick={handleClearReadNotifications}
-                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 border-b"
-                    >
-                      Clear Read
-                    </button>
-                    <button
-                      onClick={handleClearAllNotifications}
-                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 text-red-600"
-                    >
-                      Clear All
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+            <ClearNotificationButton
+              onClearRead={handleClearReadNotifications}
+              onClearAll={handleClearAllNotifications}
+              hasNotifications={notifications.length > 0}
+            />
             <button
               onClick={onClose}
-              className="p-1 hover:bg-gray-100 rounded"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-all duration-200 transform hover:scale-110"
               title="Close notifications"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -262,114 +224,92 @@ const NotificationBox: React.FC<NotificationBoxProps> = ({ isOpen, onClose }) =>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b">
+        <div className="flex border-b border-gray-200 bg-gray-50">
           <button
             onClick={() => setActiveTab('all')}
-            className={`flex-1 py-2 px-4 text-sm font-medium ${
+            className={`flex-1 py-3 px-4 text-sm font-semibold transition-all duration-200 relative ${
               activeTab === 'all' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'text-blue-600 bg-white border-b-2 border-blue-600 shadow-sm' 
+                : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100'
             }`}
           >
-            All
+            <span className="flex items-center justify-center space-x-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <span>All</span>
+            </span>
           </button>
           <button
             onClick={() => setActiveTab('unread')}
-            className={`flex-1 py-2 px-4 text-sm font-medium ${
+            className={`flex-1 py-3 px-4 text-sm font-semibold transition-all duration-200 relative ${
               activeTab === 'unread' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'text-blue-600 bg-white border-b-2 border-blue-600 shadow-sm' 
+                : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100'
             }`}
           >
-            Unread ({unreadCount})
+            <span className="flex items-center justify-center space-x-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-5 5v-5zM10.5 3.75a6 6 0 0 1 6 6v4.5l2.25 2.25a.75.75 0 0 1-.75 1.25H3a.75.75 0 0 1-.75-.75L4.5 14.25V9.75a6 6 0 0 1 6-6z" />
+              </svg>
+              <span>Unread</span>
+              {unreadCount > 0 && (
+                <span className="bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem]">
+                  {unreadCount}
+                </span>
+              )}
+            </span>
           </button>
         </div>
 
         {/* Actions */}
         {unreadCount > 0 && (
-          <div className="p-3 border-b">
+          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
             <button
               onClick={handleMarkAllAsRead}
-              className="w-full py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+              className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 text-sm font-semibold transition-all duration-200 transform hover:scale-[1.02] shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
-              Mark all as read
+              <span className="flex items-center justify-center space-x-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Mark all as read</span>
+              </span>
             </button>
           </div>
         )}
 
         {/* Notifications List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-gray-50">
           {loading ? (
             <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <div className="flex flex-col items-center space-y-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <p className="text-sm text-gray-500">Loading notifications...</p>
+              </div>
             </div>
           ) : filteredNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 text-gray-500">
-              <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-5 5v-5zM10.5 3.75a6 6 0 0 1 6 6v4.5l2.25 2.25a.75.75 0 0 1-.75 1.25H3a.75.75 0 0 1-.75-.75L4.5 14.25V9.75a6 6 0 0 1 6-6z" />
-              </svg>
-              <p>No notifications</p>
+              <div className="p-4 bg-white rounded-full shadow-sm mb-4">
+                <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-5 5v-5zM10.5 3.75a6 6 0 0 1 6 6v4.5l2.25 2.25a.75.75 0 0 1-.75 1.25H3a.75.75 0 0 1-.75-.75L4.5 14.25V9.75a6 6 0 0 1 6-6z" />
+                </svg>
+              </div>
+              <p className="text-lg font-medium text-gray-400">No notifications</p>
+              <p className="text-sm text-gray-400">You're all caught up!</p>
             </div>
           ) : (
-            <div className="divide-y">
+            <div className="space-y-1 p-2">
               {filteredNotifications.map((notification) => (
-                <div
+                <NotificationItem
                   key={notification.id}
-                  className={`p-4 border-l-4 ${getPriorityColor(notification.priority)} ${
-                    !notification.read ? 'bg-blue-50' : ''
-                  }`}
-                >
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 mt-1">
-                      {getNotificationIcon(notification.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">
-                            {notification.title}
-                          </p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-2">
-                            {new Date(notification.timestamp).toLocaleString()}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          {!notification.read && (
-                            <button
-                              onClick={() => handleMarkAsRead(notification.id)}
-                              className="p-1 hover:bg-gray-200 rounded"
-                              title="Mark as read"
-                            >
-                              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                              </svg>
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleClearNotification(notification.id)}
-                            className="p-1 hover:bg-gray-200 rounded"
-                            title="Clear notification"
-                          >
-                            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                      {notification.data?.taskId && (
-                        <button
-                          onClick={() => handleViewTask(notification.data?.taskId)}
-                          className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
-                        >
-                          View Task
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                  notification={notification}
+                  onMarkAsRead={handleMarkAsRead}
+                  onClear={handleClearNotification}
+                  onViewTask={handleViewTask}
+                  getNotificationIcon={getNotificationIcon}
+                  getPriorityColor={getPriorityColor}
+                />
               ))}
             </div>
           )}
