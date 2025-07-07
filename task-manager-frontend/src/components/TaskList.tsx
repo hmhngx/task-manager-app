@@ -14,6 +14,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import TaskForm from './TaskForm';
 import TaskDetails from './TaskDetails';
 import Button from './ui/Button';
+import AestheticSelect from './ui/AestheticSelect';
 import TablePagination from '@mui/material/TablePagination';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
@@ -29,6 +30,106 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
   const { tasks, loading, filters, sortConfig, page, rowsPerPage } = useSelector((state: RootState) => state.tasks);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
+  // Icon helper functions
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'todo':
+        return (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+        );
+      case 'pending_approval':
+        return (
+          <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
+      case 'in_progress':
+        return (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
+      case 'done':
+        return (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+          </svg>
+        );
+      case 'late':
+        return (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'low':
+        return (
+          <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        );
+      case 'medium':
+        return (
+          <svg className="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        );
+      case 'high':
+        return (
+          <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        );
+      case 'urgent':
+        return (
+          <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'task':
+        return (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+        );
+      case 'bug':
+        return (
+          <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        );
+      case 'feature':
+        return (
+          <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+        );
+      case 'subtask':
+        return (
+          <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
 
   // WebSocket integration for real-time updates
   const { isConnected } = useTaskSocket({
@@ -152,45 +253,54 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
           className="p-2 border rounded-full focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition w-48"
           aria-label="Search tasks"
         />
-        <select
+        <AestheticSelect
+          options={[
+            { value: '', label: 'All Statuses' },
+            ...Object.values(TaskStatus).map(status => ({
+              value: status,
+              label: status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' '),
+              icon: getStatusIcon(status)
+            }))
+          ]}
           value={filters.status}
-          onChange={(e) => handleFilterChange('status', e.target.value)}
-          className="p-2 border rounded-full focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition"
-          aria-label="Filter by status"
-        >
-          <option value="">All Statuses</option>
-          {Object.values(TaskStatus).map((status) => (
-            <option key={status} value={status}>
-              {status}
-            </option>
-          ))}
-        </select>
-        <select
+          onChange={(value) => handleFilterChange('status', value)}
+          placeholder="All Statuses"
+          size="sm"
+          variant="filled"
+          className="w-40"
+        />
+        <AestheticSelect
+          options={[
+            { value: '', label: 'All Priorities' },
+            ...Object.values(TaskPriority).map(priority => ({
+              value: priority,
+              label: priority.charAt(0).toUpperCase() + priority.slice(1),
+              icon: getPriorityIcon(priority)
+            }))
+          ]}
           value={filters.priority}
-          onChange={(e) => handleFilterChange('priority', e.target.value)}
-          className="p-2 border rounded-full focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition"
-          aria-label="Filter by priority"
-        >
-          <option value="">All Priorities</option>
-          {Object.values(TaskPriority).map((priority) => (
-            <option key={priority} value={priority}>
-              {priority}
-            </option>
-          ))}
-        </select>
-        <select
+          onChange={(value) => handleFilterChange('priority', value)}
+          placeholder="All Priorities"
+          size="sm"
+          variant="filled"
+          className="w-40"
+        />
+        <AestheticSelect
+          options={[
+            { value: '', label: 'All Types' },
+            ...Object.values(TaskType).map(type => ({
+              value: type,
+              label: type.charAt(0).toUpperCase() + type.slice(1),
+              icon: getTypeIcon(type)
+            }))
+          ]}
           value={filters.type}
-          onChange={(e) => handleFilterChange('type', e.target.value)}
-          className="p-2 border rounded-full focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition"
-          aria-label="Filter by type"
-        >
-          <option value="">All Types</option>
-          {Object.values(TaskType).map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
-        </select>
+          onChange={(value) => handleFilterChange('type', value)}
+          placeholder="All Types"
+          size="sm"
+          variant="filled"
+          className="w-40"
+        />
           </div>
 
       <div className="overflow-x-auto">

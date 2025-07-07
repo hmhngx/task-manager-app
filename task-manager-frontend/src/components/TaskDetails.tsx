@@ -10,6 +10,9 @@ import TaskForm from './TaskForm';
 import Button from './ui/Button';
 import UserAvatar from './UserAvatar';
 import { CommentItem } from './CommentItem';
+import AttachmentButton from './ui/AttachmentButton';
+import CommentBox from './ui/CommentBox';
+import AestheticSelect from './ui/AestheticSelect';
 import dayjs from 'dayjs';
 
 interface TaskDetailsProps {
@@ -29,6 +32,13 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [selectedAssignee, setSelectedAssignee] = useState<string>('');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  // Icon helper function
+  const getUserIcon = () => (
+    <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  );
 
   // WebSocket subscription for real-time comment updates
   const { isConnected: commentSocketConnected } = useCommentSocket({
@@ -303,6 +313,22 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
     await handleUpdateTask({ status: 'late' });
   };
 
+  // Helper function to update a comment and its replies recursively
+  const updateCommentInTree = (comments: Comment[], targetId: string, updatedVotes: Record<string, string>): Comment[] => {
+    return comments.map(comment => {
+      if (comment._id === targetId || comment.id === targetId) {
+        return { ...comment, votes: updatedVotes };
+      }
+      if (comment.replies && comment.replies.length > 0) {
+        return {
+          ...comment,
+          replies: updateCommentInTree(comment.replies, targetId, updatedVotes)
+        };
+      }
+      return comment;
+    });
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -456,7 +482,10 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
               }}
               onCommentVoted={(updatedComment) => {
                 console.log('Comment voted:', updatedComment);
-                fetchTaskDetails();
+                // Update the specific comment in the comments array (including nested replies)
+                setComments(prevComments => 
+                  updateCommentInTree(prevComments, updatedComment._id || updatedComment.id || '', updatedComment.votes || {})
+                );
               }}
               onReplyAdded={(newReply) => {
                 console.log('Reply added:', newReply);
@@ -467,28 +496,17 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
             />
           ))}
         </div>
-        <div className="mt-4">
-          <label htmlFor="newComment" className="block text-sm font-medium text-gray-700">
-            Add Comment
-          </label>
-          <textarea
-            id="newComment"
+        <div className="mt-6">
+          <CommentBox
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            rows={3}
+            onChange={setNewComment}
+            onSubmit={handleAddComment}
             placeholder="Write your comment here..."
+            label="Add Comment"
+            rows={3}
+            showCharacterCount={true}
+            maxLength={1000}
           />
-          <button
-            onClick={handleAddComment}
-            className="mt-2 px-4 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center space-x-2"
-            disabled={!newComment.trim()}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-            <span>Add Comment</span>
-          </button>
         </div>
       </div>
 
@@ -499,46 +517,75 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
             const key = (attachment && typeof attachment === 'object' && attachment._id) || idx;
             if (attachment && typeof attachment === 'object' && (attachment.originalName || attachment.url)) {
               return (
-                <div key={key} className="flex items-start justify-between bg-gray-50 p-4 rounded-lg">
+                <div key={key} className="flex items-start justify-between bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 hover:border-gray-300">
                   <div className="flex-1">
-                    <div className="flex items-center">
-                      <span className="font-medium">{attachment.originalName}</span>
-                      <span className="text-sm text-gray-500 ml-2">
-                        {attachment.uploadedAt ? new Date(attachment.uploadedAt).toLocaleString() : ''}
+                    <div className="flex items-center mb-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <span className="font-semibold text-gray-900">{attachment.originalName}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4 text-sm text-gray-600">
+                      <span className="flex items-center space-x-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>{attachment.uploadedAt ? new Date(attachment.uploadedAt).toLocaleString() : ''}</span>
                       </span>
-                      <span className="text-sm text-gray-500 ml-2">
-                        ({Math.round(attachment.size / 1024)} KB)
+                      <span className="flex items-center space-x-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        <span>{Math.round(attachment.size / 1024)} KB</span>
                       </span>
                     </div>
                     {attachment.mimeType?.startsWith('image/') && (
-                      <div className="mt-3">
-                        <a href={attachment.url} target="_blank" rel="noopener noreferrer">
-                          <img
-                            src={attachment.thumbnail || attachment.url}
-                            alt={attachment.originalName}
-                            className="max-w-[200px] max-h-[200px] rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                          />
+                      <div className="mt-4">
+                        <a 
+                          href={attachment.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-block group"
+                        >
+                          <div className="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                            <img
+                              src={attachment.thumbnail || attachment.url}
+                              alt={attachment.originalName}
+                              className="max-w-[200px] max-h-[200px] object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                              <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                            </div>
+                          </div>
                         </a>
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     {/* All users can download attachments */}
-                    <button
+                    <AttachmentButton
                       onClick={() => handleDownloadAttachment(attachment._id)}
-                      className="text-blue-500 hover:text-blue-600 px-3 py-1 rounded-md hover:bg-blue-50 transition-colors"
                       disabled={downloadingId === attachment._id}
+                      loading={downloadingId === attachment._id}
+                      variant="download"
                     >
                       {downloadingId === attachment._id ? 'Downloading...' : 'Download'}
-                    </button>
+                    </AttachmentButton>
                     {/* Only admins can delete attachments */}
                     {user?.role === 'admin' && (
-                      <button
+                      <AttachmentButton
                         onClick={() => handleDeleteAttachment(attachment._id)}
-                        className="text-red-500 hover:text-red-600 px-3 py-1 rounded-md hover:bg-red-50 transition-colors"
+                        variant="delete"
                       >
                         Delete
-                      </button>
+                      </AttachmentButton>
                     )}
                   </div>
                 </div>
@@ -592,33 +639,42 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
       <div className="flex space-x-4">
         {user?.role === 'admin' && (
           <>
-            <label htmlFor="assignUserSelect" className="sr-only">Assign to user</label>
-            <select
-              id="assignUserSelect"
-              value={selectedAssignee}
-              onChange={(e) => setSelectedAssignee(e.target.value)}
-              className="px-2 py-1 border rounded"
-            >
-              <option value="">Unassigned</option>
-              {availableUsers.map((u) => (
-                <option key={u.id} value={u.id}>{getUserDisplayName(u)}</option>
-              ))}
-            </select>
-            <button
-              onClick={handleAssignTask}
-              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-              disabled={selectedAssignee === (task.assignee?.id || '')}
-            >
-              Assign to
-            </button>
-            {task.assignee && (
-              <button
-                onClick={handleRemoveAssignment}
-                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 ml-2"
+            <div className="flex items-center space-x-2">
+              <AestheticSelect
+                options={[
+                  { value: '', label: 'Unassigned', icon: getUserIcon() },
+                  ...availableUsers.map(user => ({
+                    value: user.id || '',
+                    label: getUserDisplayName(user),
+                    icon: getUserIcon()
+                  }))
+                ]}
+                value={selectedAssignee}
+                onChange={setSelectedAssignee}
+                placeholder="Select user"
+                size="sm"
+                variant="filled"
+                className="w-48"
+                showSearch={true}
+              />
+              <Button
+                onClick={handleAssignTask}
+                disabled={selectedAssignee === (task.assignee?.id || '')}
+                variant="primary"
+                size="sm"
               >
-                Remove Assignment
-              </button>
-            )}
+                Assign to
+              </Button>
+              {task.assignee && (
+                <Button
+                  onClick={handleRemoveAssignment}
+                  variant="secondary"
+                  size="sm"
+                >
+                  Remove Assignment
+                </Button>
+              )}
+            </div>
           </>
         )}
         {user?.role !== 'admin' && user && (

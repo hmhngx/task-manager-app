@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { createTask, updateTask, getTaskById } from '../services/taskService';
 import { getAllUsers } from '../services/userService';
 import Button from './ui/Button';
+import AestheticSelect from './ui/AestheticSelect';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -34,6 +35,81 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
   const [parentTasks, setParentTasks] = useState<Task[]>([]);
   const [newLabel, setNewLabel] = useState('');
   const navigate = useNavigate();
+
+  // Icon helper functions
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'task':
+        return (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+        );
+      case 'bug':
+        return (
+          <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        );
+      case 'feature':
+        return (
+          <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+        );
+      case 'subtask':
+        return (
+          <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'low':
+        return (
+          <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        );
+      case 'medium':
+        return (
+          <svg className="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        );
+      case 'high':
+        return (
+          <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        );
+      case 'urgent':
+        return (
+          <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const getUserIcon = () => (
+    <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  );
+
+  const getTaskIcon = () => (
+    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    </svg>
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -151,41 +227,33 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="type" className="block text-sm font-medium text-gray-700">
-            Type
-          </label>
-          <select
-            id="type"
-            name="type"
+          <AestheticSelect
+            options={Object.values(TaskType).map(type => ({
+              value: type,
+              label: type.charAt(0).toUpperCase() + type.slice(1),
+              icon: getTypeIcon(type)
+            }))}
             value={formData.type}
-            onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          >
-            {Object.values(TaskType).map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setFormData(prev => ({ ...prev, type: value as TaskType }))}
+            label="Type"
+            size="md"
+            variant="default"
+          />
         </div>
 
         <div>
-          <label htmlFor="priority" className="block text-sm font-medium text-gray-700">
-            Priority
-          </label>
-          <select
-            id="priority"
-            name="priority"
+          <AestheticSelect
+            options={Object.values(TaskPriority).map(priority => ({
+              value: priority,
+              label: priority.charAt(0).toUpperCase() + priority.slice(1),
+              icon: getPriorityIcon(priority)
+            }))}
             value={formData.priority}
-            onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          >
-            {Object.values(TaskPriority).map((priority) => (
-              <option key={priority} value={priority}>
-                {priority}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setFormData(prev => ({ ...prev, priority: value as TaskPriority }))}
+            label="Priority"
+            size="md"
+            variant="default"
+          />
         </div>
       </div>
 
@@ -209,43 +277,42 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
 
       {user?.role === 'admin' && (
         <div>
-          <label htmlFor="assignee" className="block text-sm font-medium text-gray-700">
-            Assignee
-          </label>
-          <select
-            id="assignee"
+          <AestheticSelect
+            options={[
+              { value: '', label: 'Unassigned', icon: getUserIcon() },
+              ...users.map(user => ({
+                value: user.id || '',
+                label: getUserDisplayName(user),
+                icon: getUserIcon()
+              }))
+            ]}
             value={formData.assignee || ''}
-            onChange={(e) => setFormData({ ...formData, assignee: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          >
-            <option value="">Unassigned</option>
-            {users.map((user) => (
-              <option key={user.id} value={user.id}>
-                {getUserDisplayName(user)}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
+            label="Assignee"
+            size="md"
+            variant="default"
+            showSearch={true}
+          />
         </div>
       )}
 
       <div>
-        <label htmlFor="parentTask" className="block text-sm font-medium text-gray-700">
-          Parent Task
-        </label>
-        <select
-          id="parentTask"
-          name="parentTask"
-          value={formData.parentTask}
-          onChange={handleChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        >
-          <option key="none" value="">None</option>
-          {parentTasks.map((parentTask) => (
-            <option key={parentTask.id} value={parentTask.id}>
-              {parentTask.title}
-            </option>
-          ))}
-        </select>
+        <AestheticSelect
+                      options={[
+              { value: '', label: 'None', icon: getTaskIcon() },
+              ...parentTasks.map(task => ({
+                value: task.id || '',
+                label: task.title,
+                icon: getTaskIcon()
+              }))
+            ]}
+            value={formData.parentTask || ''}
+          onChange={(value) => setFormData(prev => ({ ...prev, parentTask: value }))}
+          label="Parent Task"
+          size="md"
+          variant="default"
+          showSearch={true}
+        />
       </div>
 
       <div>
