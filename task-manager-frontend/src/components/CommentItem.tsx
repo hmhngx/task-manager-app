@@ -33,6 +33,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   const [isVoting, setIsVoting] = useState(false);
   const [repliesCollapsed, setRepliesCollapsed] = useState(false);
 
+
   // Fallback user for authorData
   const fallbackUser = {
     _id: '',
@@ -106,12 +107,35 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   const handleVote = async (voteType: 'up' | 'down') => {
     if (isVoting) return;
     
+    if (!user) return;
+    const userId = getUserId(user);
+    if (!userId) return;
+    
+    // Create optimistic update
+    const currentVote = comment.votes?.[userId];
+    let optimisticVotes = { ...(comment.votes || {}) };
+    
+    if (currentVote === voteType) {
+      // Remove vote if clicking the same type
+      delete optimisticVotes[userId];
+    } else {
+      // Set new vote
+      optimisticVotes[userId] = voteType;
+    }
+    
+    // Create optimistic comment update
+    const optimisticComment = { ...comment, votes: optimisticVotes };
+    onCommentVoted(optimisticComment);
+    
     setIsVoting(true);
     try {
       const updatedComment = await voteCommentApi(comment._id || comment.id || '', voteType);
+      // Update with actual server response
       onCommentVoted(updatedComment);
     } catch (error) {
       console.error('Error voting on comment:', error);
+      // Revert to original state on error
+      onCommentVoted(comment);
     } finally {
       setIsVoting(false);
     }
@@ -134,7 +158,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   const voteCount = getVoteCount();
 
   return (
-    <div className={`${isReply ? 'ml-8' : ''} bg-gray-50 p-4 rounded-lg border border-gray-200`}>
+    <div className={`${isReply ? 'ml-8' : ''} bg-gradient-to-r from-white to-gray-50 p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 hover:border-gray-300`}>
       <div className="flex items-start space-x-3">
         {/* User Avatar */}
         <div className="flex-shrink-0">
@@ -150,19 +174,21 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                 {new Date(comment.createdAt).toLocaleString()}
               </span>
               {comment.isEdited && (
-                <span className="text-xs text-gray-400 bg-gray-200 px-2 py-1 rounded-full">edited</span>
+                <span className="text-xs text-gray-600 bg-gray-200 px-2 py-1 rounded-full font-medium shadow-sm">edited</span>
               )}
             </div>
             
             {/* Action Buttons */}
             <div className="flex items-center space-x-2">
               {/* Vote Buttons */}
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => handleVote('up')}
                   disabled={isVoting}
-                  className={`p-1 rounded hover:bg-gray-100 transition-colors ${
-                    currentVote === 'up' ? 'text-green-600' : 'text-gray-500'
+                  className={`p-2 rounded-md transition-all duration-200 transform hover:scale-110 ${
+                    currentVote === 'up' 
+                      ? 'text-green-600 bg-green-100 shadow-sm' 
+                      : 'text-gray-500 hover:text-green-600 hover:bg-green-50'
                   }`}
                   title="Upvote"
                 >
@@ -171,15 +197,19 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                   </svg>
                 </button>
                 
-                <span className="text-sm font-medium text-gray-700 min-w-[20px] text-center">
+                <span className={`text-sm font-bold min-w-[24px] text-center px-1 ${
+                  voteCount > 0 ? 'text-green-600' : voteCount < 0 ? 'text-red-600' : 'text-gray-600'
+                }`}>
                   {voteCount}
                 </span>
                 
                 <button
                   onClick={() => handleVote('down')}
                   disabled={isVoting}
-                  className={`p-1 rounded hover:bg-gray-100 transition-colors ${
-                    currentVote === 'down' ? 'text-red-600' : 'text-gray-500'
+                  className={`p-2 rounded-md transition-all duration-200 transform hover:scale-110 ${
+                    currentVote === 'down' 
+                      ? 'text-red-600 bg-red-100 shadow-sm' 
+                      : 'text-gray-500 hover:text-red-600 hover:bg-red-50'
                   }`}
                   title="Downvote"
                 >
@@ -196,7 +226,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                     console.log('Reply button clicked for comment:', comment._id || comment.id);
                     setIsReplying(!isReplying);
                   }}
-                  className="text-blue-500 hover:text-blue-600 px-2 py-1 rounded-md hover:bg-blue-50 transition-colors text-sm"
+                  className="p-2 rounded-lg hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 text-blue-500 hover:text-blue-600"
                   title="Reply to comment"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -209,7 +239,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
               {canEdit && !isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="text-blue-500 hover:text-blue-600 px-2 py-1 rounded-md hover:bg-blue-50 transition-colors text-sm"
+                  className="p-2 rounded-lg hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 text-blue-500 hover:text-blue-600"
                   title="Edit comment"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,7 +252,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
               {canDelete && (
                 <button
                   onClick={handleDelete}
-                  className="text-red-500 hover:text-red-600 px-2 py-1 rounded-md hover:bg-red-50 transition-colors text-sm"
+                  className="p-2 rounded-lg hover:bg-red-50 transition-all duration-200 transform hover:scale-105 text-red-500 hover:text-red-600"
                   title="Delete comment"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -235,20 +265,22 @@ export const CommentItem: React.FC<CommentItemProps> = ({
           
           <div className="mt-2">
             {isEditing ? (
-              <div className="space-y-2">
-                <label htmlFor={`edit-comment-${comment._id || comment.id}`}>Edit Comment</label>
+              <div className="space-y-3 border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl shadow-sm">
+                <label htmlFor={`edit-comment-${comment._id || comment.id}`} className="block text-sm font-semibold text-blue-800">
+                  Edit Comment
+                </label>
                 <textarea
                   id={`edit-comment-${comment._id || comment.id}`}
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
                   rows={3}
                   placeholder="Edit your comment..."
                 />
-                <div className="flex space-x-2">
+                <div className="flex space-x-3">
                   <button
                     onClick={handleEdit}
-                    className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md text-sm font-medium"
                   >
                     Save
                   </button>
@@ -257,21 +289,23 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                       setIsEditing(false);
                       setEditContent(comment.content);
                     }}
-                    className="px-3 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm"
+                    className="px-4 py-2 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md text-sm font-medium"
                   >
                     Cancel
                   </button>
                 </div>
               </div>
             ) : (
-              <p className="text-gray-800 leading-relaxed">{comment.content}</p>
+              <p className="text-gray-800 leading-relaxed text-base">{comment.content}</p>
             )}
           </div>
 
           {/* Reply Form */}
           {isReplying && (
-            <div className="mt-4 space-y-2 border-2 border-blue-200 bg-blue-50 p-3 rounded">
-              <label htmlFor={`reply-comment-${comment._id || comment.id}`}>Reply to Comment</label>
+            <div className="mt-4 space-y-3 border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl shadow-sm">
+              <label htmlFor={`reply-comment-${comment._id || comment.id}`} className="block text-sm font-semibold text-blue-800">
+                Reply to Comment
+              </label>
               <textarea
                 id={`reply-comment-${comment._id || comment.id}`}
                 value={replyContent}
@@ -279,17 +313,17 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                   console.log('Reply content changed:', e.target.value);
                   setReplyContent(e.target.value);
                 }}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
                 rows={2}
                 placeholder="Write your reply..."
               />
-              <div className="flex space-x-2">
+              <div className="flex space-x-3">
                 <button
                   onClick={() => {
                     console.log('Reply button clicked, content:', replyContent);
                     handleReply();
                   }}
-                  className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md text-sm font-medium"
                   disabled={!replyContent.trim()}
                 >
                   Reply
@@ -300,7 +334,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                     setIsReplying(false);
                     setReplyContent('');
                   }}
-                  className="px-3 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm"
+                  className="px-4 py-2 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md text-sm font-medium"
                 >
                   Cancel
                 </button>
@@ -314,17 +348,17 @@ export const CommentItem: React.FC<CommentItemProps> = ({
               {/* Replies Toggle Button */}
               <button
                 onClick={() => setRepliesCollapsed(!repliesCollapsed)}
-                className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800 transition-colors mb-3"
+                className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-800 transition-all duration-200 mb-3 p-2 rounded-lg hover:bg-blue-50 transform hover:scale-105"
               >
                 <svg
-                  className={`w-4 h-4 transition-transform ${repliesCollapsed ? 'rotate-90' : '-rotate-90'}`}
+                  className={`w-4 h-4 transition-transform duration-200 ${repliesCollapsed ? 'rotate-90' : '-rotate-90'}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                 </svg>
-                <span>
+                <span className="font-medium">
                   {repliesCollapsed 
                     ? `Show ${comment.replies.length} ${comment.replies.length === 1 ? 'reply' : 'replies'}`
                     : `Hide ${comment.replies.length} ${comment.replies.length === 1 ? 'reply' : 'replies'}`
@@ -334,7 +368,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
               
               {/* Collapsible Replies Content */}
               {!repliesCollapsed && (
-                <div className="space-y-3 border-l-2 border-gray-200 pl-4">
+                <div className="space-y-3 border-l-2 border-blue-200 pl-6 bg-gradient-to-r from-blue-50/30 to-transparent rounded-r-lg p-4">
                   {comment.replies.map((reply) => (
                     <CommentItem
                       key={reply._id || reply.id}
