@@ -189,8 +189,8 @@ const NotificationBox: React.FC<NotificationBoxProps> = ({ isOpen, onClose }) =>
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-5 5v-5zM10.5 3.75a6 6 0 0 1 6 6v4.5l2.25 2.25a.75.75 0 0 1-.75 1.25H3a.75.75 0 0 1-.75-.75L4.5 14.25V9.75a6 6 0 0 1 6-6z" />
-              </svg>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-5 5v-5zM10.5 3.75a6 6 0 0 1 6 6v4.5l2.25 2.25a.75.75 0 0 1-.75 1.25H3a.75.75 0 0 1-.75-.75L4.5 14.25V9.75a6 6 0 0 1 6-6z" />
+            </svg>
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">Notifications</h2>
@@ -199,8 +199,8 @@ const NotificationBox: React.FC<NotificationBoxProps> = ({ isOpen, onClose }) =>
             {unreadCount > 0 && (
               <div className="relative">
                 <span className="bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold rounded-full px-2 py-1 shadow-lg">
-                  {unreadCount}
-                </span>
+                {unreadCount}
+              </span>
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full animate-pulse" />
               </div>
             )}
@@ -284,7 +284,7 @@ const NotificationBox: React.FC<NotificationBoxProps> = ({ isOpen, onClose }) =>
           {loading ? (
             <div className="flex items-center justify-center h-32">
               <div className="flex flex-col items-center space-y-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 <p className="text-sm text-gray-500">Loading notifications...</p>
               </div>
             </div>
@@ -292,8 +292,8 @@ const NotificationBox: React.FC<NotificationBoxProps> = ({ isOpen, onClose }) =>
             <div className="flex flex-col items-center justify-center h-32 text-gray-500">
               <div className="p-4 bg-white rounded-full shadow-sm mb-4">
                 <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-5 5v-5zM10.5 3.75a6 6 0 0 1 6 6v4.5l2.25 2.25a.75.75 0 0 1-.75 1.25H3a.75.75 0 0 1-.75-.75L4.5 14.25V9.75a6 6 0 0 1 6-6z" />
-                </svg>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-5 5v-5zM10.5 3.75a6 6 0 0 1 6 6v4.5l2.25 2.25a.75.75 0 0 1-.75 1.25H3a.75.75 0 0 1-.75-.75L4.5 14.25V9.75a6 6 0 0 1 6-6z" />
+              </svg>
               </div>
               <p className="text-lg font-medium text-gray-400">No notifications</p>
               <p className="text-sm text-gray-400">You're all caught up!</p>

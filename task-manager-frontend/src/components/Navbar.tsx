@@ -64,6 +64,7 @@ export default function Navbar() {
           { to: '/admin/tasks', label: 'Manage Tasks' },
           { to: '/dashboard', label: 'Dashboard' },
           { to: '/', label: 'All Tasks' },
+          { to: '/reports', label: 'Reports' },
         ]
       : [
           { to: '/', label: 'My Tasks' },
