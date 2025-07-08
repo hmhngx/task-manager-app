@@ -249,7 +249,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   };
 
   const handleAssignTask = async () => {
-    if (!selectedAssignee) return;
+    if (!selectedAssignee || user?.role !== 'admin') return;
     try {
       await taskService.updateTask(taskId, { assignee: selectedAssignee });
       setSelectedAssignee('');
@@ -277,6 +277,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   };
 
   const handleRemoveAssignment = async () => {
+    if (user?.role !== 'admin') return;
     try {
       await taskService.updateTask(taskId, { assignee: null });
       await fetchTaskDetails();
@@ -306,10 +307,12 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   };
 
   const handleMarkAsCompleted = async () => {
+    if (user?.role !== 'admin') return;
     await handleUpdateTask({ status: 'done' });
   };
 
   const handleMarkAsLate = async () => {
+    if (user?.role !== 'admin') return;
     await handleUpdateTask({ status: 'late' });
   };
 
@@ -330,11 +333,19 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <span className="text-lg text-gray-500">Loading task details...</span>
+      </div>
+    );
   }
 
-  if (!task || !task.title) {
-    return <div>Task not found or missing data</div>;
+  if (!task) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <span className="text-lg text-red-500">Task not found.</span>
+      </div>
+    );
   }
 
   if (isEditing) {
@@ -346,157 +357,102 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   }
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-2xl font-bold">{task.title}</h2>
-          <p className="text-gray-600">{task.description}</p>
-        </div>
-        <div className="flex space-x-2">
+    <div className="max-w-3xl mx-auto p-4 md:p-8 rounded-2xl shadow-xl bg-white/90">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+        <h2 className="text-2xl md:text-3xl font-extrabold text-indigo-700 mb-2 md:mb-0">{task.title}</h2>
+        <div className="flex gap-2">
           {user?.role === 'admin' && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Edit
-            </button>
+            <Button onClick={() => setIsEditing(true)} variant="primary" className="transition-all duration-200 hover:scale-105">Edit</Button>
           )}
-          <button
-            onClick={onClose}
-            className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
-          >
-            Close
-          </button>
+          <Button onClick={onClose} variant="outline" className="transition-all duration-200 hover:scale-105">Close</Button>
         </div>
       </div>
-
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Details Section */}
         <div>
-          <h3 className="font-semibold">Details</h3>
-          <dl className="mt-2 space-y-2">
+          <h3 className="font-semibold text-lg mb-2">Details</h3>
+          <dl className="space-y-2">
             <div>
-              <dt className="text-sm text-gray-500">Type</dt>
-              <dd>{task.type}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-gray-500">Priority</dt>
-              <dd>{task.priority}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-gray-500">Status</dt>
-              <dd>
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  task.status === 'done'
-                    ? 'bg-green-100 text-green-800'
-                    : task.status === 'late'
-                    ? 'bg-red-100 text-red-800'
-                    : task.status === 'pending_approval'
-                    ? 'bg-orange-100 text-orange-800'
-                    : 'bg-blue-100 text-blue-800'
-                }`}>
-                  {task.status}
-                </span>
-                {user?.role === 'admin' && (
-                  <div className="mt-2 flex gap-2">
-                    <Button
-                      onClick={handleMarkAsCompleted}
-                      variant="primary"
-                      className="shadow-neon-green focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
-                      aria-label="Mark as Completed"
-                    >
-                      Mark as Completed
-                    </Button>
-                    <Button
-                      onClick={handleMarkAsLate}
-                      variant="danger"
-                      className="shadow-neon-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-                      aria-label="Mark as Late"
-                    >
-                      Mark as Late
-                    </Button>
-                  </div>
-                )}
+              <dt className="text-xs text-gray-500">Type</dt>
+              <dd className="flex items-center gap-2">
+                {/* Add icon if available */}
+                <span className="capitalize font-medium text-gray-700">{task.type}</span>
               </dd>
             </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-600">Assigned to:</span>
-              <span className="font-medium">
-                {task.assignee ? getUserDisplayName(task.assignee) : 'Unassigned'}
-              </span>
+            <div>
+              <dt className="text-xs text-gray-500">Priority</dt>
+              <dd className="flex items-center gap-2">
+                <span className="capitalize font-medium text-gray-700">{task.priority}</span>
+              </dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Deadline</dt>
+              <dt className="text-xs text-gray-500">Status</dt>
+              <dd>
+                <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700`}>{task.status}</span>
+              </dd>
+            </div>
+            {user?.role === 'admin' && (
+              <div className="flex gap-3 mt-3">
+                <Button onClick={handleMarkAsCompleted} variant="primary" className="shadow-neon-green focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400 transition-all duration-200 hover:scale-105">Mark as Completed</Button>
+                <Button onClick={handleMarkAsLate} variant="danger" className="shadow-neon-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 transition-all duration-200 hover:scale-105">Mark as Late</Button>
+              </div>
+            )}
+            <div className="flex items-center space-x-2 mt-3">
+              <span className="text-gray-600">Assigned to:</span>
+              <span className="font-medium">{task.assignee ? getUserDisplayName(task.assignee) : 'Unassigned'}</span>
+            </div>
+            <div>
+              <dt className="text-xs text-gray-500">Deadline</dt>
               <dd>{task.deadline ? dayjs(task.deadline).format('MMM DD, YYYY HH:mm') : 'No deadline'}</dd>
             </div>
           </dl>
         </div>
+        {/* Labels Section */}
         <div>
-          <h3 className="font-semibold">Labels</h3>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <h3 className="font-semibold text-lg mb-2">Labels</h3>
+          <div className="flex flex-wrap gap-2">
             {task.labels.map((label) => (
-              <span
-                key={label}
-                className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full"
-              >
-                {label}
-              </span>
+              <span key={label} className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full transition-all duration-200 hover:bg-indigo-200 cursor-pointer">{label}</span>
             ))}
           </div>
         </div>
       </div>
-
+      {/* Parent Task & Subtasks */}
       {task.parentTask && (
-        <div>
-          <h3 className="font-semibold">Parent Task</h3>
-          <p>{task.parentTask.title}</p>
+        <div className="mt-6">
+          <h3 className="font-semibold text-lg mb-2">Parent Task</h3>
+          <p className="bg-gray-50 rounded px-3 py-2 inline-block">{task.parentTask.title}</p>
         </div>
       )}
-
       {task.subtasks.length > 0 && (
-        <div>
-          <h3 className="font-semibold">Subtasks</h3>
+        <div className="mt-6">
+          <h3 className="font-semibold text-lg mb-2">Subtasks</h3>
           <ul className="mt-2 space-y-2">
             {task.subtasks.map((subtask, idx) => (
-              <li key={subtask.id || subtask._id || idx} className="p-2 bg-gray-50 rounded">
-                {subtask.title}
-              </li>
+              <li key={subtask.id || subtask._id || idx} className="p-2 bg-gray-50 rounded shadow-sm">{subtask.title}</li>
             ))}
           </ul>
         </div>
       )}
-
-      <div className="mt-6">
-        <h3 className="font-semibold">Comments</h3>
-        <div className="mt-2 space-y-4">
+      {/* Comments Section */}
+      <div className="mt-8">
+        <h3 className="font-semibold text-lg mb-2">Comments</h3>
+        <div className="max-h-64 overflow-y-auto pr-2 space-y-4 bg-gray-50 rounded-lg p-4">
           {comments.map((comment, idx) => (
             <CommentItem
               key={comment.id || comment._id || idx}
               comment={comment}
-              onCommentEdited={(updatedComment) => {
-                console.log('Comment edited:', updatedComment);
-                fetchTaskDetails();
-              }}
-              onCommentDeleted={(commentId) => {
-                console.log('Comment deleted:', commentId);
-                fetchTaskDetails();
-              }}
+              onCommentEdited={(updatedComment) => { fetchTaskDetails(); }}
+              onCommentDeleted={(commentId) => { fetchTaskDetails(); }}
               onCommentVoted={(updatedComment) => {
-                console.log('Comment voted:', updatedComment);
-                // Update the specific comment in the comments array (including nested replies)
-                setComments(prevComments => 
-                  updateCommentInTree(prevComments, updatedComment._id || updatedComment.id || '', updatedComment.votes || {})
-                );
+                setComments(prevComments => updateCommentInTree(prevComments, updatedComment._id || updatedComment.id || '', updatedComment.votes || {}));
               }}
-              onReplyAdded={(newReply) => {
-                console.log('Reply added:', newReply);
-                console.log('Calling fetchTaskDetails to refresh comments...');
-                fetchTaskDetails();
-              }}
+              onReplyAdded={(newReply) => { fetchTaskDetails(); }}
               taskId={taskId}
             />
           ))}
         </div>
-        <div className="mt-6">
+        <div className="mt-4">
           <CommentBox
             value={newComment}
             onChange={setNewComment}
@@ -509,15 +465,15 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
           />
         </div>
       </div>
-
-      <div className="mt-6">
-        <h3 className="font-semibold">Attachments</h3>
-        <div className="mt-2 space-y-4">
+      {/* Attachments Section */}
+      <div className="mt-8">
+        <h3 className="font-semibold text-lg mb-2">Attachments</h3>
+        <div className="space-y-4">
           {Array.isArray(task.attachments) && task.attachments.map((attachment, idx) => {
             const key = (attachment && typeof attachment === 'object' && attachment._id) || idx;
             if (attachment && typeof attachment === 'object' && (attachment.originalName || attachment.url)) {
               return (
-                <div key={key} className="flex items-start justify-between bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 hover:border-gray-300">
+                <div key={key} className="flex flex-col md:flex-row items-start md:items-center justify-between bg-gradient-to-r from-gray-50 to-gray-100 p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 hover:border-gray-300">
                   <div className="flex-1">
                     <div className="flex items-center mb-2">
                       <div className="flex items-center space-x-2">
@@ -529,7 +485,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
                         <span className="font-semibold text-gray-900">{attachment.originalName}</span>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4 text-sm text-gray-600">
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                       <span className="flex items-center space-x-1">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -545,18 +501,9 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
                     </div>
                     {attachment.mimeType?.startsWith('image/') && (
                       <div className="mt-4">
-                        <a 
-                          href={attachment.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-block group"
-                        >
+                        <a href={attachment.url} target="_blank" rel="noopener noreferrer" className="inline-block group">
                           <div className="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-                            <img
-                              src={attachment.thumbnail || attachment.url}
-                              alt={attachment.originalName}
-                              className="max-w-[200px] max-h-[200px] object-cover"
-                            />
+                            <img src={attachment.thumbnail || attachment.url} alt={attachment.originalName} className="max-w-[200px] max-h-[200px] object-cover" />
                             <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
                               <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -568,30 +515,17 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center space-x-3">
-                    {/* All users can download attachments */}
-                    <AttachmentButton
-                      onClick={() => handleDownloadAttachment(attachment._id)}
-                      disabled={downloadingId === attachment._id}
-                      loading={downloadingId === attachment._id}
-                      variant="download"
-                    >
+                  <div className="flex items-center space-x-3 mt-4 md:mt-0">
+                    <AttachmentButton onClick={() => handleDownloadAttachment(attachment._id)} disabled={downloadingId === attachment._id} loading={downloadingId === attachment._id} variant="download">
                       {downloadingId === attachment._id ? 'Downloading...' : 'Download'}
                     </AttachmentButton>
-                    {/* Only admins can delete attachments */}
                     {user?.role === 'admin' && (
-                      <AttachmentButton
-                        onClick={() => handleDeleteAttachment(attachment._id)}
-                        variant="delete"
-                      >
-                        Delete
-                      </AttachmentButton>
+                      <AttachmentButton onClick={() => handleDeleteAttachment(attachment._id)} variant="delete">Delete</AttachmentButton>
                     )}
                   </div>
                 </div>
               );
             }
-            // fallback for string or unknown object
             return (
               <div key={key} className="flex items-start justify-between bg-gray-50 p-4 rounded-lg">
                 <span>Attachment</span>
@@ -599,157 +533,6 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
             );
           })}
         </div>
-
-        {/* Only show upload for admin */}
-        {user?.role === 'admin' && (
-          <div className="mt-4">
-            <label htmlFor="fileUpload" className="block text-sm font-medium text-gray-700">
-              Upload File
-            </label>
-            <div className="mt-1 flex items-center space-x-4">
-              <input
-                id="fileUpload"
-                type="file"
-                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-md file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-blue-50 file:text-blue-700
-                  hover:file:bg-blue-100"
-                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-              />
-              <button
-                onClick={handleFileUpload}
-                disabled={!selectedFile}
-                className="px-4 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Upload
-              </button>
-            </div>
-            {selectedFile && (
-              <p className="mt-2 text-sm text-gray-500">
-                Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="flex space-x-4">
-        {user?.role === 'admin' && (
-          <>
-            <div className="flex items-center space-x-2">
-              <AestheticSelect
-                options={[
-                  { value: '', label: 'Unassigned', icon: getUserIcon() },
-                  ...availableUsers.map(user => ({
-                    value: user.id || '',
-                    label: getUserDisplayName(user),
-                    icon: getUserIcon()
-                  }))
-                ]}
-                value={selectedAssignee}
-                onChange={setSelectedAssignee}
-                placeholder="Select user"
-                size="sm"
-                variant="filled"
-                className="w-48"
-                showSearch={true}
-              />
-              <Button
-                onClick={handleAssignTask}
-                disabled={selectedAssignee === (task.assignee?.id || '')}
-                variant="primary"
-                size="sm"
-              >
-                Assign to
-              </Button>
-              {task.assignee && (
-                <Button
-                  onClick={handleRemoveAssignment}
-                  variant="secondary"
-                  size="sm"
-                >
-                  Remove Assignment
-                </Button>
-              )}
-            </div>
-          </>
-        )}
-        {user?.role !== 'admin' && user && (
-          <>
-            {/* Only show Request Assignment button if user is not assigned, not creator, and not already a requester */}
-            {!task.assignee || getUserId(task.assignee) !== getUserId(user) ? (
-              task.creator && getUserId(task.creator) !== getUserId(user) ? (
-                // Check if task can be requested
-                !canRequestTask(task) ? (
-                  <div className="px-4 py-2 bg-gray-100 text-gray-600 rounded border border-gray-300">
-                    {getTaskRequestRestrictionMessage(task)}
-                  </div>
-                ) : task.requesters.some(requester => {
-                  const requesterId = typeof requester === 'string' ? requester : getUserId(requester as User);
-                  return requesterId === getUserId(user);
-                }) ? (
-                  <div className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded border border-yellow-300">
-                    You have already requested this task
-                  </div>
-                ) : (
-                  <button
-                    onClick={handleRequestTask}
-                    className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                  >
-                    Request Assignment
-                  </button>
-                )
-              ) : (
-                <div className="px-4 py-2 bg-gray-100 text-gray-600 rounded border border-gray-300">
-                  You cannot request your own task
-                </div>
-              )
-            ) : (
-              <div className="px-4 py-2 bg-blue-100 text-blue-800 rounded border border-blue-300">
-                You are already assigned to this task
-              </div>
-            )}
-          </>
-        )}
-        {task.requesters.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="font-semibold">Pending Requests</h4>
-            {task.requesters.map((requester, idx) => {
-              const requesterId = typeof requester === 'string' ? requester : getUserId(requester as User);
-              const requesterName = typeof requester === 'string' ? 'User' : getUserDisplayName(requester as User);
-
-              if (!requesterId) {
-                console.error('Invalid requester ID:', requester);
-                return null;
-              }
-
-              return (
-                <div key={requesterId ?? idx} className="flex items-center space-x-2">
-                  <span>{requesterName}</span>
-                  {user?.role === 'admin' && typeof requesterId === 'string' && (
-                    <>
-                      <button
-                        onClick={() => handleApproveRequest(requesterId)}
-                        className="px-2 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => handleRejectRequest(requesterId)}
-                        className="px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
-                      >
-                        Reject
-                      </button>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
     </div>
   );

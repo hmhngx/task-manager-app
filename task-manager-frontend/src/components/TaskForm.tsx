@@ -7,6 +7,7 @@ import { createTask, updateTask, getTaskById } from '../services/taskService';
 import { getAllUsers } from '../services/userService';
 import Button from './ui/Button';
 import AestheticSelect from './ui/AestheticSelect';
+import AestheticInput from './ui/AestheticInput';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -195,110 +196,97 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-          Title
-        </label>
-        <input
-          type="text"
-          id="title"
-          name="title"
-          value={formData.title}
-          onChange={handleChange}
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+    <div className="max-w-lg mx-auto max-h-[90vh] overflow-y-auto p-2 rounded-lg shadow-lg bg-white">
+      <form onSubmit={handleSubmit} className="space-y-2">
+        <AestheticInput
+          label="Title"
+          value={formData.title || ''}
+          onChange={val => setFormData(prev => ({ ...prev, title: val }))}
         />
-      </div>
 
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-          Description
-        </label>
-        <textarea
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
+        <AestheticInput
+          label="Description"
+          value={formData.description || ''}
+          onChange={val => setFormData(prev => ({ ...prev, description: val }))}
+          multiline
           rows={3}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
         />
-      </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <AestheticSelect
-            options={Object.values(TaskType).map(type => ({
-              value: type,
-              label: type.charAt(0).toUpperCase() + type.slice(1),
-              icon: getTypeIcon(type)
-            }))}
-            value={formData.type}
-            onChange={(value) => setFormData(prev => ({ ...prev, type: value as TaskType }))}
-            label="Type"
-            size="md"
-            variant="default"
-          />
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <AestheticSelect
+              options={Object.values(TaskType).map(type => ({
+                value: type,
+                label: type.charAt(0).toUpperCase() + type.slice(1),
+                icon: getTypeIcon(type)
+              }))}
+              value={formData.type}
+              onChange={(value) => setFormData(prev => ({ ...prev, type: value as TaskType }))}
+              label="Type"
+              size="md"
+              variant="filled"
+            />
+          </div>
+
+          <div>
+            <AestheticSelect
+              options={Object.values(TaskPriority).map(priority => ({
+                value: priority,
+                label: priority.charAt(0).toUpperCase() + priority.slice(1),
+                icon: getPriorityIcon(priority)
+              }))}
+              value={formData.priority}
+              onChange={(value) => setFormData(prev => ({ ...prev, priority: value as TaskPriority }))}
+              label="Priority"
+              size="md"
+              variant="filled"
+            />
+          </div>
         </div>
 
         <div>
-          <AestheticSelect
-            options={Object.values(TaskPriority).map(priority => ({
-              value: priority,
-              label: priority.charAt(0).toUpperCase() + priority.slice(1),
-              icon: getPriorityIcon(priority)
-            }))}
-            value={formData.priority}
-            onChange={(value) => setFormData(prev => ({ ...prev, priority: value as TaskPriority }))}
-            label="Priority"
-            size="md"
-            variant="default"
-          />
+          <label htmlFor="deadline" className="block text-xs font-medium text-gray-700">
+            Deadline
+          </label>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DateTimePicker
+              value={formData.deadline ? dayjs(formData.deadline) : null}
+              onChange={handleDateChange}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  className: 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs',
+                }
+              }}
+            />
+          </LocalizationProvider>
         </div>
-      </div>
 
-      <div>
-        <label htmlFor="deadline" className="block text-sm font-medium text-gray-700">
-          Deadline
-        </label>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <DateTimePicker
-            value={formData.deadline ? dayjs(formData.deadline) : null}
-            onChange={handleDateChange}
-            slotProps={{
-              textField: {
-                fullWidth: true,
-                className: 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
-              }
-            }}
-          />
-        </LocalizationProvider>
-      </div>
+        {user?.role === 'admin' && (
+          <div>
+            <AestheticSelect
+              options={[
+                { value: '', label: 'Unassigned', icon: getUserIcon() },
+                ...users.map(user => ({
+                  value: user.id || '',
+                  label: getUserDisplayName(user),
+                  icon: getUserIcon()
+                }))
+              ]}
+              value={formData.assignee || ''}
+              onChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
+              label="Assignee"
+              size="md"
+              variant="filled"
+              showSearch={true}
+              maxHeight="240px"
+            />
+          </div>
+        )}
 
-      {user?.role === 'admin' && (
         <div>
           <AestheticSelect
             options={[
-              { value: '', label: 'Unassigned', icon: getUserIcon() },
-              ...users.map(user => ({
-                value: user.id || '',
-                label: getUserDisplayName(user),
-                icon: getUserIcon()
-              }))
-            ]}
-            value={formData.assignee || ''}
-            onChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
-            label="Assignee"
-            size="md"
-            variant="default"
-            showSearch={true}
-          />
-        </div>
-      )}
-
-      <div>
-        <AestheticSelect
-                      options={[
               { value: '', label: 'None', icon: getTaskIcon() },
               ...parentTasks.map(task => ({
                 value: task.id || '',
@@ -307,63 +295,70 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
               }))
             ]}
             value={formData.parentTask || ''}
-          onChange={(value) => setFormData(prev => ({ ...prev, parentTask: value }))}
-          label="Parent Task"
-          size="md"
-          variant="default"
-          showSearch={true}
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Labels</label>
-        <div className="mt-1 flex items-center space-x-2">
-          <input
-            type="text"
-            value={newLabel}
-            onChange={(e) => setNewLabel(e.target.value)}
-            placeholder="Add a label"
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            onChange={(value) => setFormData(prev => ({ ...prev, parentTask: value }))}
+            label="Parent Task"
+            size="md"
+            variant="outlined"
+            showSearch={true}
+            maxHeight="240px"
           />
-          <button
-            type="button"
-            onClick={handleAddLabel}
-            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Add
-          </button>
         </div>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {formData.labels?.map((label) => (
-            <span
-              key={label}
-              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
-            >
-              {label}
-              <button
-                type="button"
-                onClick={() => handleRemoveLabel(label)}
-                className="ml-1 inline-flex items-center p-0.5 rounded-full text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                <span className="sr-only">Remove label</span>
-                <svg className="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M1 1l6 6m0-6L1 7" />
-                </svg>
-              </button>
-            </span>
-          ))}
-        </div>
-      </div>
 
-      <div className="flex justify-end space-x-3">
-        <Button type="button" onClick={onCancel} variant="secondary">
-          Cancel
-        </Button>
-        <Button type="submit" variant="primary">
-          {task ? 'Update Task' : 'Create Task'}
-        </Button>
-      </div>
-    </form>
+        <div>
+          <label className="block text-xs font-medium text-gray-700">Labels</label>
+          <div className="mt-1 flex items -center space-x-2">
+            <AestheticInput
+              label="Add a label"
+              value={newLabel}
+              onChange={setNewLabel}
+              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddLabel();
+                }
+              }}
+              className="flex-1"
+            />
+            <button
+              type="button"
+              onClick={handleAddLabel}
+              className="inline-flex items-center px-3 py-2 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Add
+            </button>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {formData.labels?.map((label) => (
+              <span
+                key={label}
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 animate-fadeIn"
+              >
+                {label}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveLabel(label)}
+                  className="ml-1 inline-flex items-center p-0.5 rounded-full text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <span className="sr-only">Remove label</span>
+                  <svg className="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M1 1l6 6m0-6L1 7" />
+                  </svg>
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex justify-end space-x-3 pt-2">
+          <Button type="button" onClick={onCancel} variant="outline">
+            Cancel
+          </Button>
+          <Button type="submit" variant="primary">
+            {task ? 'Update Task' : 'Create Task'}
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 };
 
