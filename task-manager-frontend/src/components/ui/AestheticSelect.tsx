@@ -105,8 +105,8 @@ const AestheticSelect: React.FC<AestheticSelectProps> = ({
   const selectedOption = options.find(option => option.value === value);
 
   const sizeClasses = {
-    sm: 'text-sm px-3 py-2',
-    md: 'text-sm px-4 py-2.5',
+    sm: 'text-xs px-2 py-1.5',
+    md: 'text-sm px-3 py-2',
     lg: 'text-base px-4 py-3',
   };
 
@@ -135,15 +135,17 @@ const AestheticSelect: React.FC<AestheticSelectProps> = ({
       : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
     }
     ${className}
+    text-sm max-w-xs
   `;
 
   const optionClasses = (index: number, option: SelectOption) => `
-    w-full px-4 py-3 text-left transition-all duration-150
+    w-full px-3 py-2 text-left transition-all duration-150
     hover:bg-blue-50 focus:outline-none focus:bg-blue-50
-    flex items-center space-x-3 cursor-pointer
+    flex items-center space-x-2 cursor-pointer
     ${highlightedIndex === index ? 'bg-blue-50' : ''}
     ${option.disabled ? 'opacity-50 cursor-not-allowed hover:bg-transparent' : ''}
     ${option.value === value ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700'}
+    text-xs min-h-[32px]'
   `;
 
   const handleOptionSelect = (optionValue: string) => {
