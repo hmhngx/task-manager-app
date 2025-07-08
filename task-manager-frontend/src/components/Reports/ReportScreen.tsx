@@ -210,7 +210,7 @@ const ReportScreen: React.FC = () => {
           </Typography>
 
           {/* Filters */}
-          <Box className="mb-8 flex flex-wrap gap-4 items-center bg-white/80 backdrop-blur-md rounded-xl shadow px-6 py-4 border border-blue-100" sx={{ position: 'relative', zIndex: 1000 }}>
+          <Box className="mb-8 flex flex-wrap gap-4 items-center bg-white/80 backdrop-blur-md rounded-xl shadow px-6 py-4 border border-blue-100" sx={{ position: 'relative', zIndex: 10 }}>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DatePicker
                 label="Start Date"
@@ -239,7 +239,7 @@ const ReportScreen: React.FC = () => {
                 }}
               />
             </LocalizationProvider>
-            
+
             <AestheticSelect
               options={[
                 { value: '', label: 'All Statuses' },
@@ -281,14 +281,14 @@ const ReportScreen: React.FC = () => {
                 { value: 'feature', label: 'Feature', icon: getTypeIcon('feature') },
                 { value: 'subtask', label: 'Subtask', icon: getTypeIcon('subtask') }
               ]}
-              value={taskType}
+                value={taskType}
               onChange={setTaskType}
               placeholder="All Types"
               size="sm"
               variant="filled"
               className="w-40"
             />
-            
+
             <Button
               variant="contained"
               color="primary"
@@ -316,7 +316,7 @@ const ReportScreen: React.FC = () => {
               <TableContainer className="rounded-xl bg-white/90 backdrop-blur-sm border border-blue-100 shadow-lg" sx={{ position: 'relative', zIndex: 1 }}>
                 <Table>
                   <TableHead>
-                    <TableRow className="sticky top-0 bg-gradient-to-r from-blue-50 to-indigo-50 z-10 border-b border-blue-200">
+                    <TableRow className="sticky top-0 bg-gradient-to-r from-blue-50 to-indigo-50 z-0 border-b border-blue-200">
                       <TableCell className="text-center font-semibold py-3 text-indigo-700">No.</TableCell>
                       <TableCell className="font-semibold py-3 text-indigo-700">Title</TableCell>
                       <TableCell className="font-semibold py-3 text-indigo-700">Description</TableCell>
@@ -337,7 +337,7 @@ const ReportScreen: React.FC = () => {
                         <TableCell className="py-1.5">
                           <div className="flex items-center space-x-2">
                             {getStatusIcon(task.status)}
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[task.status] || 'bg-gray-200 text-gray-700'}`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[task.status] || 'bg-gray-200 text-gray-700'}`}>
                               {task.status.replace('_', ' ')}
                             </span>
                           </div>
@@ -347,7 +347,7 @@ const ReportScreen: React.FC = () => {
                             {getPriorityIcon(task.priority)}
                             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${priorityColors[task.priority] || 'bg-gray-200 text-gray-700'}`}>
                               {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-                            </span>
+                          </span>
                           </div>
                         </TableCell>
                         <TableCell className="py-1.5">
