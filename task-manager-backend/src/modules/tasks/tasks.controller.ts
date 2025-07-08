@@ -164,6 +164,7 @@ export class TasksController {
   }
 
   @Patch(':id')
+  @Roles(UserRole.ADMIN)
   async update(
     @Param('id') id: string,
     @Body() updateTaskDto: UpdateTaskDto,
@@ -462,6 +463,7 @@ export class TasksController {
   }
 
   @Post(':id/status')
+  @Roles(UserRole.ADMIN)
   updateTaskStatus(
     @Param('id') taskId: string,
     @Body('status') status: TaskStatus,

@@ -373,13 +373,11 @@ export class TasksService {
       const oldStatus = task.status;
       const oldAssignee = task.assignee?.toString();
 
-      // Allow admins to update any task
+      // Only admins can update tasks
       const isAdmin = userRole === 'admin';
-      const isCreator = task.creator.toString() === userId;
-      const isAssignee = task.assignee?.toString() === userId;
-      if (!isAdmin && !isCreator && !isAssignee) {
+      if (!isAdmin) {
         throw new BadRequestException(
-          `Not authorized to update this task. UserId: ${userId}, Creator: ${task.creator.toString()}, Assignee: ${task.assignee?.toString()}`,
+          `Only administrators can update tasks. UserId: ${userId}, UserRole: ${userRole}`,
         );
       }
 
@@ -1059,6 +1057,9 @@ export class TasksService {
   async updateTaskStatus(taskId: string, newStatus: TaskStatus, updaterId: string) {
     const task = await this.taskModel.findById(taskId);
     if (!task) throw new NotFoundException('Task not found');
+
+    // Note: Authorization is handled at the controller level with @Roles(UserRole.ADMIN)
+    // This method is only called by admin users
 
     // Validate status transition
     if (newStatus === TaskStatus.PENDING_APPROVAL) {
