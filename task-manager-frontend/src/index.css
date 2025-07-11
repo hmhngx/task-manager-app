@@ -2,20 +2,189 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .shadow-neon-blue {
-    box-shadow: 0 0 8px 2px #3b82f6, 0 0 16px 4px #60a5fa;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Custom animations for auth pages */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
   }
-  .shadow-neon-purple {
-    box-shadow: 0 0 8px 2px #a78bfa, 0 0 16px 4px #c4b5fd;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  .shadow-neon-green {
-    box-shadow: 0 0 8px 2px #22d3ee, 0 0 16px 4px #6ee7b7;
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
   }
-  .shadow-neon-red {
-    box-shadow: 0 0 8px 2px #ef4444, 0 0 16px 4px #f87171;
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
-  .shadow-neon-gray {
-    box-shadow: 0 0 8px 2px #6b7280, 0 0 16px 4px #d1d5db;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInFromLeft 0.6s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.5s ease-out;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Focus styles for better accessibility */
+*:focus {
+  outline: 2px solid #6c5ce7;
+  outline-offset: 2px;
+}
+
+/* Custom gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.25);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* Custom button hover effects */
+.btn-hover-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-hover-effect::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-hover-effect:hover::before {
+  left: 100%;
+}
+
+/* Loading spinner */
+.spinner {
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #6c5ce7;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Custom input focus ring */
+.input-focus-ring:focus-within {
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Custom selection color */
+::selection {
+  background: rgba(108, 92, 231, 0.2);
+  color: #2d2d2d;
+}
+
+/* Responsive design helpers */
+@media (max-width: 640px) {
+  .mobile-padding {
+    padding: 1rem;
+  }
+  
+  .mobile-text {
+    font-size: 0.875rem;
+  }
+}
+
+/* Dark mode support (if needed in the future) */
+@media (prefers-color-scheme: dark) {
+  .dark-mode-support {
+    background: #1a1a1a;
+    color: #ffffff;
   }
 }

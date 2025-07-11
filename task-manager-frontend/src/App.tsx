@@ -9,6 +9,8 @@ import { WebSocketProvider } from './contexts/WebSocketContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import TaskDetailsPage from './pages/TaskDetailsPage';
 import AdminDashboard from './components/AdminDashboard';
@@ -83,6 +85,8 @@ function App() {
           {/* Auth pages: no layout, just the box */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Main app pages: wrapped in Layout */}
           <Route

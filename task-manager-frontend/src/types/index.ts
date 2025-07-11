@@ -3,7 +3,7 @@ export interface Task {
   title: string;
   description: string;
   category?: string;
-  status: 'todo' | 'in-progress' | 'done' | 'late';
+  status: 'todo' | 'in_progress' | 'done' | 'late';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   deadline?: Date;
   userId: string;
@@ -44,8 +44,8 @@ export interface TaskStats {
 
 export interface User {
   _id: string;
-  name: string;
   email: string;
+  username?: string;
   role: 'user' | 'admin';
   createdAt: string;
   updatedAt: string;
@@ -54,8 +54,8 @@ export interface User {
 export interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (username: string, password: string) => Promise<void>;
-  register: (username: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, username?: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
