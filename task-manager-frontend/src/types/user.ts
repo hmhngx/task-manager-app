@@ -1,9 +1,8 @@
 export interface User {
   _id?: string;
   id?: string;
-  name?: string;
-  username?: string;
   email: string;
+  username?: string;
   role: 'user' | 'admin';
   createdAt: string;
   updatedAt: string;
@@ -16,5 +15,5 @@ export const getUserId = (user: User): string => {
 
 // Helper function to get the user's display name
 export const getUserDisplayName = (user: User): string => {
-  return user.username || user.name || '';
+  return user.username || user.email || 'User';
 }; 

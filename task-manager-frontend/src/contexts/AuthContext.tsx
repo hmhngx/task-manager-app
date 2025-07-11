@@ -5,8 +5,8 @@ import { User } from '../types';
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (name: string, password: string) => Promise<void>;
-  register: (name: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, username?: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
@@ -31,9 +31,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  const login = async (name: string, password: string) => {
+  const login = async (email: string, password: string) => {
     try {
-      const response = await loginUser(name, password);
+      const response = await loginUser(email, password);
       const storedToken = getStoredToken();
       setUser(response);
       setToken(storedToken);
@@ -44,9 +44,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const register = async (name: string, password: string) => {
+  const register = async (email: string, password: string, username?: string) => {
     try {
-      const response = await registerUser(name, password);
+      const response = await registerUser(email, password, username);
       const storedToken = getStoredToken();
       setUser(response);
       setToken(storedToken);

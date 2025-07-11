@@ -5,7 +5,7 @@ const getInitial = (user: User) => {
   if (!user) return 'U';
   
   // Handle different user object structures
-  const username = user.username || user.name || '';
+  const username = user.username || '';
   const email = user.email || '';
   
   if (username) {
