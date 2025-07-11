@@ -22,6 +22,7 @@ export enum TaskType {
 
 export interface User {
   id: string;
+  _id?: string;
   username: string;
   email: string;
   role: 'user' | 'admin';

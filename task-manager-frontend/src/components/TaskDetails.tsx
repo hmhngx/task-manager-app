@@ -32,6 +32,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [selectedAssignee, setSelectedAssignee] = useState<string>('');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Icon helper function
   const getUserIcon = () => (
@@ -199,6 +201,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
   };
 
   const handleRequestTask = async () => {
+    setActionLoading(true);
+    setActionError(null);
     console.log('🔄 User clicked "Request Assignment" button');
     console.log('📋 Task ID:', taskId);
     console.log('👤 Current user object:', user);
@@ -208,13 +212,17 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
       console.log('📡 Sending task request to backend...');
       await taskService.requestTask(taskId);
       console.log('✅ Task request sent successfully');
-      fetchTaskDetails();
-    } catch (error) {
-      console.error('❌ Error requesting task:', error);
+      await fetchTaskDetails();
+    } catch (error: any) {
+      setActionError(error?.response?.data?.message || 'Failed to request task');
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleApproveRequest = async (requesterId: string) => {
+    setActionLoading(true);
+    setActionError(null);
     console.log('✅ Admin clicked "Approve" button');
     console.log('📋 Task ID:', taskId);
     console.log('👤 Requester ID:', requesterId);
@@ -226,12 +234,16 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
       await taskService.approveRequest(taskId, requesterId);
       console.log('✅ Request approved successfully');
       await fetchTaskDetails();
-    } catch (error) {
-      console.error('❌ Error approving request:', error);
+    } catch (error: any) {
+      setActionError(error?.response?.data?.message || 'Failed to approve request');
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleRejectRequest = async (requesterId: string) => {
+    setActionLoading(true);
+    setActionError(null);
     console.log('❌ Admin clicked "Reject" button');
     console.log('📋 Task ID:', taskId);
     console.log('👤 Requester ID:', requesterId);
@@ -243,8 +255,10 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
       await taskService.rejectRequest(taskId, requesterId);
       console.log('✅ Request rejected successfully');
       await fetchTaskDetails();
-    } catch (error) {
-      console.error('❌ Error rejecting request:', error);
+    } catch (error: any) {
+      setActionError(error?.response?.data?.message || 'Failed to reject request');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -401,6 +415,83 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
               <span className="text-gray-600">Assigned to:</span>
               <span className="font-medium">{task.assignee ? getUserDisplayName(task.assignee) : 'Unassigned'}</span>
             </div>
+            
+            {/* Request Assignment Button & Status Messages */}
+            {user && user.role === 'user' && (
+              <div className="mt-4">
+                {getTaskRequestRestrictionMessage(task) ? (
+                  <div className="text-sm text-red-500 flex items-center gap-2">
+                    <span className="bg-red-100 text-red-800 px-2 py-1 rounded">⛔</span>
+                    {getTaskRequestRestrictionMessage(task)}
+                  </div>
+                ) : task.creator.id === getUserId(user) ? (
+                  <div className="text-sm text-gray-500 flex items-center gap-2">
+                    <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">⚠️</span>
+                    You cannot request your own task.
+                  </div>
+                ) : (task.assignee?.id || task.assignee?._id) === getUserId(user) ? (
+                  <div className="text-sm text-green-600 flex items-center gap-2">
+                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded">✔️</span>
+                    You are already assigned to this task.
+                  </div>
+                ) : task.requesters?.some(requester => (requester.id || requester._id) === getUserId(user)) ? (
+                  <div className="text-sm text-blue-600 flex items-center gap-2">
+                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">ℹ️</span>
+                    You have already requested this task.
+                  </div>
+                ) : canRequestTask(task) ? (
+                  <Button 
+                    onClick={handleRequestTask} 
+                    variant="primary" 
+                    className="w-full transition-all duration-200 hover:scale-105"
+                    disabled={actionLoading}
+                  >
+                    Request Assignment
+                  </Button>
+                ) : null}
+                {actionError && <div className="text-sm text-red-500 mt-2">{actionError}</div>}
+              </div>
+            )}
+            
+            {/* Pending Requests Section for Admins */}
+            {user?.role === 'admin' && task.requesters && task.requesters.length > 0 && (
+              <div className="mt-4">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Pending Requests ({task.requesters.length})</h4>
+                <div className="space-y-2">
+                  {task.requesters.map((requester) => (
+                    <div key={requester.id || requester._id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <UserAvatar user={requester} className="h-6 w-6 text-xs" />
+                        <span className="text-sm font-medium">{getUserDisplayName(requester)}</span>
+                      </div>
+                      <div className="flex space-x-2">
+                        {(requester.id || requester._id) && (
+                          <>
+                            <Button
+                              onClick={() => handleApproveRequest((requester.id || requester._id) as string)}
+                              variant="primary"
+                              className="text-xs px-3 py-1"
+                              disabled={actionLoading}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              onClick={() => handleRejectRequest((requester.id || requester._id) as string)}
+                              variant="danger"
+                              className="text-xs px-3 py-1"
+                              disabled={actionLoading}
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div>
               <dt className="text-xs text-gray-500">Deadline</dt>
               <dd>{task.deadline ? dayjs(task.deadline).format('MMM DD, YYYY HH:mm') : 'No deadline'}</dd>
@@ -468,6 +559,37 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
       {/* Attachments Section */}
       <div className="mt-8">
         <h3 className="font-semibold text-lg mb-2">Attachments</h3>
+        
+        {/* File Upload Section - Only for Admins */}
+        {user?.role === 'admin' && (
+          <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h4 className="text-sm font-semibold text-blue-800 mb-2">Upload Attachment</h4>
+            <div className="flex items-center space-x-2">
+              <input
+                type="file"
+                id="file-upload"
+                aria-label="Choose file to upload"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                className="flex-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+              />
+              <Button
+                onClick={handleFileUpload}
+                disabled={!selectedFile}
+                variant="primary"
+                className="px-4 py-2 text-sm"
+              >
+                Upload
+              </Button>
+            </div>
+            {selectedFile && (
+              <p className="text-xs text-gray-600 mt-1">
+                Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+              </p>
+            )}
+          </div>
+        )}
+        
         <div className="space-y-4">
           {Array.isArray(task.attachments) && task.attachments.map((attachment, idx) => {
             const key = (attachment && typeof attachment === 'object' && attachment._id) || idx;

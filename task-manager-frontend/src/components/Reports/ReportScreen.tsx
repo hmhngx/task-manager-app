@@ -21,7 +21,7 @@ import { Download as DownloadIcon, NavigateNext as NextIcon, NavigateBefore as P
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
-import { Task } from '../../types/Task';
+import { Task, TaskStatus, TaskPriority, TaskType } from '../../types/Task';
 import AestheticSelect from '../ui/AestheticSelect';
 
 const statusColors: Record<string, string> = {
@@ -199,7 +199,14 @@ const ReportScreen: React.FC = () => {
     setPage(0);
   };
 
-  const paginatedTasks = tasks.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const filteredTasks = tasks.filter(task => {
+    return (
+      (!status || task.status === status) &&
+      (!priority || task.priority === priority) &&
+      (!taskType || task.type === taskType)
+    );
+  });
+  const paginatedTasks = filteredTasks.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen py-8 px-2 md:px-4">
@@ -243,11 +250,11 @@ const ReportScreen: React.FC = () => {
             <AestheticSelect
               options={[
                 { value: '', label: 'All Statuses' },
-                { value: 'todo', label: 'Todo', icon: getStatusIcon('todo') },
-                { value: 'pending_approval', label: 'Pending Approval', icon: getStatusIcon('pending_approval') },
-                { value: 'in_progress', label: 'In Progress', icon: getStatusIcon('in_progress') },
-                { value: 'done', label: 'Done', icon: getStatusIcon('done') },
-                { value: 'late', label: 'Late', icon: getStatusIcon('late') }
+                ...Object.values(TaskStatus).map(status => ({
+                  value: status,
+                  label: status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' '),
+                  icon: getStatusIcon(status)
+                }))
               ]}
               value={status}
               onChange={setStatus}
@@ -260,10 +267,14 @@ const ReportScreen: React.FC = () => {
             <AestheticSelect
               options={[
                 { value: '', label: 'All Priorities' },
-                { value: 'low', label: 'Low', icon: getPriorityIcon('low') },
-                { value: 'medium', label: 'Medium', icon: getPriorityIcon('medium') },
-                { value: 'high', label: 'High', icon: getPriorityIcon('high') },
-                { value: 'urgent', label: 'Urgent', icon: getPriorityIcon('urgent') }
+                ...Object.values(TaskPriority).map(priority => {
+                  const p = priority as string;
+                  return {
+                    value: p,
+                    label: p.charAt(0).toUpperCase() + p.slice(1),
+                    icon: getPriorityIcon(p)
+                  };
+                })
               ]}
               value={priority}
               onChange={setPriority}
@@ -276,12 +287,16 @@ const ReportScreen: React.FC = () => {
             <AestheticSelect
               options={[
                 { value: '', label: 'All Types' },
-                { value: 'task', label: 'Task', icon: getTypeIcon('task') },
-                { value: 'bug', label: 'Bug', icon: getTypeIcon('bug') },
-                { value: 'feature', label: 'Feature', icon: getTypeIcon('feature') },
-                { value: 'subtask', label: 'Subtask', icon: getTypeIcon('subtask') }
+                ...Object.values(TaskType).map(type => {
+                  const t = type as string;
+                  return {
+                    value: t,
+                    label: t.charAt(0).toUpperCase() + t.slice(1),
+                    icon: getTypeIcon(t)
+                  };
+                })
               ]}
-                value={taskType}
+              value={taskType}
               onChange={setTaskType}
               placeholder="All Types"
               size="sm"
@@ -364,10 +379,10 @@ const ReportScreen: React.FC = () => {
                   </TableBody>
                 </Table>
                 <Box className="flex items-center justify-between p-4">
-                  <span className="text-gray-600 font-bold">{tasks.length} tasks found</span>
+                  <span className="text-gray-600 font-bold">{filteredTasks.length} tasks found</span>
                   <TablePagination
                     component="div"
-                    count={tasks.length}
+                    count={filteredTasks.length}
                     page={page}
                     onPageChange={handleChangePage}
                     rowsPerPage={rowsPerPage}

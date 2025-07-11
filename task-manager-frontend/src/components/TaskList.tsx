@@ -244,7 +244,7 @@ const TaskList: React.FC<TaskListProps> = ({ selectedDate, isAdmin }) => {
       </div>
 
       {/* Filters/Search */}
-      <div className="mb-8 flex flex-wrap gap-4 items-center bg-white/80 backdrop-blur-md rounded-full shadow px-6 py-4 border border-blue-100">
+      <div className="mb-8 flex flex-wrap gap-4 items-center bg-white/80 backdrop-blur-md rounded-full shadow px-6 py-4 border border-blue-100 z-1000">
           <input
             type="text"
           placeholder="Search tasks..."

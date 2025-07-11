@@ -61,7 +61,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isAdmin }) => {
           <div className="flex flex-col items-center flex-1">
             {statIcons.todo}
             <div className="text-4xl font-extrabold text-blue-600 mt-1">{weekly?.todo ?? 0}</div>
-            <div className="text-xs text-gray-500 mt-1">To Do</div>
+            <div className="text-xs text-gray-500 mt-1">To_Do</div>
           </div>
           <div className="flex flex-col items-center flex-1">
             {statIcons.in_progress}
@@ -116,7 +116,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isAdmin }) => {
           <div className="flex flex-col items-center flex-1">
             {statIcons.todo}
             <div className="text-4xl font-extrabold text-blue-600 mt-1">{monthly?.todo ?? 0}</div>
-            <div className="text-xs text-gray-500 mt-1">To Do</div>
+            <div className="text-xs text-gray-500 mt-1">To_Do</div>
           </div>
           <div className="flex flex-col items-center flex-1">
             {statIcons.in_progress}
