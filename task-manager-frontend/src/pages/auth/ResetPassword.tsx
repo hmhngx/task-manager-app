@@ -1,51 +1,64 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { Mail, User, Lock, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { resetPassword } from '../../services/authService';
+import { Mail, Lock, ArrowRight, CheckCircle } from 'lucide-react';
 import AuthLayout from '../../components/auth/AuthLayout';
 import FloatingInput from '../../components/ui/FloatingInput';
 import GradientButton from '../../components/ui/GradientButton';
 
-const Register: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+const ResetPassword: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { register } = useAuth();
+  
+  const [email, setEmail] = useState('');
+  const [token, setToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    const tokenParam = searchParams.get('token');
+    
+    if (emailParam) setEmail(emailParam);
+    if (tokenParam) setToken(tokenParam);
+    
+    if (!emailParam || !tokenParam) {
+      setError('Invalid reset link. Please request a new password reset.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
-    if (!validateEmail(email)) {
-      setError('Please enter a valid email address');
-      return;
-    }
+    setSuccess('');
 
-    if (password !== confirmPassword) {
+    if (newPassword !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    if (password.length < 6) {
+    if (newPassword.length < 6) {
       setError('Password must be at least 6 characters long');
+      return;
+    }
+
+    if (!email || !token) {
+      setError('Invalid reset link. Please request a new password reset.');
       return;
     }
 
     setIsLoading(true);
     try {
-      await register(email, password, username || undefined);
-      navigate('/dashboard');
+      await resetPassword(email, token, newPassword);
+      setSuccess('Password reset successful! Redirecting to login...');
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      setError(err instanceof Error ? err.message : 'Failed to reset password');
     } finally {
       setIsLoading(false);
     }
@@ -53,8 +66,11 @@ const Register: React.FC = () => {
 
   return (
     <AuthLayout
-      title="Create Account"
-      subtitle="Join our task management platform"
+      title="Reset Password"
+      subtitle="Enter your new password below"
+      showBackButton
+      backTo="/login"
+      backText="Back to login"
     >
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4">
@@ -69,6 +85,17 @@ const Register: React.FC = () => {
         </div>
       )}
 
+      {success && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+            </div>
+            <p className="text-sm text-green-700 font-medium">{success}</p>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
           <FloatingInput
@@ -78,28 +105,22 @@ const Register: React.FC = () => {
             onChange={(e) => setEmail(e.target.value)}
             leftIcon={<Mail size={20} />}
             required
+            disabled
+            className="bg-gray-50"
           />
 
           <FloatingInput
-            label="Username (Optional)"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            leftIcon={<User size={20} />}
-          />
-
-          <FloatingInput
-            label="Password"
+            label="New Password"
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
             leftIcon={<Lock size={20} />}
             showPasswordToggle
             required
           />
 
           <FloatingInput
-            label="Confirm Password"
+            label="Confirm New Password"
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -112,16 +133,17 @@ const Register: React.FC = () => {
         <GradientButton
           type="submit"
           loading={isLoading}
+          disabled={!email || !token}
           rightIcon={<ArrowRight size={20} />}
           className="w-full"
           size="lg"
         >
-          {isLoading ? 'Creating account...' : 'Create account'}
+          {isLoading ? 'Resetting...' : 'Reset Password'}
         </GradientButton>
 
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            Already have an account?{' '}
+            Remember your password?{' '}
             <Link
               to="/login"
               className="font-semibold text-purple-600 hover:text-purple-700 transition-colors duration-200"
@@ -135,4 +157,4 @@ const Register: React.FC = () => {
   );
 };
 
-export default Register;
+export default ResetPassword; 
