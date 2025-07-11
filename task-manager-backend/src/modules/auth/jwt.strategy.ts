@@ -7,7 +7,7 @@ import { UserRole } from '../users/user.schema';
 
 interface JwtPayload {
   sub: string;
-  username: string;
+  email: string;
   role: UserRole;
 }
 
@@ -35,7 +35,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return String(id);
   }
 
-  async validate(payload: JwtPayload): Promise<{ id: string; username: string; role: UserRole }> {
+  async validate(
+    payload: JwtPayload,
+  ): Promise<{ id: string; email: string; username?: string; role: UserRole }> {
     this.logger.log(`Validating JWT payload: ${JSON.stringify(payload)}`);
     try {
       if (!Types.ObjectId.isValid(payload.sub)) {
@@ -49,15 +51,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         throw new UnauthorizedException('No user found');
       }
 
-      // Verify that the username in the token matches the user
-      if (user.username !== payload.username) {
-        this.logger.error(`Username mismatch: token=${payload.username}, user=${user.username}`);
+      // Verify that the email in the token matches the user
+      if (user.email !== payload.email) {
+        this.logger.error(`Email mismatch: token=${payload.email}, user=${user.email}`);
         throw new UnauthorizedException('Invalid token');
       }
 
-      this.logger.log(`Successfully validated user: ${user.username}`);
+      this.logger.log(`Successfully validated user: ${user.email}`);
       return {
         id: this.getIdString(user._id),
+        email: user.email,
         username: user.username,
         role: payload.role,
       };

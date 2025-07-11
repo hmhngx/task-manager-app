@@ -21,7 +21,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
 import { UserRole } from '../users/user.schema';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { LoginDto, RegisterDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('Authentication')
@@ -46,55 +46,86 @@ export class AuthController {
   }
 
   @Post('register')
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiResponse({ status: 201, description: 'User registered successfully' })
+  @ApiResponse({ status: 400, description: 'Email or username already exists' })
   async register(@Body(new ValidationPipe({ transform: true })) registerDto: RegisterDto) {
-    this.logger.log(`Registration attempt for username: ${registerDto.username}`);
+    this.logger.log(`Registration attempt for email: ${registerDto.email}`);
 
-    // Check if username already exists
-    const existingUser = await this.usersService.findByUsername(registerDto.username);
+    // Check if email already exists
+    const existingUser = await this.usersService.findByEmail(registerDto.email);
     if (existingUser) {
-      this.logger.warn(`Username already exists: ${registerDto.username}`);
-      throw new BadRequestException('Username already exists');
+      this.logger.warn(`Email already exists: ${registerDto.email}`);
+      throw new BadRequestException('Email already exists');
+    }
+
+    // Check if username already exists (if provided)
+    if (registerDto.username) {
+      const existingUsername = await this.usersService.findByUsername(registerDto.username);
+      if (existingUsername) {
+        this.logger.warn(`Username already exists: ${registerDto.username}`);
+        throw new BadRequestException('Username already exists');
+      }
     }
 
     // Create new regular user (not admin)
-    await this.usersService.create(registerDto.username, registerDto.password);
+    await this.usersService.create(registerDto.email, registerDto.password, registerDto.username);
 
     // Fetch the full user object
-    const user = await this.usersService.findByUsername(registerDto.username);
+    const user = await this.usersService.findByEmail(registerDto.email);
     if (!user) {
       throw new BadRequestException('Failed to create user');
     }
 
-    return this.authService.login(user);
+    return this.authService.registerAndLogin(user);
   }
 
   @Post('register/admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Register a new admin user (Admin only)' })
+  @ApiResponse({ status: 201, description: 'Admin user registered successfully' })
+  @ApiResponse({ status: 400, description: 'Email or username already exists' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   async registerAdmin(@Body() registerDto: RegisterDto): Promise<LoginResponse> {
-    // Check if user exists first
-    const existingUser = await this.usersService.findByUsername(registerDto.username);
+    // Check if email exists first
+    const existingUser = await this.usersService.findByEmail(registerDto.email);
     if (existingUser) {
-      throw new BadRequestException('Username already exists');
+      throw new BadRequestException('Email already exists');
+    }
+
+    // Check if username already exists (if provided)
+    if (registerDto.username) {
+      const existingUsername = await this.usersService.findByUsername(registerDto.username);
+      if (existingUsername) {
+        throw new BadRequestException('Username already exists');
+      }
     }
 
     // Create new admin user
-    await this.usersService.createAdmin(registerDto.username, registerDto.password);
+    await this.usersService.createAdmin(
+      registerDto.email,
+      registerDto.password,
+      registerDto.username,
+    );
 
     // Fetch the full user object
-    const user = await this.usersService.findByUsername(registerDto.username);
+    const user = await this.usersService.findByEmail(registerDto.email);
     if (!user) {
       throw new BadRequestException('Failed to create admin user');
     }
 
-    return this.authService.login(user);
+    return this.authService.registerAndLogin(user);
   }
 
   @Post('login')
+  @ApiOperation({ summary: 'User login' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
     @Body(new ValidationPipe({ transform: true })) loginDto: LoginDto,
   ): Promise<LoginResponse> {
-    const user = await this.usersService.findByUsername(loginDto.username);
+    const user = await this.usersService.findByEmail(loginDto.email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -107,7 +138,35 @@ export class AuthController {
     return this.authService.login(user);
   }
 
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Request password reset' })
+  @ApiResponse({ status: 200, description: 'Password reset email sent if email exists' })
+  async forgotPassword(
+    @Body(new ValidationPipe({ transform: true })) forgotPasswordDto: ForgotPasswordDto,
+  ) {
+    await this.authService.forgotPassword(forgotPasswordDto.email);
+    return { message: 'If the email exists, a password reset link has been sent' };
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password with token' })
+  @ApiResponse({ status: 200, description: 'Password reset successful' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired token' })
+  async resetPassword(
+    @Body(new ValidationPipe({ transform: true })) resetPasswordDto: ResetPasswordDto,
+  ) {
+    await this.authService.resetPassword(
+      resetPasswordDto.email,
+      resetPasswordDto.token,
+      resetPasswordDto.newPassword,
+    );
+    return { message: 'Password reset successful' };
+  }
+
   @Post('refresh')
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refreshTokens(@Body('refresh_token') refreshToken: string) {
     if (!refreshToken) {
       throw new BadRequestException('Refresh token is required');
@@ -117,6 +176,9 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'User logout' })
+  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  @ApiBearerAuth()
   async logout(@Body('refresh_token') refreshToken: string) {
     if (!refreshToken) {
       throw new BadRequestException('Refresh token is required');
