@@ -1,11 +1,12 @@
-# Task Manager Frontend
+# TaskFlow Frontend
 
-A modern React frontend with **real-time WebSocket integration**, **comprehensive notification system**, **advanced comment system**, and **workflow management** for the Task Manager application.
+A modern React frontend with **real-time WebSocket integration**, **comprehensive notification system**, **advanced comment system**, **email authentication**, and **workflow management** for the TaskFlow application.
 
 ## 🚀 Key Features
 
 ### Core Task Management
-- **User Authentication** with JWT and role-based access
+- **Email-based Authentication** with JWT and role-based access
+- **Password Reset System** with email verification
 - **Task CRUD Operations** with assignment workflows
 - **Real-time Collaboration** via WebSocket integration
 - **Advanced Comment System** with voting, replies, and mentions
@@ -14,6 +15,15 @@ A modern React frontend with **real-time WebSocket integration**, **comprehensiv
 - **Admin Dashboard** with live monitoring
 - **Participant Management** with add/remove functionality
 - **Task Request System** with approval workflows
+
+### Authentication & User Experience
+- **Email-based Login** with secure authentication
+- **Password Reset Flow** with email verification
+- **Modern UI Components** with floating inputs and gradient buttons
+- **Responsive Design** with mobile-first approach
+- **Loading States** and error handling
+- **Session Management** with persistent login
+- **Account Recovery** with email-based reset
 
 ### Advanced Comment System
 - **Threaded Comments** with parent-child relationships
@@ -59,6 +69,12 @@ A modern React frontend with **real-time WebSocket integration**, **comprehensiv
 - **React Datepicker** for date selection
 - **Headless UI** for accessible components
 
+### Authentication & Forms
+- **Custom UI Components** - Floating inputs, gradient buttons
+- **Form Validation** with comprehensive error handling
+- **Email Authentication** with secure token management
+- **Password Reset Flow** with user-friendly interface
+
 ### Real-Time
 - **WebSocket Context** for connection management
 - **Service Worker** for push notifications
@@ -88,11 +104,24 @@ npm start
 ## 🔧 Environment Variables
 
 ```bash
-REACT_APP_BACKEND_URL=http://localhost:3000
+REACT_APP_API_URL=http://localhost:3000
 REACT_APP_ENV=development
 ```
 
 ## 📱 Components Overview
+
+### Authentication Components
+- **AuthLayout** - Reusable authentication layout with modern design
+- **Login** - Email-based login with floating inputs
+- **Register** - User registration with validation
+- **ForgotPassword** - Password reset request form
+- **ResetPassword** - Password reset with token verification
+
+### UI Components
+- **FloatingInput** - Modern input field with floating labels
+- **GradientButton** - Gradient-styled buttons with loading states
+- **AestheticSelect** - Enhanced select dropdown component
+- **UserAvatar** - User profile display component
 
 ### Core Components
 - **TaskList** - Display and manage tasks with filtering
@@ -102,7 +131,6 @@ REACT_APP_ENV=development
 - **CommentItem** - Individual comment with voting and replies
 - **NotificationBox** - Comprehensive notification management interface
 - **AdminDashboard** - Admin monitoring and analytics
-- **UserAvatar** - User profile display component
 
 ### Context Providers
 - **AuthContext** - User authentication state management
@@ -176,19 +204,21 @@ subscribeToTask(taskId);
 
 ## 🎨 UI/UX Features
 
-### Responsive Design
-- **Mobile-first** approach with Tailwind CSS
-- **Responsive Components** - Works on all screen sizes
-- **Touch-friendly** interface for mobile devices
-- **Progressive Web App** features
-
-### User Experience
+### Modern Design System
+- **Floating Inputs** - Elegant form inputs with floating labels
+- **Gradient Buttons** - Beautiful gradient-styled buttons
+- **Responsive Layout** - Mobile-first design approach
+- **Smooth Animations** - Enhanced user experience
 - **Loading States** - Skeleton loaders and spinners
 - **Error Boundaries** - Graceful error handling
+
+### User Experience
+- **Email Authentication** - Secure and user-friendly login
+- **Password Reset** - Intuitive password recovery flow
 - **Toast Notifications** - User feedback and alerts
-- **Smooth Animations** - Enhanced user experience
 - **Keyboard Navigation** - Accessible keyboard shortcuts
-- **Dark Mode Support** - Theme switching capability
+- **Touch-friendly** interface for mobile devices
+- **Progressive Web App** features
 
 ### Component Features
 - **Task Cards** - Status indicators, priority badges, participant avatars
@@ -199,6 +229,7 @@ subscribeToTask(taskId);
 
 ## 🔒 Security Features
 
+- **Email-based Authentication** with secure token management
 - **JWT Authentication** with automatic token refresh
 - **Protected Routes** - Role-based access control
 - **WebSocket Authentication** - Secure real-time connections
@@ -211,6 +242,7 @@ subscribeToTask(taskId);
 ```
 src/
 ├── components/          # React components
+│   ├── auth/           # Authentication components
 │   ├── ui/             # Reusable UI components
 │   └── Reports/        # Report components
 ├── contexts/           # React contexts
@@ -218,8 +250,6 @@ src/
 ├── pages/              # Page components
 │   └── auth/           # Authentication pages
 ├── services/           # API services
-├── shared/             # Shared utilities
-│   └── interfaces/     # TypeScript interfaces
 ├── store/              # Redux store
 ├── types/              # TypeScript types
 └── config/             # Configuration files
@@ -238,63 +268,91 @@ npm run test:e2e
 ```
 
 ### Test Coverage
-   ```bash
+```bash
 npm run test:coverage
-   ```
+```
 
 ## 🚀 Deployment
 
 ### Development
-   ```bash
-   npm start
-   ```
+```bash
+npm start
+```
 
 ### Production Build
 ```bash
 npm run build
 ```
 
-### Environment Setup
+### Docker Deployment
 ```bash
-# Development
-REACT_APP_BACKEND_URL=http://localhost:3000
+# Build image
+docker build -t taskflow-frontend .
 
-# Production
-REACT_APP_BACKEND_URL=https://your-api-domain.com
+# Run container
+docker run -p 3001:3001 taskflow-frontend
 ```
 
-## 📱 Progressive Web App
+## 📱 Authentication Flow
 
-### Features
-- **Service Worker** - Offline functionality
-- **Push Notifications** - Browser notifications
-- **App Manifest** - Installable app
-- **Offline Support** - Basic offline functionality
-- **Background Sync** - Sync when online
+### Login Process
+1. User enters email and password
+2. Form validation and submission
+3. JWT token storage in localStorage
+4. Automatic redirect to dashboard
 
-## 🔧 Development
+### Password Reset
+1. User requests password reset
+2. Email sent with secure token
+3. User clicks link and enters new password
+4. Password updated and user logged in
 
-### Code Style
-- **ESLint** for code linting
-- **Prettier** for code formatting
-- **TypeScript** for type safety
-- **Conventional Commits** for commit messages
+### Session Management
+- Automatic token refresh
+- Persistent login across browser sessions
+- Secure logout with token cleanup
 
-### Adding New Features
-1. Create component in `src/components/`
-2. Add types in `src/types/`
-3. Update Redux store if needed
-4. Add WebSocket events if real-time
-5. Update tests and documentation
+## 🎨 Design System
 
-## 🤝 Contributing
+### Color Palette
+- **Primary**: Purple gradient (#8B5CF6 to #7C3AED)
+- **Secondary**: Gray tones (#6B7280 to #374151)
+- **Success**: Green (#10B981)
+- **Error**: Red (#EF4444)
+- **Warning**: Yellow (#F59E0B)
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+### Typography
+- **Headings**: Inter font family
+- **Body**: System font stack
+- **Code**: Monospace font
 
-## 📄 License
+### Spacing
+- Consistent spacing scale using Tailwind CSS
+- Responsive padding and margins
+- Component-specific spacing rules
 
-This project is licensed under the MIT License.
+## 🔄 Recent Updates
+
+### Email Authentication System
+- Implemented email-based login and registration
+- Added password reset functionality with email verification
+- Enhanced security with refresh tokens
+- Added modern authentication UI components
+
+### UI/UX Improvements
+- Modern authentication pages with floating inputs
+- Gradient buttons and improved styling
+- Enhanced user experience with better feedback
+- Responsive design improvements
+
+### Component Library
+- Added FloatingInput component with floating labels
+- Created GradientButton component with loading states
+- Enhanced AestheticSelect component
+- Improved UserAvatar component
+
+### Frontend Infrastructure
+- Enhanced authentication service with email support
+- Improved error handling and user feedback
+- Better state management with Redux
+- Enhanced WebSocket integration

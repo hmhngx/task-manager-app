@@ -1,11 +1,12 @@
-# Task Manager Backend
+# TaskFlow Backend
 
-A robust NestJS backend with **real-time WebSocket integration**, **comprehensive notification system**, **advanced comment system**, and **workflow management** for the Task Manager application.
+A robust NestJS backend with **real-time WebSocket integration**, **comprehensive notification system**, **advanced comment system**, **email authentication**, and **workflow management** for the TaskFlow application.
 
 ## 🚀 Key Features
 
 ### Core API
-- **User Authentication** with JWT and refresh tokens
+- **Email-based Authentication** with JWT and refresh tokens
+- **Password Reset System** with email verification and secure tokens
 - **Role-based Access Control** (Admin/User)
 - **Task CRUD Operations** with assignment workflows
 - **File Upload** and attachment management
@@ -13,6 +14,15 @@ A robust NestJS backend with **real-time WebSocket integration**, **comprehensiv
 - **Reporting & Analytics** with Excel export
 - **Participant Management** with add/remove functionality
 - **Task Request System** with approval workflows
+
+### Authentication & Security
+- **Email-based Login** with secure password hashing using bcrypt
+- **Password Reset Flow** with time-limited tokens and email verification
+- **JWT Authentication** with refresh token rotation
+- **Session Management** with persistent login
+- **Account Recovery** with secure email-based reset links
+- **Input Validation** with comprehensive DTOs
+- **Rate Limiting** and security headers
 
 ### Advanced Comment System
 - **Threaded Comments** with parent-child relationships
@@ -36,7 +46,7 @@ A robust NestJS backend with **real-time WebSocket integration**, **comprehensiv
 ### Comprehensive Notification System
 - **WebSocket Notifications** - Instant in-app updates
 - **Web Push Notifications** - Browser notifications via VAPID
-- **Email Notifications** - SMTP integration
+- **Email Notifications** - SMTP integration with templates
 - **Scheduled Notifications** - Automated reminders via cron jobs
 - **Comment Notifications** - Mentions, replies, and voting alerts
 - **Task Notifications** - Assignments, status changes, and requests
@@ -51,9 +61,14 @@ A robust NestJS backend with **real-time WebSocket integration**, **comprehensiv
 - **Socket.IO** for WebSocket implementation
 - **JWT** for authentication with refresh tokens
 
+### Authentication & Email
+- **bcrypt** for password hashing
+- **Nodemailer** for email delivery
+- **@nestjs-modules/mailer** for email templates
+- **Handlebars** for email template rendering
+
 ### Notifications
 - **Web Push** for browser notifications
-- **Nodemailer** for email delivery
 - **@nestjs/schedule** for cron jobs
 - **VAPID** for push notification keys
 
@@ -69,12 +84,12 @@ A robust NestJS backend with **real-time WebSocket integration**, **comprehensiv
 ### Prerequisites
 - Node.js (v16+)
 - MongoDB
-- SMTP server
+- SMTP server (Gmail, SendGrid, etc.)
 - VAPID keys for push notifications
 
 ### Installation
-   ```bash
-   npm install
+```bash
+npm install
 cp .env.example .env
 # Configure environment variables
 npm run start:dev
@@ -85,7 +100,7 @@ npm run start:dev
 ```bash
 # Database
 MONGODB_URI=your_mongodb_connection
-   JWT_SECRET=your_jwt_secret
+JWT_SECRET=your_jwt_secret
 JWT_REFRESH_SECRET=your_refresh_secret
 
 # Frontend URL (CORS)
@@ -102,20 +117,22 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=your_email@gmail.com
 SMTP_PASS=your_app_password
-SMTP_FROM=your_email@gmail.com
+EMAIL_FROM_NAME=TaskFlow
 
 # Application
-   PORT=3000
-   NODE_ENV=development
+PORT=3000
+NODE_ENV=development
 ```
 
 ## 🌐 API Endpoints
 
 ### Authentication
-- `POST /auth/login` - User login
+- `POST /auth/login` - User login with email
 - `POST /auth/register` - User registration
 - `POST /auth/refresh` - Refresh JWT token
 - `POST /auth/logout` - User logout
+- `POST /auth/forgot-password` - Request password reset
+- `POST /auth/reset-password` - Reset password with token
 
 ### Tasks
 - `GET /tasks` - Get tasks with filtering
@@ -205,7 +222,9 @@ SMTP_FROM=your_email@gmail.com
 
 ## 🔒 Security Features
 
+- **Email-based Authentication** with secure password hashing
 - **JWT Authentication** with refresh tokens
+- **Password Reset Security** with time-limited tokens
 - **Role-based Access Control**
 - **WebSocket Authentication** with JWT validation
 - **CORS Configuration**
@@ -222,6 +241,7 @@ SMTP_FROM=your_email@gmail.com
 - Profile information (name, role, preferences)
 - Push notification subscriptions
 - Activity timestamps
+- Password reset tokens and expiry
 
 ### Tasks
 - Basic info (title, description, status)
@@ -248,10 +268,103 @@ SMTP_FROM=your_email@gmail.com
 
 ### Attachments
 - File metadata (name, size, type)
-- Storage information and URLs
-- Upload tracking and permissions
-- Thumbnail generation for images
-- Download tracking
+- Storage path and access URLs
+- Upload timestamp and user info
+- Task and comment associations
+
+### Refresh Tokens
+- Token hash and expiry
+- User association
+- Revocation status
+- Replacement token tracking
+
+## 📧 Email System
+
+### Email Service
+The backend includes a comprehensive email service for:
+- Welcome emails for new users
+- Password reset links with secure tokens
+- Task assignment notifications
+- Deadline reminders
+- System notifications
+
+### Email Templates
+Customizable Handlebars templates located in:
+- `src/modules/auth/templates/welcome.hbs`
+- `src/modules/auth/templates/password-reset.hbs`
+
+### SMTP Configuration
+Supports various SMTP providers:
+- Gmail (with App Passwords)
+- SendGrid
+- AWS SES
+- Custom SMTP servers
+
+## 🔧 Development Scripts
+
+### Authentication Scripts
+```bash
+# Create admin user with email
+npm run create-admin
+
+# Add email to existing admin user
+npm run add-admin-email
+
+# Migrate existing users to email authentication
+npm run migrate:email-auth
+```
+
+### Database Scripts
+```bash
+# Run database migrations
+npm run migrate
+
+# Seed database with sample data
+npm run seed
+```
+
+### Development Scripts
+```bash
+# Start development server
+npm run start:dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm run start:prod
+
+# Run tests
+npm run test
+
+# Run e2e tests
+npm run test:e2e
+```
+
+## 📁 Project Structure
+
+```
+src/
+├── config/              # Configuration files
+│   ├── database.config.ts
+│   ├── jwt.config.ts
+│   └── email.config.ts
+├── modules/             # Feature modules
+│   ├── auth/           # Authentication module
+│   │   ├── services/   # Email service
+│   │   ├── templates/  # Email templates
+│   │   ├── guards/     # Authentication guards
+│   │   └── dto/        # Data transfer objects
+│   ├── tasks/          # Task management
+│   │   ├── services/   # Task services
+│   │   ├── schemas/    # Database schemas
+│   │   └── dto/        # Task DTOs
+│   ├── users/          # User management
+│   ├── reports/        # Reporting system
+│   └── websocket/      # WebSocket gateways
+├── exceptions/          # Exception filters
+└── main.ts             # Application entry point
+```
 
 ## 🧪 Testing
 
@@ -267,87 +380,65 @@ npm run test:e2e
 
 ### Test Coverage
 ```bash
-npm run test:cov
+npm run test:coverage
 ```
-
-## 📈 Performance
-
-### Optimization Features
-- **Database Indexing** for fast queries
-- **Caching** for frequently accessed data
-- **Connection Pooling** for MongoDB
-- **File Upload Streaming** for large files
-- **WebSocket Connection Management**
-- **Rate Limiting** for API protection
-
-### Monitoring
-- **Request Logging** with timestamps
-- **Error Tracking** and debugging
-- **Performance Metrics** collection
-- **Database Query Optimization**
-- **Memory Usage Monitoring**
 
 ## 🚀 Deployment
 
-### Development
-```bash
-npm run start:dev
-```
-
-### Production
+### Production Build
 ```bash
 npm run build
 npm run start:prod
 ```
 
-### Docker
+### Docker Deployment
 ```bash
-docker build -t task-manager-backend .
-docker run -p 3000:3000 task-manager-backend
+# Build image
+docker build -t taskflow-backend .
+
+# Run container
+docker run -p 3000:3000 taskflow-backend
 ```
+
+### Environment Setup
+Ensure all environment variables are configured:
+- Database connection
+- JWT secrets
+- SMTP settings
+- VAPID keys
+- Frontend URL for CORS
 
 ## 📚 API Documentation
 
 ### Swagger UI
-Access the interactive API documentation at `/api` when running in development mode.
+Access API documentation at: `http://localhost:3000/api`
 
-### OpenAPI Specification
-The API specification is available at `/api-json` for integration with other tools.
+### Authentication Flow
+1. **Login**: POST `/auth/login` with email/password
+2. **Token Refresh**: POST `/auth/refresh` with refresh token
+3. **Password Reset**: POST `/auth/forgot-password` → email → POST `/auth/reset-password`
 
-## 🔧 Development
+### WebSocket Authentication
+1. Connect to WebSocket with JWT token
+2. Authenticate connection via `auth` event
+3. Subscribe to specific channels
 
-### Code Structure
-```
-src/
-├── modules/
-│   ├── auth/           # Authentication & authorization
-│   ├── tasks/          # Task management
-│   ├── notifications/  # Notification system
-│   ├── reports/        # Analytics & reporting
-│   ├── users/          # User management
-│   └── websocket/      # Real-time features
-├── shared/
-│   └── interfaces/     # Shared TypeScript interfaces
-├── config/             # Configuration files
-└── exceptions/         # Error handling
-```
+## 🔄 Recent Updates
 
-### Adding New Features
-1. Create module in `src/modules/`
-2. Define DTOs and schemas
-3. Implement service logic
-4. Add controller endpoints
-5. Update WebSocket events if needed
-6. Add tests and documentation
+### Email Authentication System
+- Implemented email-based login and registration
+- Added password reset functionality with secure tokens
+- Enhanced JWT authentication with refresh tokens
+- Added comprehensive email service with templates
 
-## 🤝 Contributing
+### Security Enhancements
+- Improved password hashing with bcrypt
+- Added rate limiting and security headers
+- Enhanced input validation with DTOs
+- Implemented secure token management
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
+### Backend Infrastructure
+- Added email configuration and service
+- Enhanced user management with profile features
+- Improved error handling and logging
+- Added development scripts for user management

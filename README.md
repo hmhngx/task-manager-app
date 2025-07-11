@@ -1,11 +1,12 @@
-# Task Manager Application
+# TaskFlow
 
-A modern, full-stack task management application with **real-time collaboration**, **comprehensive notifications**, **advanced comment system**, and **workflow management**. Built with React, NestJS, and MongoDB.
+A modern, full-stack task management application with **real-time collaboration**, **comprehensive notifications**, **advanced comment system**, **email authentication**, and **workflow management**. Built with React, NestJS, and MongoDB.
 
 ## 🚀 Key Features
 
 ### Core Task Management
-- **User Authentication** with JWT and role-based access (Admin/User)
+- **Email-based Authentication** with JWT and role-based access (Admin/User)
+- **Password Reset System** with email verification and secure tokens
 - **Task CRUD Operations** with assignment and approval workflows
 - **Real-time Collaboration** via WebSocket integration
 - **Advanced Comment System** with voting, replies, and mentions
@@ -14,6 +15,15 @@ A modern, full-stack task management application with **real-time collaboration*
 - **Deadline Tracking** with automated reminders
 - **Participant Management** with add/remove functionality
 - **Task Request System** with approval workflows
+
+### Authentication & Security
+- **Email-based Login** with secure password hashing
+- **Password Reset Flow** with email verification
+- **JWT Authentication** with refresh tokens
+- **Role-based Access Control** (Admin/User)
+- **Secure Token Management** with automatic refresh
+- **Account Recovery** with email-based reset links
+- **Session Management** with persistent login
 
 ### Advanced Comment System
 - **Threaded Comments** with parent-child relationships
@@ -124,7 +134,7 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=your_email@gmail.com
 SMTP_PASS=your_app_password
-SMTP_FROM=your_email@gmail.com
+EMAIL_FROM_NAME=TaskFlow
 
 # Application
 PORT=3000
@@ -133,17 +143,19 @@ NODE_ENV=development
 
 ### Frontend (.env)
 ```bash
-REACT_APP_BACKEND_URL=http://localhost:3000
+REACT_APP_API_URL=http://localhost:3000
 REACT_APP_ENV=development
 ```
 
 ## 🌐 API Endpoints
 
 ### Authentication
-- `POST /auth/login` - User login
+- `POST /auth/login` - User login with email
 - `POST /auth/register` - User registration
 - `POST /auth/refresh` - Refresh JWT token
 - `POST /auth/logout` - User logout
+- `POST /auth/forgot-password` - Request password reset
+- `POST /auth/reset-password` - Reset password with token
 
 ### Tasks
 - `GET /tasks` - Get tasks with filtering
@@ -204,7 +216,9 @@ REACT_APP_ENV=development
 
 ## 🔒 Security Features
 
+- **Email-based Authentication** with secure password hashing
 - **JWT Authentication** with refresh tokens
+- **Password Reset Security** with time-limited tokens
 - **Role-based Access Control** (Admin/User)
 - **WebSocket Authentication** with JWT validation
 - **CORS Configuration** for secure cross-origin requests
@@ -246,6 +260,50 @@ docker build -t task-manager-frontend ./task-manager-frontend
 docker run -p 3001:3001 task-manager-frontend
 ```
 
+## 📧 Email Setup
+
+### SMTP Configuration
+The application supports email notifications for:
+- Welcome emails for new users
+- Password reset links
+- Task assignment notifications
+- Deadline reminders
+
+### Gmail Setup
+1. Enable 2-factor authentication
+2. Generate an App Password
+3. Configure SMTP settings in `.env`
+
+### Email Templates
+Customizable email templates are available in:
+- `task-manager-backend/src/modules/auth/templates/`
+
+## 🔧 Development Scripts
+
+### Backend Scripts
+```bash
+# Create admin user
+npm run create-admin
+
+# Add email to existing admin
+npm run add-admin-email
+
+# Migrate to email authentication
+npm run migrate:email-auth
+```
+
+### Frontend Scripts
+```bash
+# Start development server
+npm start
+
+# Build for production
+npm run build
+
+# Run tests
+npm test
+```
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -260,10 +318,27 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-For support, email support@taskmanager.com or join our Slack channel.
+For support and questions:
+- Check the documentation in each subdirectory
+- Review the email setup guides
+- Open an issue on GitHub
 
-## 🔄 Version History
+## 🔄 Recent Updates
 
-- **v2.0.0** - Advanced comment system with voting and replies
-- **v1.5.0** - Real-time notifications and WebSocket integration
-- **v1.0.0** - Initial release with basic task management
+### Email Authentication System
+- Implemented email-based login and registration
+- Added password reset functionality with email verification
+- Enhanced security with refresh tokens
+- Added comprehensive email templates
+
+### UI/UX Improvements
+- Modern authentication pages with floating inputs
+- Gradient buttons and improved styling
+- Enhanced user experience with better feedback
+- Responsive design improvements
+
+### Backend Enhancements
+- Email service integration with SMTP
+- Enhanced user management with profile features
+- Improved notification system
+- Better error handling and logging
