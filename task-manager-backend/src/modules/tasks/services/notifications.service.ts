@@ -2,7 +2,7 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Task, TaskDocument } from '../schemas/task.schema';
-import { User, UserDocument } from '../../users/schemas/user.schema';
+import { User, UserDocument } from '../../users/user.schema';
 import { NotificationService } from '../../notifications/services/notification.service';
 import {
   NotificationType,

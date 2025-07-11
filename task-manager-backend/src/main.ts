@@ -1,3 +1,5 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -44,7 +46,7 @@ async function bootstrap() {
 
   // Setup Swagger
   const config = new DocumentBuilder()
-    .setTitle('Task Manager API')
+    .setTitle('TaskFlow API')
     .setDescription('API for managing tasks with user authentication')
     .setVersion('1.0')
     .addBearerAuth()

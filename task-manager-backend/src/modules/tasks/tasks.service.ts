@@ -293,12 +293,12 @@ export class TasksService {
       const populatedQuery = query
         .populate({
           path: 'assignee',
-          select: 'username',
+          select: 'username _id',
           options: { lean: true },
         })
         .populate({
           path: 'creator',
-          select: 'username',
+          select: 'username _id',
           options: { lean: true },
         })
         .populate({
@@ -319,12 +319,12 @@ export class TasksService {
         })
         .populate({
           path: 'watchers',
-          select: 'username',
+          select: 'username _id',
           options: { lean: true },
         })
         .populate({
           path: 'requesters',
-          select: 'username',
+          select: 'username _id',
           options: { lean: true },
         });
 
@@ -339,8 +339,8 @@ export class TasksService {
   async getTaskById(id: string) {
     const task = await this.taskModel
       .findById(id)
-      .populate('assignee', 'username')
-      .populate('creator', 'username')
+      .populate('assignee', 'username _id')
+      .populate('creator', 'username _id')
       .populate('parentTask')
       .populate('subtasks')
       .populate({
@@ -351,8 +351,8 @@ export class TasksService {
         },
       })
       .populate('attachments')
-      .populate('watchers', 'username')
-      .populate('requesters', 'username');
+      .populate('watchers', 'username _id')
+      .populate('requesters', 'username _id');
 
     if (!task) {
       throw new NotFoundException('Task not found');
@@ -574,7 +574,8 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    if (task.creator.toString() !== userId) {
+    const deleter = await this.usersService.findById(userId);
+    if (task.creator.toString() !== userId && deleter?.role !== 'admin') {
       throw new BadRequestException('Not authorized to delete this task');
     }
 
