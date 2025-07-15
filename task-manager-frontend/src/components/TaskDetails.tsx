@@ -13,6 +13,7 @@ import { CommentItem } from './CommentItem';
 import AttachmentButton from './ui/AttachmentButton';
 import CommentBox from './ui/CommentBox';
 import AestheticSelect from './ui/AestheticSelect';
+import TaskAI from './TaskAI';
 import dayjs from 'dayjs';
 
 interface TaskDetailsProps {
@@ -556,6 +557,9 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
           />
         </div>
       </div>
+      {/* AI Assistant Section */}
+      <TaskAI task={task} />
+      
       {/* Attachments Section */}
       <div className="mt-8">
         <h3 className="font-semibold text-lg mb-2">Attachments</h3>
