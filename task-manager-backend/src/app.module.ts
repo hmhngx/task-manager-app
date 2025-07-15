@@ -8,6 +8,7 @@ import { UsersModule } from './modules/users/users.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { WebSocketModule } from './modules/websocket/websocket.module';
 import { NotificationModule } from './modules/notifications/notification.module';
+import { AiModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { NotificationModule } from './modules/notifications/notification.module'
     ReportsModule,
     WebSocketModule,
     NotificationModule,
+    AiModule,
   ],
 })
 export class AppModule {}
