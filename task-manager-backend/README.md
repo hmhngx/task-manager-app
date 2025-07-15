@@ -1,6 +1,6 @@
 # TaskFlow Backend
 
-A robust NestJS backend with **real-time WebSocket integration**, **comprehensive notification system**, **advanced comment system**, **email authentication**, and **workflow management** for the TaskFlow application.
+A robust NestJS backend with **real-time WebSocket integration**, **comprehensive notification system**, **advanced comment system**, **email authentication**, **AI-powered productivity assistance**, and **workflow management** for the TaskFlow application.
 
 ## 🚀 Key Features
 
@@ -14,6 +14,16 @@ A robust NestJS backend with **real-time WebSocket integration**, **comprehensiv
 - **Reporting & Analytics** with Excel export
 - **Participant Management** with add/remove functionality
 - **Task Request System** with approval workflows
+
+### AI-Powered Productivity Assistant
+- **OpenAI Integration** with GPT-3.5-turbo for intelligent task assistance
+- **Context-Aware Suggestions** based on task details and user questions
+- **Productivity Tips** with actionable recommendations
+- **Time Management Advice** for task completion optimization
+- **Best Practices Guidance** for different task types
+- **Secure API Communication** with proper error handling
+- **Connection Testing** for API key validation
+- **Comprehensive Logging** for debugging and monitoring
 
 ### Authentication & Security
 - **Email-based Login** with secure password hashing using bcrypt
@@ -78,6 +88,7 @@ A robust NestJS backend with **real-time WebSocket integration**, **comprehensiv
 - **Multer** for file uploads
 - **ExcelJS** for report generation
 - **Cron** for scheduled tasks
+- **OpenAI API** for AI-powered assistance
 
 ## 📦 Quick Start
 
@@ -118,6 +129,9 @@ SMTP_SECURE=false
 SMTP_USER=your_email@gmail.com
 SMTP_PASS=your_app_password
 EMAIL_FROM_NAME=TaskFlow
+
+# AI Assistant (OpenAI)
+OPENAI_API_KEY=your_openai_api_key
 
 # Application
 PORT=3000
@@ -181,6 +195,10 @@ NODE_ENV=development
 - `GET /reports/tasks` - Task analytics
 - `GET /reports/users` - User activity
 - `GET /reports/export` - Excel export
+
+### AI Assistant
+- `POST /ai/assist` - Get AI assistance for task productivity
+- `POST /ai/test` - Test OpenAI API connection
 
 ### Users
 - `GET /users` - Get users (admin only)
@@ -361,6 +379,9 @@ src/
 │   │   └── dto/        # Task DTOs
 │   ├── users/          # User management
 │   ├── reports/        # Reporting system
+│   ├── ai/             # AI assistant module
+│   │   ├── dto/        # AI request DTOs
+│   │   └── services/   # AI service
 │   └── websocket/      # WebSocket gateways
 ├── exceptions/          # Exception filters
 └── main.ts             # Application entry point
@@ -424,6 +445,14 @@ Access API documentation at: `http://localhost:3000/api`
 3. Subscribe to specific channels
 
 ## 🔄 Recent Updates
+
+### AI-Powered Productivity Assistant
+- Implemented OpenAI integration with GPT-3.5-turbo
+- Added context-aware task assistance and productivity tips
+- Created comprehensive AI service with error handling
+- Added connection testing for API key validation
+- Included suggestion extraction and response parsing
+- Added Swagger documentation for AI endpoints
 
 ### Email Authentication System
 - Implemented email-based login and registration

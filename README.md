@@ -1,6 +1,6 @@
 # TaskFlow
 
-A modern, full-stack task management application with **real-time collaboration**, **comprehensive notifications**, **advanced comment system**, **email authentication**, and **workflow management**. Built with React, NestJS, and MongoDB.
+A modern, full-stack task management application with **real-time collaboration**, **comprehensive notifications**, **advanced comment system**, **email authentication**, **AI-powered productivity assistance**, and **workflow management**. Built with React, NestJS, and MongoDB.
 
 ## 🚀 Key Features
 
@@ -15,6 +15,16 @@ A modern, full-stack task management application with **real-time collaboration*
 - **Deadline Tracking** with automated reminders
 - **Participant Management** with add/remove functionality
 - **Task Request System** with approval workflows
+
+### AI-Powered Productivity Assistant
+- **OpenAI Integration** with GPT-3.5-turbo for intelligent task assistance
+- **Context-Aware Suggestions** based on task details and user questions
+- **Productivity Tips** with actionable recommendations
+- **Time Management Advice** for task completion optimization
+- **Best Practices Guidance** for different task types
+- **Real-time AI Responses** with numbered suggestion lists
+- **Secure API Communication** with proper error handling
+- **Connection Testing** for API key validation
 
 ### Authentication & Security
 - **Email-based Login** with secure password hashing
@@ -86,6 +96,7 @@ A modern, full-stack task management application with **real-time collaboration*
 - **Multer** for file uploads
 - **ExcelJS** for report generation
 - **Cron** for scheduled tasks
+- **OpenAI API** for AI-powered assistance
 
 ## 📦 Quick Start
 
@@ -135,6 +146,9 @@ SMTP_SECURE=false
 SMTP_USER=your_email@gmail.com
 SMTP_PASS=your_app_password
 EMAIL_FROM_NAME=TaskFlow
+
+# AI Assistant (OpenAI)
+OPENAI_API_KEY=your_openai_api_key
 
 # Application
 PORT=3000
@@ -197,6 +211,10 @@ REACT_APP_ENV=development
 - `GET /reports/tasks` - Task analytics
 - `GET /reports/users` - User activity
 - `GET /reports/export` - Excel export
+
+### AI Assistant
+- `POST /ai/assist` - Get AI assistance for task productivity
+- `POST /ai/test` - Test OpenAI API connection
 
 ## 📱 Real-Time Features
 
@@ -324,6 +342,13 @@ For support and questions:
 - Open an issue on GitHub
 
 ## 🔄 Recent Updates
+
+### AI-Powered Productivity Assistant
+- Implemented OpenAI integration with GPT-3.5-turbo
+- Added context-aware task assistance and productivity tips
+- Created modern AI assistant UI with gradient design
+- Added comprehensive error handling and API validation
+- Included suggestion extraction and numbered recommendations
 
 ### Email Authentication System
 - Implemented email-based login and registration
