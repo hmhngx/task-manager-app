@@ -5,6 +5,7 @@ import { Task } from '../types/Task';
 import { useNavigate, Link } from 'react-router-dom';
 import Button from './ui/Button';
 import TablePagination from '@mui/material/TablePagination';
+import { useTaskSocket } from '../hooks/useTaskSocket';
 
 const AdminTasksDashboard: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -17,6 +18,39 @@ const AdminTasksDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // WebSocket integration for real-time task updates
+  const { isConnected } = useTaskSocket({
+    onTaskUpdate: (task) => {
+      console.log('Task updated in real-time:', task);
+      // Update the task in the local state
+      setTasks(prevTasks => 
+        prevTasks.map(t => 
+          (t._id === task._id || t.id === task.id) ? task : t
+        )
+      );
+    },
+    onTaskCreated: (task) => {
+      console.log('Task created in real-time:', task);
+      // Add the new task to the local state
+      setTasks(prevTasks => [task, ...prevTasks]);
+    },
+    onTaskDeleted: (taskId) => {
+      console.log('Task deleted in real-time:', taskId);
+      // Remove the task from the local state
+      setTasks(prevTasks => 
+        prevTasks.filter(t => (t._id !== taskId && t.id !== taskId))
+      );
+    },
+    onStatusChange: (taskId, oldStatus, newStatus) => {
+      console.log(`Task ${taskId} status changed from ${oldStatus} to ${newStatus}`);
+      // The task update will be handled by onTaskUpdate callback
+    },
+    onAssignment: (taskId, assigneeId, assignerId) => {
+      console.log(`Task ${taskId} assigned to ${assigneeId} by ${assignerId}`);
+      // The task update will be handled by onTaskUpdate callback
+    },
+  });
 
   useEffect(() => {
     if (!isAdmin) {
@@ -135,9 +169,15 @@ const AdminTasksDashboard: React.FC = () => {
             <p className="mt-2 text-sm text-gray-600">
               View and manage all tasks created by users
             </p>
+            <div className="flex items-center mt-2">
+              <div className={`w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-xs text-gray-500">
+                {isConnected ? 'Real-time updates connected' : 'Real-time updates disconnected'}
+              </span>
+            </div>
           </div>
           <Link
-            to="/dashboard"
+            to="/app/dashboard"
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all hover:scale-105"
           >
             <svg
