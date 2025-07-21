@@ -14,6 +14,9 @@ A robust NestJS backend with **real-time WebSocket integration**, **comprehensiv
 - **Reporting & Analytics** with Excel export
 - **Participant Management** with add/remove functionality
 - **Task Request System** with approval workflows
+- **Admin Dashboards** with advanced analytics and real-time updates (API support)
+- **Improved Notification System** with new types and real-time updates (API support)
+- **Support for Enhanced Navigation and Landing Page** (API endpoints for user/session status)
 
 ### AI-Powered Productivity Assistant
 - **OpenAI Integration** with GPT-3.5-turbo for intelligent task assistance
@@ -471,3 +474,12 @@ Access API documentation at: `http://localhost:3000/api`
 - Enhanced user management with profile features
 - Improved error handling and logging
 - Added development scripts for user management
+
+### Admin Features
+- Added API support for enhanced admin dashboards and analytics
+
+### Notifications
+- Improved notification system with new types and real-time updates
+
+### Navigation & Layout
+- Added endpoints to support new landing page and navigation improvements

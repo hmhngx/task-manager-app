@@ -15,6 +15,11 @@ A modern React frontend with **real-time WebSocket integration**, **comprehensiv
 - **Admin Dashboard** with live monitoring
 - **Participant Management** with add/remove functionality
 - **Task Request System** with approval workflows
+- **Landing Page** for first-time and unauthenticated users
+- **Enhanced Navigation** with improved sidebar and navbar
+- **Admin Dashboards** with advanced analytics and real-time updates
+- **Improved Authentication Flow** with robust session and route protection
+- **Upgraded Notification System** with new types and real-time updates
 
 ### AI-Powered Productivity Assistant
 - **OpenAI Integration** with GPT-3.5-turbo for intelligent task assistance
@@ -123,12 +128,30 @@ REACT_APP_ENV=development
 
 ## 📱 Components Overview
 
-### Authentication Components
-- **AuthLayout** - Reusable authentication layout with modern design
-- **Login** - Email-based login with floating inputs
-- **Register** - User registration with validation
-- **ForgotPassword** - Password reset request form
-- **ResetPassword** - Password reset with token verification
+### Navigation & Layout
+- **LandingPage** - Welcome and onboarding for new/unauthenticated users
+- **Navbar** - Top navigation bar with improved accessibility
+- **Sidebar** - Responsive sidebar for main navigation
+
+### Admin Features
+- **AdminDashboard** - Enhanced analytics and user management
+- **AdminTasksDashboard** - Advanced task analytics and filtering
+
+### Authentication
+- **AuthContext** - Improved session and token management
+- **Login** - Updated login page with better validation
+- **Register** - Enhanced registration with feedback
+- **PrivateRoute** - Robust route protection for authenticated users
+
+### Task Management
+- **TaskDetails** - Improved task detail view
+- **TaskForm** - Enhanced task creation/editing
+- **TaskDetailsPage** - Refined task page layout
+- **taskService** - Updated for new endpoints and error handling
+
+### Notifications
+- **NotificationBox** - Improved notification UI and logic
+- **NotificationItem** - Enhanced notification display
 
 ### UI Components
 - **FloatingInput** - Modern input field with floating labels
@@ -347,26 +370,25 @@ docker run -p 3001:3001 taskflow-frontend
 
 ## 🔄 Recent Updates
 
-### AI-Powered Productivity Assistant
-- Implemented OpenAI integration with GPT-3.5-turbo
-- Added context-aware task assistance and productivity tips
-- Created modern AI assistant UI with gradient design
-- Added comprehensive error handling and API validation
-- Included suggestion extraction and numbered recommendations
-- Added loading states and user-friendly feedback
-- Implemented responsive design for all device sizes
+### Navigation & Layout
+- Added new LandingPage for onboarding and unauthenticated users
+- Improved Navbar and Sidebar for better navigation and accessibility
 
-### Email Authentication System
-- Implemented email-based login and registration
-- Added password reset functionality with email verification
-- Enhanced security with refresh tokens
-- Added modern authentication UI components
+### Admin Features
+- Enhanced AdminDashboard and AdminTasksDashboard with new analytics and real-time updates
 
-### UI/UX Improvements
-- Modern authentication pages with floating inputs
-- Gradient buttons and improved styling
-- Enhanced user experience with better feedback
-- Responsive design improvements
+### Authentication
+- Refactored AuthContext for better session management
+- Updated Login and Register pages for improved validation and feedback
+- Improved PrivateRoute for robust route protection
+
+### Task Management
+- Refined TaskDetails, TaskForm, and TaskDetailsPage for better UX
+- Updated taskService for new API endpoints
+
+### Notifications
+- Improved NotificationBox and NotificationItem for better user experience
+- Added new notification types and real-time updates
 
 ### Component Library
 - Added FloatingInput component with floating labels

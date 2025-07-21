@@ -15,6 +15,11 @@ A modern, full-stack task management application with **real-time collaboration*
 - **Deadline Tracking** with automated reminders
 - **Participant Management** with add/remove functionality
 - **Task Request System** with approval workflows
+- **Landing Page** for first-time and unauthenticated users
+- **Enhanced Navigation** with improved sidebar and navbar
+- **Admin Dashboards** with advanced analytics and real-time updates
+- **Improved Authentication Flow** with robust session and route protection
+- **Upgraded Notification System** with new types and real-time updates
 
 ### AI-Powered Productivity Assistant
 - **OpenAI Integration** with GPT-3.5-turbo for intelligent task assistance
@@ -367,3 +372,30 @@ For support and questions:
 - Enhanced user management with profile features
 - Improved notification system
 - Better error handling and logging
+
+## 📱 Components Overview
+
+### Navigation & Layout
+- **LandingPage** - Welcome and onboarding for new/unauthenticated users
+- **Navbar** - Top navigation bar with improved accessibility
+- **Sidebar** - Responsive sidebar for main navigation
+
+### Admin Features
+- **AdminDashboard** - Enhanced analytics and user management
+- **AdminTasksDashboard** - Advanced task analytics and filtering
+
+### Authentication
+- **AuthContext** - Improved session and token management
+- **Login** - Updated login page with better validation
+- **Register** - Enhanced registration with feedback
+- **PrivateRoute** - Robust route protection for authenticated users
+
+### Task Management
+- **TaskDetails** - Improved task detail view
+- **TaskForm** - Enhanced task creation/editing
+- **TaskDetailsPage** - Refined task page layout
+- **taskService** - Updated for new endpoints and error handling
+
+### Notifications
+- **NotificationBox** - Improved notification UI and logic
+- **NotificationItem** - Enhanced notification display
