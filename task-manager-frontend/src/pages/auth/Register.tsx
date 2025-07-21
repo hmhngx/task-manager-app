@@ -43,7 +43,7 @@ const Register: React.FC = () => {
     setIsLoading(true);
     try {
       await register(email, password, username || undefined);
-      navigate('/dashboard');
+      navigate('/app/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
