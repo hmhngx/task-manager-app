@@ -61,7 +61,7 @@ const NotificationBox: React.FC<NotificationBoxProps> = ({ isOpen, onClose }) =>
     onClose();
     
     // Navigate to task details page
-    navigate(`/tasks/${taskId}`);
+    navigate(`/app/tasks/${taskId}`);
   };
 
   const getNotificationIcon = (type: string) => {
