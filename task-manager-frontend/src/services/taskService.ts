@@ -8,6 +8,15 @@ const getAuthHeader = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+// Helper function to handle authentication errors consistently
+const handleAuthError = (error: any): never => {
+  if (axios.isAxiosError(error) && error.response?.status === 401) {
+    logoutUser();
+    window.location.href = '/';
+  }
+  throw error;
+};
+
 export const getTasks = async (): Promise<Task[]> => {
   try {
     const response = await axios.get(`${API_URL}/tasks`, {
@@ -15,11 +24,8 @@ export const getTasks = async (): Promise<Task[]> => {
     });
     return response.data;
   } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
-      logoutUser();
-      window.location.href = '/login';
-    }
-    throw error;
+    handleAuthError(error);
+    return []; // This line will never be reached due to handleAuthError throwing
   }
 };
 
@@ -32,7 +38,7 @@ export const createTask = async (task: CreateTaskDto): Promise<Task> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -50,7 +56,7 @@ export const updateTask = async (
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -64,7 +70,7 @@ export const deleteTask = async (id: string): Promise<void> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -79,7 +85,7 @@ export const getWeeklyStats = async (): Promise<TaskStats> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -101,7 +107,7 @@ export const getWeeklyStatsDetailed = async (): Promise<{
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -116,7 +122,7 @@ export const getMonthlyStats = async (): Promise<TaskStats> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -131,7 +137,7 @@ export const getAllTasks = async (): Promise<Task[]> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -147,7 +153,7 @@ export const getAllTasksWithFilters = async (filters: any = {}): Promise<Task[]>
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -162,7 +168,7 @@ export const getMyTasks = async (): Promise<Task[]> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -177,7 +183,7 @@ export const getCreatedByMe = async (): Promise<Task[]> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -192,7 +198,7 @@ export const getTasksByStatus = async (status: string): Promise<Task[]> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -207,7 +213,7 @@ export const getTasksByPriority = async (priority: string): Promise<Task[]> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -222,7 +228,7 @@ export const getTasksByType = async (type: string): Promise<Task[]> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -237,7 +243,7 @@ export const getTaskById = async (id: string): Promise<Task> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -252,7 +258,7 @@ export const getTaskComments = async (taskId: string): Promise<Comment[]> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -281,7 +287,7 @@ export const createComment = async (taskId: string, content: string, mentions: s
     console.error('createComment error:', error);
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -298,7 +304,7 @@ export const updateComment = async (commentId: string, content: string): Promise
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -312,7 +318,7 @@ export const deleteComment = async (commentId: string): Promise<void> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -329,7 +335,7 @@ export const voteComment = async (commentId: string, voteType: 'up' | 'down'): P
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -344,7 +350,7 @@ export const getTaskAttachments = async (taskId: string): Promise<Attachment[]> 
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -365,7 +371,7 @@ export const uploadAttachment = async (taskId: string, file: File): Promise<Atta
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -379,7 +385,7 @@ export const deleteAttachment = async (attachmentId: string): Promise<void> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -394,7 +400,7 @@ export const requestTask = async (taskId: string): Promise<Task> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -409,7 +415,7 @@ export const approveRequest = async (taskId: string, requesterId: string): Promi
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -424,7 +430,7 @@ export const rejectRequest = async (taskId: string, requesterId: string): Promis
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -439,7 +445,7 @@ export const addWatcher = async (taskId: string): Promise<Task> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -454,7 +460,7 @@ export const removeWatcher = async (taskId: string): Promise<Task> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -469,7 +475,7 @@ export const getTaskStats = async (): Promise<TaskStats> => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }
@@ -484,7 +490,7 @@ export const getAvailableUsers = async () => {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       logoutUser();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw error;
   }

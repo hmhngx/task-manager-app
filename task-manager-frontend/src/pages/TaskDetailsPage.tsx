@@ -7,7 +7,7 @@ const TaskDetailsPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleClose = () => {
-    navigate('/dashboard');
+    navigate('/app/dashboard');
   };
 
   if (!taskId) {

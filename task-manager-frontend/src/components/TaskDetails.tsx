@@ -323,12 +323,22 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
 
   const handleMarkAsCompleted = async () => {
     if (user?.role !== 'admin') return;
+    setActionLoading(true);
+    try {
     await handleUpdateTask({ status: 'done' });
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleMarkAsLate = async () => {
     if (user?.role !== 'admin') return;
+    setActionLoading(true);
+    try {
     await handleUpdateTask({ status: 'late' });
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   // Helper function to update a comment and its replies recursively
@@ -408,8 +418,22 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ taskId, onClose }) => {
             </div>
             {user?.role === 'admin' && (
               <div className="flex gap-3 mt-3">
-                <Button onClick={handleMarkAsCompleted} variant="primary" className="shadow-neon-green focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400 transition-all duration-200 hover:scale-105">Mark as Completed</Button>
-                <Button onClick={handleMarkAsLate} variant="danger" className="shadow-neon-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 transition-all duration-200 hover:scale-105">Mark as Late</Button>
+                <Button 
+                  onClick={handleMarkAsCompleted} 
+                  variant="primary" 
+                  disabled={actionLoading}
+                  className="shadow-neon-green focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400 transition-all duration-200 hover:scale-105"
+                >
+                  {actionLoading ? 'Updating...' : 'Mark as Completed'}
+                </Button>
+                <Button 
+                  onClick={handleMarkAsLate} 
+                  variant="danger" 
+                  disabled={actionLoading}
+                  className="shadow-neon-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 transition-all duration-200 hover:scale-105"
+                >
+                  {actionLoading ? 'Updating...' : 'Mark as Late'}
+                </Button>
               </div>
             )}
             <div className="flex items-center space-x-2 mt-3">

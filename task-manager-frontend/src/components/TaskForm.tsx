@@ -178,13 +178,17 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
       };
 
       if (onSubmit) {
+        // If onSubmit is provided, let the parent component handle everything
         await onSubmit(submitData);
       } else if (task?.id) {
+        // Update existing task
         await updateTask(task.id, submitData);
+        navigate('/app');
       } else {
+        // Create new task (standalone form)
         await createTask(submitData);
+        navigate('/app');
       }
-      navigate('/tasks');
     } catch (error) {
       console.error('Error saving task:', error);
     }
