@@ -50,7 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   const totalTasks = tasksLeft + completedCount;
@@ -170,16 +170,16 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Navigation */}
         <nav className="flex-1 p-2 space-y-1">
-          <NavItem to="/" icon={FiHome as React.ComponentType<{ className?: string }>} label="Tasks" />
-          <NavItem to="/dashboard" icon={FiPieChart as React.ComponentType<{ className?: string }>} label="Dashboard" />
-          <NavItem to="/reports" icon={FiFileText as React.ComponentType<{ className?: string }>} label="Reports" />
+          <NavItem to="/app" icon={FiHome as React.ComponentType<{ className?: string }>} label="Tasks" />
+          <NavItem to="/app/dashboard" icon={FiPieChart as React.ComponentType<{ className?: string }>} label="Dashboard" />
+          <NavItem to="/app/reports" icon={FiFileText as React.ComponentType<{ className?: string }>} label="Reports" />
           {isAdmin && (
             <>
               <div className={`${isCollapsed ? 'px-1' : 'px-3'} pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider`}>
                 {!isCollapsed && 'Admin'}
               </div>
-              <NavItem to="/admin" icon={FiSettings as React.ComponentType<{ className?: string }>} label="Manage Users" adminOnly />
-              <NavItem to="/admin/tasks" icon={FiUsers as React.ComponentType<{ className?: string }>} label="Manage Tasks" adminOnly />
+              <NavItem to="/app/admin" icon={FiSettings as React.ComponentType<{ className?: string }>} label="Manage Users" adminOnly />
+              <NavItem to="/app/admin/tasks" icon={FiUsers as React.ComponentType<{ className?: string }>} label="Manage Tasks" adminOnly />
             </>
           )}
         </nav>

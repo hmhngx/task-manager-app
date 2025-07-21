@@ -51,7 +51,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
+      navigate('/');
     } catch (error) {
       console.error('Failed to log out', error);
     }
@@ -60,15 +60,15 @@ export default function Navbar() {
   const navLinks = [
     ...(isAdmin
       ? [
-          { to: '/admin', label: 'Manage Users' },
-          { to: '/admin/tasks', label: 'Manage Tasks' },
-          { to: '/dashboard', label: 'Dashboard' },
-          { to: '/', label: 'All Tasks' },
-          { to: '/reports', label: 'Reports' },
+          { to: '/app/admin', label: 'Manage Users' },
+          { to: '/app/admin/tasks', label: 'Manage Tasks' },
+          { to: '/app/dashboard', label: 'Dashboard' },
+          { to: '/app', label: 'All Tasks' },
+          { to: '/app/reports', label: 'Reports' },
         ]
       : [
-          { to: '/', label: 'My Tasks' },
-          { to: '/dashboard', label: 'Dashboard' },
+          { to: '/app', label: 'My Tasks' },
+          { to: '/app/dashboard', label: 'Dashboard' },
         ]),
   ];
 
@@ -90,7 +90,7 @@ export default function Navbar() {
             {/* Logo */}
             <div className="flex items-center justify-between w-full md:w-auto">
               <Link
-                to="/"
+              to="/app"
                 className="flex-shrink-0 text-2xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2"
                 onClick={() => setIsMenuOpen(false)}
               >

@@ -22,6 +22,7 @@ import Navbar from './components/Navbar';
 import ReportScreen from './components/Reports/ReportScreen';
 import { getTasks } from './services/taskService';
 import NotificationBox from './components/NotificationBox';
+import LandingPage from './pages/LandingPage';
 import './App.css';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -82,6 +83,9 @@ function App() {
         <NotificationProvider>
       <Router>
         <Routes>
+          {/* Landing page */}
+          <Route path="/" element={<LandingPage />} />
+          
           {/* Auth pages: no layout, just the box */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -90,7 +94,7 @@ function App() {
 
           {/* Main app pages: wrapped in Layout */}
           <Route
-            path="/*"
+            path="/app/*"
             element={
               <Layout>
                 <Routes>
