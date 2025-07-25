@@ -12,12 +12,55 @@ import {
   ShieldCheckIcon,
   ServerIcon,
   CpuChipIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 
 const LandingPage: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { isAuthenticated } = useAuth();
+
+  // Demo gallery images
+  const demoImages = [
+    {
+      src: "/images/demo.png",
+      alt: "TaskFlow Dashboard - Main View",
+      title: "Dashboard Overview",
+      description: "Real-time task management with live updates and AI insights"
+    },
+    {
+      src: "/images/task-creation.png",
+      alt: "TaskFlow - Task Creation",
+      title: "Smart Task Creation",
+      description: "Innovative task creation with effective assigning system"
+    },
+    {
+      src: "/images/excel-report.png",
+      alt: "TaskFlow - Excel Report",
+      title: "Excel Report",
+      description: "Excel report to track your progress and performance"
+    },
+    {
+      src: "/images/ai-assistant.png",
+      alt: "TaskFlow - Smart Artifical Intelligence Assistant",
+      title: "Smart Artifical Intelligence Assistant",
+      description: "AI-powered assistant to help you with your tasks"
+    },
+    {
+      src: "/images/notification-system.png",
+      alt: "TaskFlow - Notification System",
+      title: "Notification System",
+      description: "User-friendly notification system to keep you updated with your tasks"
+    },
+    {
+      src: "/images/task-management.png",
+      alt: "TaskFlow - Task Management",
+      title: "Task Management",
+      description: "Informative, easy to use and effective task management system"
+    },
+  ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,6 +69,19 @@ const LandingPage: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Gallery navigation functions
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % demoImages.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + demoImages.length) % demoImages.length);
+  };
+
+  const goToImage = (index: number) => {
+    setCurrentImageIndex(index);
+  };
 
   const features = [
     {
@@ -144,29 +200,59 @@ const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f8f9fd] to-[#f1f3f9] font-sans text-[#2d2d2d] leading-relaxed">
       {/* Sticky Navbar */}
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-white shadow-lg' : 'bg-transparent'
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ease-in-out ${
+        isScrolled 
+          ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200/50' 
+          : 'bg-transparent'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-blue-900">TaskFlow</h1>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] bg-clip-text text-transparent hover:scale-105 transition-transform duration-300 ease-in-out cursor-pointer shadow-lg hover:shadow-xl">
+                  TaskFlow
+                </h1>
               </div>
             </div>
             <div className="hidden md:block">
-              <div className="ml-10 flex items-baseline space-x-4">
-                <a href="#features" className="text-gray-700 hover:text-blue-900 px-3 py-2 rounded-md text-sm font-medium">Features</a>
-                <a href="#pricing" className="text-gray-700 hover:text-blue-900 px-3 py-2 rounded-md text-sm font-medium">Pricing</a>
-                <a href="#testimonials" className="text-gray-700 hover:text-blue-900 px-3 py-2 rounded-md text-sm font-medium">Testimonials</a>
+              <div className="ml-10 flex items-baseline space-x-6">
+                <a 
+                  href="#features" 
+                  className="text-[#2d2d2d] hover:text-[#6c5ce7] px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ease-in-out hover:bg-white/80 hover:shadow-md hover:-translate-y-0.5 hover:scale-105 focus:ring-2 focus:ring-[#6c5ce7] focus:outline-none"
+                >
+                  Features
+                </a>
+                <a 
+                  href="#pricing" 
+                  className="text-[#2d2d2d] hover:text-[#6c5ce7] px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ease-in-out hover:bg-white/80 hover:shadow-md hover:-translate-y-0.5 hover:scale-105 focus:ring-2 focus:ring-[#6c5ce7] focus:outline-none"
+                >
+                  Pricing
+                </a>
+                <a 
+                  href="#testimonials" 
+                  className="text-[#2d2d2d] hover:text-[#6c5ce7] px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ease-in-out hover:bg-white/80 hover:shadow-md hover:-translate-y-0.5 hover:scale-105 focus:ring-2 focus:ring-[#6c5ce7] focus:outline-none"
+                >
+                  Testimonials
+                </a>
                 {isAuthenticated ? (
-                  <Link to="/app" className="bg-blue-900 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-800 transition-colors">
+                  <Link 
+                    to="/app" 
+                    className="bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-105 hover:brightness-110 hover:opacity-90 focus:ring-2 focus:ring-[#6c5ce7] focus:outline-none transition-all duration-300 ease-in-out"
+                  >
                     Go to App
                   </Link>
                 ) : (
                   <>
-                    <Link to="/login" className="text-gray-700 hover:text-blue-900 px-3 py-2 rounded-md text-sm font-medium">Sign In</Link>
-                    <Link to="/register" className="bg-blue-900 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-800 transition-colors">
+                    <Link 
+                      to="/login" 
+                      className="text-[#2d2d2d] hover:text-[#6c5ce7] px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ease-in-out hover:bg-white/80 hover:shadow-md hover:-translate-y-0.5 hover:scale-105 focus:ring-2 focus:ring-[#6c5ce7] focus:outline-none"
+                    >
+                      Sign In
+                    </Link>
+                    <Link 
+                      to="/register" 
+                      className="bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 hover:scale-105 hover:brightness-110 hover:opacity-90 focus:ring-2 focus:ring-[#6c5ce7] focus:outline-none transition-all duration-300 ease-in-out"
+                    >
                       Get Started
                     </Link>
                   </>
@@ -201,7 +287,14 @@ const LandingPage: React.FC = () => {
                   <Link to="/register" className="bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] text-white px-8 py-4 rounded-lg text-lg font-semibold shadow-lg hover:scale-105 hover:brightness-110 hover:opacity-90 focus:ring-2 focus:ring-[#6c5ce7] focus:outline-none transition-all duration-300 ease-in-out">
                     Start Free
                   </Link>
-                  <button className="flex items-center gap-2 bg-white text-[#2d2d2d] px-8 py-4 rounded-lg text-lg font-semibold shadow-lg hover:scale-105 hover:brightness-110 hover:opacity-90 focus:ring-2 focus:ring-[#6c5ce7] focus:outline-none transition-all duration-300 ease-in-out border">
+                  <button 
+                    onClick={() => {
+                      document.getElementById('demo-section')?.scrollIntoView({ 
+                        behavior: 'smooth' 
+                      });
+                    }}
+                    className="flex items-center gap-2 bg-white text-[#2d2d2d] px-8 py-4 rounded-lg text-lg font-semibold shadow-lg hover:scale-105 hover:brightness-110 hover:opacity-90 focus:ring-2 focus:ring-[#6c5ce7] focus:outline-none transition-all duration-300 ease-in-out border"
+                  >
                     <PlayIcon className="w-5 h-5 text-[#6c5ce7]" />
                     Watch Demo
                   </button>
@@ -325,7 +418,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Demo Section */}
-      <section className="py-16 bg-white scroll-mt-16">
+      <section id="demo-section" className="py-16 bg-white scroll-mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -337,11 +430,58 @@ const LandingPage: React.FC = () => {
           </div>
           
           <div className="bg-gradient-to-r from-blue-100 to-green-100 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-1 hover:scale-105 focus:scale-105 focus:shadow-2xl focus:outline-none transition-all duration-300 ease-in-out">
-            <div className="aspect-video bg-white rounded-lg shadow-lg flex items-center justify-center hover:shadow-2xl hover:-translate-y-1 hover:scale-105 focus:scale-105 focus:shadow-2xl focus:outline-none transition-all duration-300 ease-in-out">
-              <div className="text-center">
-                <PlayIcon className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-                <p className="text-lg font-medium text-gray-700">Product Demo Video</p>
-                <p className="text-sm text-gray-500 mt-2">Click to watch TaskFlow in action</p>
+            <div className="aspect-video bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 ease-in-out relative">
+              {/* Product Demo Image Gallery */}
+              <div className="relative w-full h-full">
+                <img 
+                  src={demoImages[currentImageIndex].src}
+                  alt={demoImages[currentImageIndex].alt} 
+                  className="w-full h-full object-cover rounded-lg transition-all duration-500 ease-in-out"
+                />
+                
+                {/* Navigation Buttons */}
+                <button
+                  onClick={prevImage}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 hover:bg-white transition-all duration-300 ease-in-out focus:ring-2 focus:ring-[#6c5ce7] focus:outline-none"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeftIcon className="w-6 h-6 text-[#6c5ce7]" />
+                </button>
+                
+                <button
+                  onClick={nextImage}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 hover:bg-white transition-all duration-300 ease-in-out focus:ring-2 focus:ring-[#6c5ce7] focus:outline-none"
+                  aria-label="Next image"
+                >
+                  <ChevronRightIcon className="w-6 h-6 text-[#6c5ce7]" />
+                </button>
+
+                {/* Image Info Overlay */}
+                <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-lg">
+                  <p className="text-lg font-semibold text-[#2d2d2d]">{demoImages[currentImageIndex].title}</p>
+                  <p className="text-sm text-gray-600 mt-1">{demoImages[currentImageIndex].description}</p>
+                </div>
+
+                {/* Pagination Dots */}
+                <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 flex space-x-3">
+                  {demoImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => goToImage(index)}
+                      className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#6c5ce7] ${
+                        index === currentImageIndex 
+                          ? 'bg-[#6c5ce7] border-[#6c5ce7] scale-125 shadow-[0_0_20px_rgba(108,92,231,0.6)] shadow-[#6c5ce7]' 
+                          : 'bg-white/70 border-black/50 hover:bg-white hover:border-white hover:scale-110 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                      }`}
+                      aria-label={`Go to image ${index + 1}`}
+                    />
+                  ))}
+                </div>
+
+                {/* Image Counter */}
+                <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-medium">
+                  {currentImageIndex + 1} / {demoImages.length}
+                </div>
               </div>
             </div>
           </div>
@@ -512,9 +652,9 @@ const LandingPage: React.FC = () => {
                 <Link to="/register" className="bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] text-white px-8 py-4 rounded-lg text-lg font-semibold shadow-lg hover:scale-105 hover:brightness-110 hover:opacity-90 focus:ring-2 focus:ring-[#6c5ce7] focus:outline-none transition-all duration-300 ease-in-out">
                   Get Started Free
                 </Link>
-                <button className="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold shadow-lg hover:scale-105 hover:brightness-110 hover:opacity-90 focus:ring-2 focus:ring-[#6c5ce7] focus:outline-none transition-all duration-300 ease-in-out">
+                <Link to="/register" className="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold shadow-lg hover:scale-105 hover:brightness-110 hover:opacity-90 focus:ring-2 focus:ring-[#6c5ce7] focus:outline-none transition-all duration-300 ease-in-out">
                   Schedule Demo
-                </button>
+                </Link>
               </>
             )}
           </div>
