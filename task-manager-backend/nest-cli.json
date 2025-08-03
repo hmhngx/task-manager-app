@@ -7,7 +7,7 @@
     "assets": [
       {
         "include": "modules/auth/templates/**/*",
-        "outDir": "dist/src"
+        "outDir": "dist"
       }
     ]
   }

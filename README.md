@@ -1,5 +1,40 @@
 # TaskFlow
 
+A comprehensive full-stack task management application built with modern technologies.
+
+## 🚀 Quick Deployment (100% Free)
+
+This application can be deployed using a completely free stack:
+
+| Layer                  | Platform                                                                               | Purpose                              | Free Tier Features                                |
+| ---------------------- | -------------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------- |
+| **Frontend**           | [Vercel](https://vercel.com)                                                           | React 18 + TS + Tailwind UI (static) | 100GB bandwidth/mo, unlimited projects, GitHub CI |
+| **Backend**            | [Railway](https://railway.app)                                                         | NestJS app with WebSockets, Cron     | $5 credit/month, Node.js apps, no credit card     |
+| **Database**           | [MongoDB Atlas](https://www.mongodb.com/atlas/database)                                | Mongoose ODM + hosted DB             | 512MB shared cluster, free tier                   |
+| **File Uploads**       | [Cloudinary](https://cloudinary.com/) or [UploadThing](https://uploadthing.com/)       | Storage for user uploads             | 2GB+ free tier, API, CDN                          |
+| **Email**              | [Brevo (ex-Sendinblue)](https://www.brevo.com/) or [Ethereal](https://ethereal.email/) | SMTP for transactional email         | Brevo: 300 emails/day free                        |
+| **Push Notifications** | Web Push API + VAPID keys                                                              | Browser-native notifications         | 100% free, self-hosted                            |
+| **AI / OpenAI**        | [OpenAI API](https://platform.openai.com)                                              | GPT-based assistant features         | Free trial credits available                      |
+
+### Quick Start Deployment
+
+1. **Run the setup script:**
+   ```bash
+   chmod +x setup-deployment.sh
+   ./setup-deployment.sh
+   ```
+
+2. **Follow the deployment checklist** provided by the script
+
+3. **For detailed instructions:** See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
+
+### Deployment URLs
+- **Frontend:** https://task-manager-frontend.vercel.app
+- **Backend:** https://task-manager-backend-production.up.railway.app
+- **API Docs:** https://task-manager-backend-production.up.railway.app/api
+
+# TaskFlow
+
 A modern, full-stack task management application with **real-time collaboration**, **comprehensive notifications**, **advanced comment system**, **email authentication**, **AI-powered productivity assistance**, and **workflow management**. Built with React, NestJS, and MongoDB.
 
 ## 🚀 Key Features
@@ -20,7 +55,7 @@ A modern, full-stack task management application with **real-time collaboration*
 - **Admin Dashboards** with advanced analytics and real-time updates
 - **Improved Authentication Flow** with robust session and route protection
 - **Upgraded Notification System** with new types and real-time updates
-
+    
 ### AI-Powered Productivity Assistant
 - **OpenAI Integration** with GPT-3.5-turbo for intelligent task assistance
 - **Context-Aware Suggestions** based on task details and user questions

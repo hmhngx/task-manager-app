@@ -19,7 +19,9 @@ async function bootstrap() {
       'http://localhost:5173', // Vite default port
       'http://localhost:3001', // Alternative port
       'http://localhost:3000', // React default port
-    ],
+      'https://task-manager-frontend.vercel.app', // Vercel frontend
+      process.env.FRONTEND_URL, // Environment variable
+    ].filter(Boolean),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -57,7 +59,7 @@ async function bootstrap() {
   // Serve static files from uploads directory
   app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
 
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 8080;
   await app.listen(port);
   logger.log(`Application is running on: http://localhost:${port}`);
 }
