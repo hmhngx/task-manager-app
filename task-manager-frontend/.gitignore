@@ -36,3 +36,4 @@ test-*.mjs
 *test*.ts
 *test*.mjs
 *.js
+.vercel
