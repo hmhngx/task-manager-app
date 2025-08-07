@@ -19,16 +19,21 @@ async function bootstrap() {
       'http://localhost:5173', // Vite default port
       'http://localhost:3001', // Alternative port
       'http://localhost:3000', // React default port
+      'https://task-manager-frontend.vercel.app', // Vercel frontend
       'https://task-manager-frontend-harrison-nguyens-projects.vercel.app', // Your specific Vercel domain
       'https://task-manager-frontend-hmhngx-harrison-nguyens-projects.vercel.app',
       'https://task-manager-frontend-nu-two.vercel.app',
       process.env.FRONTEND_URL, // Environment variable
       // Allow any Vercel domain for this project
       /^https:\/\/.*\.vercel\.app$/,
+      // Allow any Railway domain for this project
+      /^https:\/\/.*\.up\.railway\.app$/,
     ].filter(Boolean),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
   // Enable validation
