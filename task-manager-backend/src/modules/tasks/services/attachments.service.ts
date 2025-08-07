@@ -16,7 +16,7 @@ import {
   NotificationPriority,
 } from '../../../shared/interfaces/notification.interface';
 import { TaskGateway } from '../../websocket/gateways/task.gateway';
-import * as sharp from 'sharp';
+// import * as sharp from 'sharp';
 
 @Injectable()
 export class AttachmentsService {
@@ -58,6 +58,8 @@ export class AttachmentsService {
       let height: number | undefined;
       let thumbnail: string | undefined;
 
+      // Temporarily disable image processing due to sharp compatibility issues
+      /*
       if (file.mimetype.startsWith('image/')) {
         const image = sharp(file.buffer);
         const metadata = await image.metadata();
@@ -74,6 +76,7 @@ export class AttachmentsService {
         // Optimize main image
         processedData = await image.jpeg({ quality: 85 }).toBuffer();
       }
+      */
 
       const attachment = await this.attachmentModel.create({
         filename: `${Date.now()}-${file.originalname}`,
