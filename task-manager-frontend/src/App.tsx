@@ -25,6 +25,7 @@ import NotificationBox from './components/NotificationBox';
 import LandingPage from './pages/LandingPage';
 import './App.css';
 
+// Force redeploy to refresh environment variables - CORS fix
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
