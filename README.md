@@ -2,6 +2,16 @@
 
 A comprehensive full-stack task management application built with modern technologies.
 
+## 🚀 Live Deployment
+
+This application is currently deployed and running:
+
+| Component | URL | Status |
+|-----------|-----|--------|
+| **Frontend** | https://task-manager-frontend-harrison-nguyens-projects.vercel.app | ✅ Live |
+| **Backend** | https://task-flow-production-71a7.up.railway.app | ✅ Live |
+| **API Docs** | https://task-flow-production-71a7.up.railway.app/api | ✅ Live |
+
 ## 🚀 Quick Deployment (100% Free)
 
 This application can be deployed using a completely free stack:
@@ -27,11 +37,6 @@ This application can be deployed using a completely free stack:
 2. **Follow the deployment checklist** provided by the script
 
 3. **For detailed instructions:** See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
-
-### Deployment URLs
-- **Frontend:** https://task-manager-frontend.vercel.app
-- **Backend:** https://task-manager-backend-production.up.railway.app
-- **API Docs:** https://task-manager-backend-production.up.railway.app/api
 
 # TaskFlow
 

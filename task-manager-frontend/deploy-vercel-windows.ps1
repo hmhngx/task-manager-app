@@ -1,27 +1,41 @@
-# Vercel Frontend Deployment Script for Windows
+# Vercel Deployment Script for Windows
+# This script deploys the frontend to Vercel with the correct backend URL
 
-Write-Host "🚀 Deploying Task Manager Frontend to Vercel (Free Tier)..." -ForegroundColor Green
+Write-Host "🚀 Deploying TaskFlow Frontend to Vercel..." -ForegroundColor Green
 
-# Install Vercel CLI if not installed
-if (!(Get-Command vercel -ErrorAction SilentlyContinue)) {
-    Write-Host "Installing Vercel CLI..." -ForegroundColor Yellow
+# Check if Vercel CLI is installed
+try {
+    $vercelVersion = vercel --version
+    Write-Host "✅ Vercel CLI found: $vercelVersion" -ForegroundColor Green
+} catch {
+    Write-Host "❌ Vercel CLI not found. Installing..." -ForegroundColor Red
     npm install -g vercel
 }
 
-# Login to Vercel (if not already logged in)
-Write-Host "Logging in to Vercel..." -ForegroundColor Yellow
-vercel login
+# Set environment variables for the deployment
+Write-Host "🔧 Setting environment variables..." -ForegroundColor Yellow
 
-# Set environment variables for production
-Write-Host "Setting environment variables..." -ForegroundColor Yellow
-Write-Host "Please set the following environment variables in Vercel dashboard:" -ForegroundColor Cyan
-Write-Host "- REACT_APP_API_URL=https://task-manager-backend-production.up.railway.app" -ForegroundColor White
-Write-Host "- REACT_APP_BACKEND_URL=https://task-manager-backend-production.up.railway.app" -ForegroundColor White
+# Set the backend URL to the deployed Railway backend
+$env:REACT_APP_API_URL = "https://task-flow-production-71a7.up.railway.app"
+$env:REACT_APP_BACKEND_URL = "https://task-flow-production-71a7.up.railway.app"
+$env:REACT_APP_ENV = "production"
+
+Write-Host "✅ Environment variables set:" -ForegroundColor Green
+Write-Host "   REACT_APP_API_URL: $env:REACT_APP_API_URL" -ForegroundColor Cyan
+Write-Host "   REACT_APP_BACKEND_URL: $env:REACT_APP_BACKEND_URL" -ForegroundColor Cyan
+Write-Host "   REACT_APP_ENV: $env:REACT_APP_ENV" -ForegroundColor Cyan
+
+# Install dependencies
+Write-Host "📦 Installing dependencies..." -ForegroundColor Yellow
+npm install --legacy-peer-deps
+
+# Build the application
+Write-Host "🔨 Building application..." -ForegroundColor Yellow
+npm run build
 
 # Deploy to Vercel
-Write-Host "Deploying to Vercel..." -ForegroundColor Yellow
+Write-Host "🚀 Deploying to Vercel..." -ForegroundColor Yellow
 vercel --prod
 
-Write-Host "✅ Frontend deployed successfully!" -ForegroundColor Green
-Write-Host "🔗 Your frontend URL: https://task-manager-frontend.vercel.app" -ForegroundColor Cyan
-Write-Host "📊 Free tier includes: 100GB bandwidth/month, unlimited projects" -ForegroundColor Yellow 
+Write-Host "✅ Deployment complete!" -ForegroundColor Green
+Write-Host "🌐 Your frontend should now be connected to the deployed backend" -ForegroundColor Green 
