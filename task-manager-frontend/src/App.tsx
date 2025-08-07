@@ -26,6 +26,10 @@ import LandingPage from './pages/LandingPage';
 import './App.css';
 
 // Force redeploy to refresh environment variables - CORS fix
+// Debug API URL
+console.log('API URL:', process.env.REACT_APP_API_URL);
+console.log('Backend URL:', process.env.REACT_APP_BACKEND_URL);
+
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
