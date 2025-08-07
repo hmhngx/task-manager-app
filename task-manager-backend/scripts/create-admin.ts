@@ -12,10 +12,10 @@ async function createAdmin() {
     // Get the User model
     const UserModel = model('User', UserSchema);
 
-    // Admin credentials
-    const adminEmail = 'admin@taskmanager.com';
-    const adminPassword = 'admin123456';
-    const adminUsername = 'superadmin';
+    // Admin credentials from environment variables or defaults
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@taskmanager.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123456';
+    const adminUsername = process.env.ADMIN_USERNAME || 'superadmin';
 
     // Check if admin already exists
     const existingAdmin = await UserModel.findOne({ email: adminEmail }).exec();
